@@ -1,1 +1,8 @@
 streamlit
+requests
+pandas
+plotly
+requests-oauthlib
+matplotlib
+openai
+pymongo
