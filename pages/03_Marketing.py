@@ -2,7 +2,6 @@ import logging
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Configure logging
 logging.basicConfig(
@@ -68,13 +67,9 @@ def main():
         # Load the entire collection into a DataFrame
         data = get_collection_data(client, collection_name)
 
-        # Display the data with AgGrid for filtering and sorting
-        gb = GridOptionsBuilder.from_dataframe(data)
-        gb.configure_default_column(filterable=True, sortable=True)
-        gb.configure_pagination(enabled=True, paginationAutoPageSize=True)  # Enable pagination if needed
-        grid_options = gb.build()
+        # Display the data using Streamlit's built-in dataframe viewer
+        st.dataframe(data)
 
-        AgGrid(data, gridOptions=grid_options)
     except Exception as e:
         logging.critical(f"Critical error in main function: {e}")
         st.error(f"Critical error: {e}")
