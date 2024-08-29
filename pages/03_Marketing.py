@@ -8,7 +8,7 @@ import plotly.express as px
 logging.basicConfig(
     filename="app.log", 
     filemode="a", 
-    format="%(asctime)s - %(levelname)s - %(message)s", 
+    format="%(asctime)s - %(levellevel)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -56,23 +56,22 @@ def get_collection_data(client, collection_name):
         raise
 
 def apply_filters(df):
-    # Ensure the 'Date' column is parsed as datetime
+    # Check and apply date filter only if a valid 'Date' column is present
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-
-        # Drop rows where the date conversion failed
         df = df.dropna(subset=['Date'])
 
-        min_date = df['Date'].min()
-        max_date = df['Date'].max()
+        if not df.empty:  # Check if there are valid date entries left
+            min_date = df['Date'].min()
+            max_date = df['Date'].max()
 
-        start_date, end_date = st.date_input(
-            "Select date range:",
-            value=[min_date, max_date],
-            min_value=min_date,
-            max_value=max_date
-        )
-        df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
+            start_date, end_date = st.date_input(
+                "Select date range:",
+                value=[min_date, max_date],
+                min_value=min_date,
+                max_value=max_date
+            )
+            df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
 
     # Filter by Numeric Columns
     numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
@@ -90,7 +89,6 @@ def apply_filters(df):
         df = df[df[col].isin(selected_values)]
     
     return df
-
 
 def create_visualizations(df):
     st.subheader("Create Your Own Visualizations")
@@ -130,15 +128,15 @@ def main():
     # Apply filters to the data
     filtered_data = apply_filters(data)
 
-    st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
-    st.dataframe(filtered_data)
+    # Check if DataFrame is empty after filtering
+    if filtered_data.empty:
+        st.warning("No data available for the selected filters.")
+    else:
+        st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
+        st.dataframe(filtered_data)
 
-    if st.checkbox("Show raw data"):
-        st.subheader("Raw Data")
-        st.write(filtered_data)
-
-    # Call the visualization function
-    create_visualizations(filtered_data)
+        # Call the visualization function
+        create_visualizations(filtered_data)
 
 if __name__ == "__main__":
     main()
