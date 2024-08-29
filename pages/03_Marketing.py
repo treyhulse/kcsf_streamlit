@@ -56,10 +56,16 @@ def get_collection_data(client, collection_name):
         raise
 
 def apply_filters(df):
-    # Filter by Date
+    # Ensure the 'Date' column is parsed as datetime
     if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+
+        # Drop rows where the date conversion failed
+        df = df.dropna(subset=['Date'])
+
         min_date = df['Date'].min()
         max_date = df['Date'].max()
+
         start_date, end_date = st.date_input(
             "Select date range:",
             value=[min_date, max_date],
@@ -84,6 +90,7 @@ def apply_filters(df):
         df = df[df[col].isin(selected_values)]
     
     return df
+
 
 def create_visualizations(df):
     st.subheader("Create Your Own Visualizations")
