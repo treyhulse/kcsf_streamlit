@@ -33,22 +33,22 @@ def get_collection_data(client, collection_name):
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
         
-        # Fetch all data and handle encoding errors
-        data = list(collection.find())
+        data = []
+        for doc in collection.find():
+            try:
+                # Process each document individually
+                processed_doc = {}
+                for key, value in doc.items():
+                    if isinstance(value, str):
+                        processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
+                    else:
+                        processed_doc[key] = value
+                data.append(processed_doc)
+            except Exception as e:
+                logging.error(f"Skipping problematic document {doc.get('_id', 'Unknown ID')}: {e}")
+                continue  # Skip problematic document
         
-        # Convert each document to string, handling encoding errors
-        processed_data = []
-        for doc in data:
-            processed_doc = {}
-            for key, value in doc.items():
-                if isinstance(value, str):
-                    processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
-                else:
-                    processed_doc[key] = value
-            processed_data.append(processed_doc)
-        
-        df = pd.DataFrame(processed_data)
-        
+        df = pd.DataFrame(data)
         logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
         return df
     except Exception as e:
