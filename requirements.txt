@@ -6,3 +6,4 @@ requests-oauthlib
 matplotlib
 openai
 pymongo
+streamlit-aggrid==1.0.5
