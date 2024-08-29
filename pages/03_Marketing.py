@@ -38,7 +38,12 @@ def get_collection_data_in_chunks(client, collection_name, chunk_size=1000):
         
         # Load data in chunks
         while True:
-            chunk = list(cursor.next() for _ in range(chunk_size))
+            chunk = []
+            try:
+                for _ in range(chunk_size):
+                    chunk.append(next(cursor))
+            except StopIteration:
+                break  # No more data to fetch, break the loop
             if not chunk:
                 break
             data.extend(chunk)
