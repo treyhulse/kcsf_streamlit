@@ -8,7 +8,7 @@ import plotly.express as px
 logging.basicConfig(
     filename="app.log", 
     filemode="a", 
-    format="%(asctime)s - %(levellevel)s - %(message)s", 
+    format="%(asctime)s - %(levelname)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -55,41 +55,6 @@ def get_collection_data(client, collection_name):
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
         raise
 
-def apply_filters(df):
-    # Check and apply date filter only if a valid 'Date' column is present
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df = df.dropna(subset=['Date'])
-
-        if not df.empty:  # Check if there are valid date entries left
-            min_date = df['Date'].min()
-            max_date = df['Date'].max()
-
-            start_date, end_date = st.date_input(
-                "Select date range:",
-                value=[min_date, max_date],
-                min_value=min_date,
-                max_value=max_date
-            )
-            df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
-
-    # Filter by Numeric Columns
-    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
-    for col in numeric_columns:
-        min_val = float(df[col].min())
-        max_val = float(df[col].max())
-        selected_range = st.slider(f"Filter by {col}:", min_val, max_val, (min_val, max_val))
-        df = df[(df[col] >= selected_range[0]) & (df[col] <= selected_range[1])]
-
-    # Filter by Categorical Columns
-    categorical_columns = df.select_dtypes(include=['object']).columns
-    for col in categorical_columns:
-        unique_values = df[col].unique().tolist()
-        selected_values = st.multiselect(f"Filter by {col}:", unique_values, default=unique_values)
-        df = df[df[col].isin(selected_values)]
-    
-    return df
-
 def create_visualizations(df):
     st.subheader("Create Your Own Visualizations")
 
@@ -119,24 +84,21 @@ def main():
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
 
-    # Specify the collection to display (in this case, always 'sales')
-    collection_name = "sales"
+    # Collection selection at the top
+    collection_name = st.selectbox("Select a collection", ['sales', 'items', 'inventory', 'customers'])
 
-    # Load the entire collection into a DataFrame
+    # Load the selected collection into a DataFrame
     data = get_collection_data(client, collection_name)
 
-    # Apply filters to the data
-    filtered_data = apply_filters(data)
-
-    # Check if DataFrame is empty after filtering
-    if filtered_data.empty:
-        st.warning("No data available for the selected filters.")
+    # Check if DataFrame is empty after loading
+    if data.empty:
+        st.warning("No data available in the selected collection.")
     else:
-        st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
-        st.dataframe(filtered_data)
+        st.write(f"Loaded DataFrame: {data.shape[0]} rows")
+        st.dataframe(data)
 
         # Call the visualization function
-        create_visualizations(filtered_data)
+        create_visualizations(data)
 
 if __name__ == "__main__":
     main()
