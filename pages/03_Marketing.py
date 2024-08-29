@@ -12,7 +12,6 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-@st.cache_data(ttl=600)
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
@@ -28,7 +27,6 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
-@st.cache_data(ttl=600)
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
@@ -81,35 +79,26 @@ def create_visualizations(df):
     st.plotly_chart(fig)
 
 def main():
-    st.title("Data Visualization Tool")
+    st.title("MongoDB Data Visualization Tool")
 
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
 
-    # Collection selection using buttons
-    collection_name = None
-    if st.button('Sales'):
-        collection_name = 'sales'
-    elif st.button('Items'):
-        collection_name = 'items'
-    elif st.button('Inventory'):
-        collection_name = 'inventory'
-    elif st.button('Customers'):
-        collection_name = 'customers'
+    # Collection selection at the top
+    collection_name = st.selectbox("Select a collection", ['sales', 'items', 'inventory', 'customers'])
 
-    if collection_name:
-        # Load the selected collection into a DataFrame
-        data = get_collection_data(client, collection_name)
+    # Load the selected collection into a DataFrame
+    data = get_collection_data(client, collection_name)
 
-        # Check if DataFrame is empty after loading
-        if data.empty:
-            st.warning("No data available in the selected collection.")
-        else:
-            st.write(f"Loaded DataFrame: {data.shape[0]} rows")
-            st.dataframe(data)
+    # Check if DataFrame is empty after loading
+    if data.empty:
+        st.warning("No data available in the selected collection.")
+    else:
+        st.write(f"Loaded DataFrame: {data.shape[0]} rows")
+        st.dataframe(data)
 
-            # Call the visualization function
-            create_visualizations(data)
+        # Call the visualization function
+        create_visualizations(data)
 
 if __name__ == "__main__":
     main()
