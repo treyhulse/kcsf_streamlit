@@ -33,9 +33,21 @@ def get_collection_data(client, collection_name):
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
         
-        # Fetch all data and convert to DataFrame directly
+        # Fetch all data and handle encoding errors
         data = list(collection.find())
-        df = pd.DataFrame(data)
+        
+        # Convert each document to string, handling encoding errors
+        processed_data = []
+        for doc in data:
+            processed_doc = {}
+            for key, value in doc.items():
+                if isinstance(value, str):
+                    processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
+                else:
+                    processed_doc[key] = value
+            processed_data.append(processed_doc)
+        
+        df = pd.DataFrame(processed_data)
         
         logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
         return df
