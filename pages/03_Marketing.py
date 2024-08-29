@@ -1,8 +1,7 @@
-# main_streamlit_page.py (Example file name)
-
 import logging
 import streamlit as st
 from utils.mongo_connection import get_mongo_client, get_collection_data
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Configure logging for the main page
 logging.basicConfig(
@@ -14,19 +13,24 @@ logging.basicConfig(
 
 def main():
     try:
-        st.title("MongoDB Collections Viewer")
+        st.title("MongoDB Sales Collection Viewer")
 
         # Connect to MongoDB using the utility function
         client = get_mongo_client()
 
-        # Select the collection to display
-        collection_name = st.selectbox("Choose a collection", ["sales", "items", "inventory", "customers"])
+        # Select the collection to display (in this case, always 'sales')
+        collection_name = "sales"
 
-        # Get the data from the chosen collection using the utility function
+        # Get the data from the sales collection using the utility function
         data = get_collection_data(client, collection_name)
 
-        # Display the data
-        st.write(data)
+        # Display the data with AgGrid for filtering and sorting
+        gb = GridOptionsBuilder.from_dataframe(data)
+        gb.configure_default_column(filterable=True, sortable=True)
+        gb.configure_pagination(enabled=True, paginationAutoPageSize=True)  # Enable pagination if needed
+        grid_options = gb.build()
+
+        AgGrid(data, gridOptions=grid_options)
     except Exception as e:
         logging.critical(f"Critical error in main function: {e}")
         st.error(f"Critical error: {e}")

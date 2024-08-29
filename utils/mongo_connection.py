@@ -15,7 +15,11 @@ def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
         connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
-        client = MongoClient(connection_string, serverSelectionTimeoutMS=20000)  # 20 seconds timeout
+        client = MongoClient(connection_string, 
+                     ssl=True,
+                     serverSelectionTimeoutMS=30000,
+                     connectTimeoutMS=30000,
+                     socketTimeoutMS=30000)
         logging.info("MongoDB connection successful")
         return client
     except Exception as e:
