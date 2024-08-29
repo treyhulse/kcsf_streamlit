@@ -27,44 +27,20 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
-def get_collection_data_in_chunks(client, collection_name, chunk_size=1000):
+def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
         
-        cursor = collection.find()
-        data = []
+        # Fetch all data and convert to DataFrame directly
+        data = list(collection.find())
+        df = pd.DataFrame(data)
         
-        # Load data in chunks
-        while True:
-            chunk = []
-            try:
-                for _ in range(chunk_size):
-                    chunk.append(next(cursor))
-            except StopIteration:
-                break  # No more data to fetch, break the loop
-            if not chunk:
-                break
-            data.extend(chunk)
-            logging.info(f"Fetched {len(data)} documents so far...")
-
-        logging.info(f"Data fetched successfully from {collection_name}")
-        return pd.DataFrame(data)
+        logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
+        return df
     except Exception as e:
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
-        raise
-
-def get_raw_collection_data(client, collection_name):
-    try:
-        logging.debug(f"Fetching raw data from collection: {collection_name}")
-        db = client['netsuite']  # Ensure the database name is correct
-        collection = db[collection_name]
-        data = list(collection.find())
-        logging.info(f"Raw data fetched successfully from {collection_name} with {len(data)} documents")
-        return data
-    except Exception as e:
-        logging.error(f"Error fetching raw data from collection {collection_name}: {e}")
         raise
 
 def main():
@@ -77,12 +53,8 @@ def main():
         # Specify the collection to display (in this case, always 'sales')
         collection_name = "sales"
 
-        # Test raw data fetching
-        raw_data = get_raw_collection_data(client, collection_name)
-        st.write(f"Fetched {len(raw_data)} documents in raw format.")
-
-        # Load data incrementally to handle large datasets
-        data = get_collection_data_in_chunks(client, collection_name, chunk_size=1000)
+        # Load the entire collection into a DataFrame
+        data = get_collection_data(client, collection_name)
 
         # Display the data with AgGrid for filtering and sorting
         gb = GridOptionsBuilder.from_dataframe(data)
