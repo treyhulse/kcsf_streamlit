@@ -2,6 +2,7 @@ import logging
 import streamlit as st
 from pymongo import MongoClient
 import pandas as pd
+import plotly.express as px
 
 # Configure logging
 logging.basicConfig(
@@ -54,25 +55,83 @@ def get_collection_data(client, collection_name):
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
         raise
 
+def apply_filters(df):
+    # Filter by Date
+    if 'Date' in df.columns:
+        min_date = df['Date'].min()
+        max_date = df['Date'].max()
+        start_date, end_date = st.date_input(
+            "Select date range:",
+            value=[min_date, max_date],
+            min_value=min_date,
+            max_value=max_date
+        )
+        df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
+
+    # Filter by Numeric Columns
+    numeric_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    for col in numeric_columns:
+        min_val = float(df[col].min())
+        max_val = float(df[col].max())
+        selected_range = st.slider(f"Filter by {col}:", min_val, max_val, (min_val, max_val))
+        df = df[(df[col] >= selected_range[0]) & (df[col] <= selected_range[1])]
+
+    # Filter by Categorical Columns
+    categorical_columns = df.select_dtypes(include=['object']).columns
+    for col in categorical_columns:
+        unique_values = df[col].unique().tolist()
+        selected_values = st.multiselect(f"Filter by {col}:", unique_values, default=unique_values)
+        df = df[df[col].isin(selected_values)]
+    
+    return df
+
+def create_visualizations(df):
+    st.subheader("Create Your Own Visualizations")
+
+    # Select columns for X and Y axes
+    x_column = st.selectbox("Select X-axis column", df.columns)
+    y_column = st.selectbox("Select Y-axis column", df.columns)
+
+    # Select the type of chart
+    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram"])
+
+    # Create the chart based on user input
+    if chart_type == "Bar":
+        fig = px.bar(df, x=x_column, y=y_column)
+    elif chart_type == "Line":
+        fig = px.line(df, x=x_column, y=y_column)
+    elif chart_type == "Scatter":
+        fig = px.scatter(df, x=x_column, y=y_column)
+    elif chart_type == "Histogram":
+        fig = px.histogram(df, x=x_column)
+
+    # Display the chart
+    st.plotly_chart(fig)
+
 def main():
-    try:
-        st.title("MongoDB Sales Collection Viewer")
+    st.title("MongoDB Data Visualization Tool")
 
-        # Connect to MongoDB using the utility function
-        client = get_mongo_client()
+    # Connect to MongoDB using the utility function
+    client = get_mongo_client()
 
-        # Specify the collection to display (in this case, always 'sales')
-        collection_name = "sales"
+    # Specify the collection to display (in this case, always 'sales')
+    collection_name = "sales"
 
-        # Load the entire collection into a DataFrame
-        data = get_collection_data(client, collection_name)
+    # Load the entire collection into a DataFrame
+    data = get_collection_data(client, collection_name)
 
-        # Display the data using Streamlit's built-in dataframe viewer
-        st.dataframe(data)
+    # Apply filters to the data
+    filtered_data = apply_filters(data)
 
-    except Exception as e:
-        logging.critical(f"Critical error in main function: {e}")
-        st.error(f"Critical error: {e}")
+    st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
+    st.dataframe(filtered_data)
+
+    if st.checkbox("Show raw data"):
+        st.subheader("Raw Data")
+        st.write(filtered_data)
+
+    # Call the visualization function
+    create_visualizations(filtered_data)
 
 if __name__ == "__main__":
     main()
