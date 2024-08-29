@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder
 
-# Configure logging for the utility file
+# Configure logging
 logging.basicConfig(
     filename="app.log", 
     filemode="a", 
@@ -27,20 +27,39 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
-def get_collection_data(client, collection_name):
+def get_collection_data_in_chunks(client, collection_name, chunk_size=1000):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
-        data = pd.DataFrame(list(collection.find()))
         
-        # Handling potential UTF-8 encoding issues
-        data = data.applymap(lambda x: x.encode('utf-8', errors='ignore').decode('utf-8') if isinstance(x, str) else x)
+        cursor = collection.find()
+        data = []
+        
+        # Load data in chunks
+        while True:
+            chunk = list(cursor.next() for _ in range(chunk_size))
+            if not chunk:
+                break
+            data.extend(chunk)
+            logging.info(f"Fetched {len(data)} documents so far...")
 
         logging.info(f"Data fetched successfully from {collection_name}")
-        return data
+        return pd.DataFrame(data)
     except Exception as e:
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
+        raise
+
+def get_raw_collection_data(client, collection_name):
+    try:
+        logging.debug(f"Fetching raw data from collection: {collection_name}")
+        db = client['netsuite']  # Ensure the database name is correct
+        collection = db[collection_name]
+        data = list(collection.find())
+        logging.info(f"Raw data fetched successfully from {collection_name} with {len(data)} documents")
+        return data
+    except Exception as e:
+        logging.error(f"Error fetching raw data from collection {collection_name}: {e}")
         raise
 
 def main():
@@ -53,8 +72,12 @@ def main():
         # Specify the collection to display (in this case, always 'sales')
         collection_name = "sales"
 
-        # Get the data from the sales collection using the utility function
-        data = get_collection_data(client, collection_name)
+        # Test raw data fetching
+        raw_data = get_raw_collection_data(client, collection_name)
+        st.write(f"Fetched {len(raw_data)} documents in raw format.")
+
+        # Load data incrementally to handle large datasets
+        data = get_collection_data_in_chunks(client, collection_name, chunk_size=1000)
 
         # Display the data with AgGrid for filtering and sorting
         gb = GridOptionsBuilder.from_dataframe(data)
