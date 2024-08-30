@@ -63,9 +63,9 @@ def build_sidebar(role):
         'Sales Specialist': {
             "header": "Sales Tools",
             "items": {
-                "Sales": "03_Sales.py",
-                "Leads": "03_Sales.py",
-                "Opportunities": "03_Sales.py"
+                "Home": "streamlit_app.py",
+                "Sales": "02_Sales.py",
+                "Marketing": "03_Marketing.py"
             }
         },
         'Sales Manager': {
@@ -135,9 +135,9 @@ def build_sidebar(role):
         'Developer': {
             "header": "Developer Tools",
             "items": {
-                "Dev Tools": "07_AI_Insights.py",
-                "API Access": "07_AI_Insights.py",
-                "Logs": "07_AI_Insights.py"
+                "Shipping Report": "01_Shipping_Report.py",
+                "Supply Chain": "02_Supply_Chain.py",
+                "Marketing": "03_Marketing.py"
             }
         },
     }
