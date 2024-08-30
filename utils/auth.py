@@ -69,6 +69,6 @@ def get_sidebar_content(role):
         'Purchasing Specialist': ["Suppliers", "Purchase Orders", "Inventory Levels"],
         'Purchasing Manager': ["Purchasing Overview", "Supplier Performance", "Order Approvals"],
         'Marketing': ["Campaigns", "Social Media", "Analytics"],
-        'Developer': ["Dev Tools", "API Access", "Logs"],
+        'Developer': ["Shop", "Marketing", "Shipping Report"],
     }
     return content.get(role, ["Default Content"])
