@@ -2,15 +2,15 @@ import streamlit as st
 
 # Dictionary to store roles and their corresponding emails
 roles = {
-    'Sales Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Sales Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Financial': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Administrator': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Shop Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Shop Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Purchasing Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Marketing': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Sales Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Sales Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Financial': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Administrator': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Shop Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Shop Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Purchasing Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Marketing': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
     'Developer': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
 }
 
