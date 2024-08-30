@@ -74,7 +74,7 @@ terms_mapping = {
     18: "No Charge"
 }
 
-# Custom CSS for metric boxes with drop shadow
+
 st.markdown(
     """
     <style>
@@ -196,7 +196,9 @@ def main():
     total_orders = len(merged_df)
     matched_orders = merged_df['Task ID'].notna().sum()
     unmatched_orders = merged_df['Task ID'].isna().sum()
-    total_sales_reps = merged_df['Sales Rep'].nunique()
+
+    # Calculate Successful Task Percentage
+    successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
 
     # Display metric boxes in one row
     col1, col2, col3, col4 = st.columns(4)
@@ -211,7 +213,7 @@ def main():
         st.metric("Untasked Orders", unmatched_orders)
 
     with col4:
-        st.metric("Total Sales Reps", total_sales_reps)
+        st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
 
     st.markdown("<br>", unsafe_allow_html=True)  # Add some vertical space
 

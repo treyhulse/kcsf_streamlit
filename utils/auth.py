@@ -2,7 +2,7 @@ import streamlit as st
 
 # Dictionary to store roles and their corresponding emails
 roles = {
-    'Administrator': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Administrator': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com', 'gina.bliss@kcstorefixtures.com'],
     'Sales Specialist': ['becky.dean@kcstorefixtures.com', 'treyhulse3@kcstorefixtures.com'],
     'Sales Manager': ['anna.alessi@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Financial': ['sean.castle@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
