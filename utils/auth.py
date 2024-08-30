@@ -42,6 +42,7 @@ page_access = {
     '06_Logistics.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
     '07_AI_Insights.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing', 'Developer'],
     '08_Showcase.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '09_Role_Permissions.py': ['Administrator'],
 }
 
 # Function to validate if a user can access a specific page
