@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from utils.data_functions import process_netsuite_data_csv
+from datetime import date, timedelta
 from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role, validate_page_access
 
 # Capture the user's email
@@ -24,14 +29,6 @@ for item in sidebar_content:
 ## AUTHENTICATED
 
 ################################################################################################
-
-
-
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv
-from datetime import date, timedelta
 
 st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
 
