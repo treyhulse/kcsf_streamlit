@@ -1,17 +1,18 @@
+import streamlit as st
 # auth.py
 
 # Dictionary to store roles and their corresponding emails
 roles = {
-    'Sales Specialist': ['trey.hulse@kcstorefixtures.co', 'user1@example.com'],
-    'Sales Manager': ['trey.hulse@kcstorefixtures.co', 'user2@example.com'],
-    'Financial': ['trey.hulse@kcstorefixtures.co', 'user3@example.com'],
-    'Administrator': ['trey.hulse@kcstorefixtures.co', 'user4@example.com'],
-    'Shop Specialist': ['trey.hulse@kcstorefixtures.co', 'user5@example.com'],
-    'Shop Manager': ['trey.hulse@kcstorefixtures.co', 'user6@example.com'],
-    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.co', 'user7@example.com'],
-    'Purchasing Manager': ['trey.hulse@kcstorefixtures.co', 'user8@example.com'],
-    'Marketing': ['trey.hulse@kcstorefixtures.co', 'user9@example.com'],
-    'Developer': ['trey.hulse@kcstorefixtures.com', 'user10@example.com'],
+    'Sales Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Sales Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Financial': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Administrator': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Shop Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Shop Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Purchasing Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Marketing': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Developer': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
 }
 
 # Function to validate if an email has a specific role
@@ -60,15 +61,15 @@ def show_permission_violation():
 # Function to get sidebar content for a specific role
 def get_sidebar_content(role):
     content = {
-        'Sales Specialist': ["Sales Dashboard", "Leads", "Opportunities"],
-        'Sales Manager': ["Sales Overview", "Team Performance", "Pipeline"],
+        'Sales Specialist': ["Sales", "Leads", "Opportunities"],
+        'Sales Manager': ["Sales", "Team Performance", "Pipeline"],
         'Financial': ["Financial Reports", "Budgeting", "Expenses"],
         'Administrator': ["User Management", "Settings", "System Logs"],
-        'Shop Specialist': ["Shop Floor", "Work Orders", "Inventory"],
-        'Shop Manager': ["Production Overview", "Team Assignments", "Efficiency"],
-        'Purchasing Specialist': ["Suppliers", "Purchase Orders", "Inventory Levels"],
-        'Purchasing Manager': ["Purchasing Overview", "Supplier Performance", "Order Approvals"],
-        'Marketing': ["Campaigns", "Social Media", "Analytics"],
-        'Developer': ["Shop", "Marketing", "Shipping Report"],
+        'Shop Specialist': ["Shop", "Work Orders", "Inventory"],
+        'Shop Manager': ["Sales", "Team Assignments", "Efficiency"],
+        'Purchasing Specialist': ["Supply Chain", "Purchase Orders", "Inventory Levels"],
+        'Purchasing Manager': ["Supply Chain", "Supplier Performance", "Order Approvals"],
+        'Marketing': ["Marketing", "Social Media", "Analytics"],
+        'Developer': ["Shop", "Marketing", "Shipping Report", "Sales", "Logistics", "Showcase"],
     }
     return content.get(role, ["Default Content"])
