@@ -30,7 +30,6 @@ for item in sidebar_content:
 
 ################################################################################################
 
-st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
 
 st.title("Shipping Report")
 
