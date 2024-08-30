@@ -2,15 +2,15 @@ import streamlit as st
 
 # Dictionary to store roles and their corresponding emails
 roles = {
-    'Sales Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Sales Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Financial': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Administrator': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Shop Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Shop Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Purchasing Manager': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
-    'Marketing': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Sales Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Sales Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Financial': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Administrator': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Shop Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Shop Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Purchasing Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
+    'Marketing': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
     'Developer': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
 }
 
@@ -57,21 +57,100 @@ def show_permission_violation():
     st.error("You do not have permission to view this page.")
     st.stop()
 
-# Function to get sidebar content for a specific role
-def get_sidebar_content(role):
-    content = {
-        'Sales Specialist': ["Sales", "Leads", "Opportunities", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Sales Manager': ["Sales", "Team Performance", "Pipeline", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Financial': ["Financial Reports", "Budgeting", "Expenses", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Administrator': ["User Management", "Settings", "System Logs", "Sales", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Shop Specialist': ["Shop", "Work Orders", "Inventory", "Sales", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Shop Manager': ["Sales", "Team Assignments", "Efficiency", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Purchasing Specialist': ["Supply Chain", "Purchase Orders", "Inventory Levels", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Purchasing Manager': ["Supply Chain", "Supplier Performance", "Order Approvals", "Shop", "Marketing", "Shipping Report", "Logistics", "Showcase"],
-        'Marketing': ["Marketing", "Social Media", "Analytics", "Shop", "Sales", "Shipping Report", "Logistics", "Showcase"],
-        'Developer': ["Shop", "Marketing", "Shipping Report", "Sales", "Logistics", "Showcase", "Financial Reports", "User Management", "System Logs"],
+# Function to dynamically build the sidebar based on the user's role and return the selected page
+def build_sidebar(role):
+    sidebar_content = {
+        'Sales Specialist': {
+            "header": "Sales Tools",
+            "items": {
+                "Sales": "03_Sales.py",
+                "Leads": "03_Sales.py",
+                "Opportunities": "03_Sales.py"
+            }
+        },
+        'Sales Manager': {
+            "header": "Manager Tools",
+            "items": {
+                "Team Performance": "03_Sales.py",
+                "Pipeline": "03_Sales.py",
+                "Sales": "03_Sales.py"
+            }
+        },
+        'Financial': {
+            "header": "Financial Tools",
+            "items": {
+                "Financial Reports": "03_Sales.py",
+                "Budgeting": "03_Sales.py",
+                "Expenses": "03_Sales.py"
+            }
+        },
+        'Administrator': {
+            "header": "Admin Tools",
+            "items": {
+                "User Management": "03_Sales.py",
+                "Settings": "03_Sales.py",
+                "System Logs": "03_Sales.py"
+            }
+        },
+        'Shop Specialist': {
+            "header": "Shop Tools",
+            "items": {
+                "Shop": "05_Shop.py",
+                "Work Orders": "05_Shop.py",
+                "Inventory": "05_Shop.py"
+            }
+        },
+        'Shop Manager': {
+            "header": "Manager Tools",
+            "items": {
+                "Team Assignments": "05_Shop.py",
+                "Efficiency": "05_Shop.py",
+                "Shop": "05_Shop.py"
+            }
+        },
+        'Purchasing Specialist': {
+            "header": "Purchasing Tools",
+            "items": {
+                "Supply Chain": "02_Supply_Chain.py",
+                "Purchase Orders": "02_Supply_Chain.py",
+                "Inventory Levels": "02_Supply_Chain.py"
+            }
+        },
+        'Purchasing Manager': {
+            "header": "Manager Tools",
+            "items": {
+                "Supplier Performance": "02_Supply_Chain.py",
+                "Order Approvals": "02_Supply_Chain.py",
+                "Supply Chain": "02_Supply_Chain.py"
+            }
+        },
+        'Marketing': {
+            "header": "Marketing Tools",
+            "items": {
+                "Campaigns": "03_Marketing.py",
+                "Social Media": "03_Marketing.py",
+                "Analytics": "03_Marketing.py"
+            }
+        },
+        'Developer': {
+            "header": "Developer Tools",
+            "items": {
+                "Dev Tools": "07_AI_Insights.py",
+                "API Access": "07_AI_Insights.py",
+                "Logs": "07_AI_Insights.py"
+            }
+        },
     }
-    return content.get(role, ["Default Content"])
+
+    # Get the content for the current role
+    content = sidebar_content.get(role, {"header": "Tools", "items": {"Default Content": None}})
+
+    # Build the sidebar using Streamlit's sidebar components
+    st.sidebar.title(content["header"])
+    selected_page = st.sidebar.radio("Navigate to", list(content["items"].keys()))
+
+    # Return the selected page's file name
+    return content["items"][selected_page]
 
 # Mapping of pages to roles (all roles have access by default)
 page_access = {
