@@ -4,6 +4,8 @@ from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
+from auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content
+
 
 # Configure logging
 logging.basicConfig(
