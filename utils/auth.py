@@ -1,9 +1,9 @@
 # auth.py
 
 roles = {
-    'Person': ['trey.huls@kcstorefixtures.com', 'person2@example.com', 'user1@example.com'],
-    'Manager': ['trey.huls@kcstorefixtures.com', 'manager2@example.com', 'user2@example.com'],
-    'Director': ['trey.hulse@kcstorefixtures.com', 'director2@example.com', 'user3@example.com'],
+    'Person': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.co', 'user1@example.com'],
+    'Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.co', 'user2@example.com'],
+    'Director': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com', 'user3@example.com'],
 }
 
 def has_role(email, role):
