@@ -13,16 +13,15 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-@st.cache_data(ttl=600)
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
         connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
         client = MongoClient(connection_string, 
-                     ssl=True,
-                     serverSelectionTimeoutMS=30000,
-                     connectTimeoutMS=30000,
-                     socketTimeoutMS=30000)
+                             ssl=True,
+                             serverSelectionTimeoutMS=30000,
+                             connectTimeoutMS=30000,
+                             socketTimeoutMS=30000)
         logging.info("MongoDB connection successful")
         return client
     except Exception as e:
@@ -81,7 +80,7 @@ def apply_global_filters(df):
         end_date = start_date
     elif date_filter == "This Week":
         start_date = today - timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days=6)
+        end_date = start_date + timedelta(days(6))
     elif date_filter == "This Month":
         start_date = today.replace(day=1)
         next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
