@@ -10,7 +10,7 @@ roles = {
     'Shop Manager': ['victor@kc-store-fixtures.com', 'treyhulse3@kcstorefixtures.com'],
     'Purchasing Specialist': ['matt@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Purchasing Manager': ['mike@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
-    'Marketing': ['robin.falk@kcstorefixtures.com'],
+    'Marketing': ['robin.falk@kcstorefixtures.com', 'treyhulse3@kcstorefixtures.com'],
 }
 
 # Function to validate if an email has a specific role
