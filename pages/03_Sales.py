@@ -159,7 +159,7 @@ def create_visualizations(df):
     st.plotly_chart(fig)
 
 def main():
-    st.title("MongoDB Data Visualization Tool")
+    st.title("Data Visualization Tool")
 
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
