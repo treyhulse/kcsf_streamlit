@@ -1,8 +1,5 @@
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv
-from datetime import date, timedelta
+
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation, build_sidebar, get_user_role
 
 # Capture the user's email
@@ -29,8 +26,17 @@ st.title(f"{user_role} Dashboard - {page_name}")
 st.write(f"Welcome, {user_email}!")
 st.write(f"You have access to the {user_role} tools on this page.")
 
-# Add role-specific content for this page here
 
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
+import pandas as pd
+import plotly.express as px
+from utils.data_functions import process_netsuite_data_csv
+from datetime import date, timedelta
 
 
 st.title("Shipping Report")
