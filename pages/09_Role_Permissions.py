@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.auth import roles, page_access, save_roles_to_file, save_page_access_to_file, has_role, capture_user_email, show_permission_violation, validate_page_access
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -21,7 +21,6 @@ st.write(f"You have access to this page.")
 ################################################################################################
 from pymongo import MongoClient
 from utils.mongo_connection import get_mongo_client
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
 # Establish MongoDB connection
 client = get_mongo_client()
@@ -75,7 +74,8 @@ def admin_ui():
 
     elif remove_option == "Remove Email from Role":
         role_selected = st.selectbox("Select role", [role['role'] for role in roles_collection.find()])
-        email_selected = st.selectbox("Select email to remove", roles_collection.find_one({"role": role_selected})['emails'])
+        emails_list = roles_collection.find_one({"role": role_selected})['emails']
+        email_selected = st.selectbox("Select email to remove", emails_list)
         if st.button("Remove Email"):
             roles_collection.update_one({"role": role_selected}, {"$pull": {"emails": email_selected}})
             st.success(f"Email '{email_selected}' has been removed from role '{role_selected}'.")
@@ -85,8 +85,19 @@ def admin_ui():
     # Section 4: Update Page Access Permissions
     st.subheader("Update Page Access Permissions")
     selected_page = st.selectbox("Select page to update access for", [perm['page'] for perm in permissions_collection.find()])
-    current_roles = permissions_collection.find_one({"page": selected_page})['roles']
-    selected_roles = st.multiselect("Select roles that can access this page", [role['role'] for role in roles_collection.find()], default=current_roles)
+    permission_entry = permissions_collection.find_one({"page": selected_page})
+    current_roles = permission_entry['roles'] if permission_entry else []
+    all_roles = [role['role'] for role in roles_collection.find()]
+    
+    # Ensure default roles are valid options
+    valid_roles = [role for role in current_roles if role in all_roles]
+    
+    selected_roles = st.multiselect(
+        "Select roles that can access this page",
+        all_roles,
+        default=valid_roles
+    )
+
     if st.button("Update Page Access"):
         permissions_collection.update_one(
             {"page": selected_page},
