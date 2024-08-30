@@ -50,6 +50,11 @@ def get_collection_data(client, collection_name):
                 continue  # Skip problematic document
         
         df = pd.DataFrame(data)
+
+        # Remove the '_id' column if it exists
+        if '_id' in df.columns:
+            df.drop(columns=['_id'], inplace=True)
+
         logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
         return df
     except Exception as e:
