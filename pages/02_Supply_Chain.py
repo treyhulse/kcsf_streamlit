@@ -20,10 +20,6 @@ sidebar_content = get_sidebar_content(user_role)
 for item in sidebar_content:
     st.sidebar.write(item)
 
-# Page content
-st.title(f"{user_role} Dashboard - {page_name}")
-st.write(f"Welcome, {user_email}!")
-st.write(f"You have access to the {user_role} tools on this page.")
 
 
 ################################################################################################
