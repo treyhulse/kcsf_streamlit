@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 logging.basicConfig(
     filename="app.log", 
     filemode="a", 
-    format="%(asctime)s - %(levellevel)s - %(message)s", 
+    format="%(asctime)s - %(levelname)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -71,8 +71,12 @@ def apply_global_filters(df):
         df['Ship Date (Admin)'] = pd.to_datetime(df['Ship Date (Admin)'], errors='coerce')
 
         # Filter by Ship Date (Admin)
-        date_filter = st.sidebar.selectbox("Filter by Ship Date (Admin)", 
-                                           ["Today", "Tomorrow", "This Week", "This Month", "Next Month"])
+        date_filter = st.sidebar.selectbox(
+            "Filter by Ship Date (Admin)", 
+            ["This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
+             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
+            index=0  # Default to "This Month"
+        )
 
         today = datetime.today().date()
 
@@ -85,10 +89,29 @@ def apply_global_filters(df):
         elif date_filter == "This Week":
             start_date = today - timedelta(days=today.weekday())
             end_date = start_date + timedelta(days=6)
+        elif date_filter == "Last Week":
+            start_date = today - timedelta(days=today.weekday() + 7)
+            end_date = start_date + timedelta(days=6)
         elif date_filter == "This Month":
             start_date = today.replace(day=1)
             next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
             end_date = next_month - timedelta(days=next_month.day)
+        elif date_filter == "Last Month":
+            first_day_this_month = today.replace(day=1)
+            start_date = (first_day_this_month - timedelta(days=1)).replace(day=1)
+            end_date = first_day_this_month - timedelta(days=1)
+        elif date_filter == "First Quarter":
+            start_date = datetime(today.year, 1, 1).date()
+            end_date = datetime(today.year, 3, 31).date()
+        elif date_filter == "Second Quarter":
+            start_date = datetime(today.year, 4, 1).date()
+            end_date = datetime(today.year, 6, 30).date()
+        elif date_filter == "Third Quarter":
+            start_date = datetime(today.year, 7, 1).date()
+            end_date = datetime(today.year, 9, 30).date()
+        elif date_filter == "Fourth Quarter":
+            start_date = datetime(today.year, 10, 1).date()
+            end_date = datetime(today.year, 12, 31).date()
         elif date_filter == "Next Month":
             first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
             start_date = first_day_next_month
@@ -102,6 +125,11 @@ def apply_global_filters(df):
 
 def create_visualizations(df):
     st.subheader("Create Your Own Visualizations")
+
+    # Ensure that there are columns available for visualization
+    if df.empty or df.shape[1] < 2:
+        st.warning("Not enough data to create visualizations.")
+        return
 
     # Select columns for X and Y axes
     x_column = st.selectbox("Select X-axis column", df.columns)
@@ -124,7 +152,7 @@ def create_visualizations(df):
     st.plotly_chart(fig)
 
 def main():
-    st.title("Data Visualization Tool")
+    st.title("MongoDB Data Visualization Tool")
 
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
