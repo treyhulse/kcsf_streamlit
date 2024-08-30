@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from utils.data_functions import process_netsuite_data_csv
 from datetime import date, timedelta
-from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content
+from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role
 
 # Capture the user's email
 user_email = capture_user_email()
