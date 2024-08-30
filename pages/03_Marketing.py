@@ -137,11 +137,11 @@ def create_visualizations(df):
         return
 
     # Select columns for X and Y axes
-    x_column = st.selectbox("Select X-axis column", df.columns)
-    y_column = st.selectbox("Select Y-axis column", df.columns)
+    x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
+    y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
 
     # Select the type of chart
-    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram"])
+    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
 
     # Create the chart based on user input
     if chart_type == "Bar":
@@ -152,6 +152,8 @@ def create_visualizations(df):
         fig = px.scatter(df, x=x_column, y=y_column)
     elif chart_type == "Histogram":
         fig = px.histogram(df, x=x_column)
+    elif chart_type == "Pie":
+        fig = px.pie(df, names=x_column, values=y_column)
 
     # Display the chart
     st.plotly_chart(fig)
