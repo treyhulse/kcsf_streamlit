@@ -89,6 +89,7 @@
         "Marketing"
     ],
     "09_Role_Permissions.py": [
-        "Administrator"
+        "Administrator",
+        "Sales Specialist"
     ]
 }
