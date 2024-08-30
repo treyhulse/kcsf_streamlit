@@ -1,5 +1,5 @@
 import streamlit as st
-from auth import has_role, has_any_role, get_user_role
+from utils.auth import has_role, has_any_role, get_user_role
 
 # Capture the user's email dynamically
 user_info = st.experimental_user
