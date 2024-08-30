@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 logging.basicConfig(
     filename="app.log", 
     filemode="a", 
-    format="%(asctime)s - %(levelname)s - %(message)s", 
+    format="%(asctime)s - %(levellevel)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -66,32 +66,37 @@ def apply_global_filters(df):
     if 'All' not in selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
 
-    # Filter by Ship Date (Admin)
-    date_filter = st.sidebar.selectbox("Filter by Ship Date (Admin)", 
-                                       ["Today", "Tomorrow", "This Week", "This Month", "Next Month"])
+    # Ensure 'Ship Date (Admin)' is a datetime object
+    if 'Ship Date (Admin)' in df.columns:
+        df['Ship Date (Admin)'] = pd.to_datetime(df['Ship Date (Admin)'], errors='coerce')
 
-    today = datetime.today().date()
+        # Filter by Ship Date (Admin)
+        date_filter = st.sidebar.selectbox("Filter by Ship Date (Admin)", 
+                                           ["Today", "Tomorrow", "This Week", "This Month", "Next Month"])
 
-    if date_filter == "Today":
-        start_date = today
-        end_date = today
-    elif date_filter == "Tomorrow":
-        start_date = today + timedelta(days=1)
-        end_date = start_date
-    elif date_filter == "This Week":
-        start_date = today - timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days(6))
-    elif date_filter == "This Month":
-        start_date = today.replace(day=1)
-        next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
-        end_date = next_month - timedelta(days=next_month.day)
-    elif date_filter == "Next Month":
-        first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
-        start_date = first_day_next_month
-        end_date = (first_day_next_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        today = datetime.today().date()
 
-    df = df[(df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) & 
-            (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))]
+        if date_filter == "Today":
+            start_date = today
+            end_date = today
+        elif date_filter == "Tomorrow":
+            start_date = today + timedelta(days=1)
+            end_date = start_date
+        elif date_filter == "This Week":
+            start_date = today - timedelta(days=today.weekday())
+            end_date = start_date + timedelta(days=6)
+        elif date_filter == "This Month":
+            start_date = today.replace(day=1)
+            next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
+            end_date = next_month - timedelta(days=next_month.day)
+        elif date_filter == "Next Month":
+            first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+            start_date = first_day_next_month
+            end_date = (first_day_next_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+        # Apply date filter
+        df = df[(df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) & 
+                (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))]
 
     return df
 
@@ -124,33 +129,21 @@ def main():
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
 
-    # Collection selection using buttons
-    collection_name = None
-    if st.button('Sales'):
-        collection_name = 'sales'
-    elif st.button('Items'):
-        collection_name = 'items'
-    elif st.button('Inventory'):
-        collection_name = 'inventory'
-    elif st.button('Customers'):
-        collection_name = 'customers'
+    # Load the 'sales' collection into a DataFrame
+    data = get_collection_data(client, 'sales')
 
-    if collection_name:
-        # Load the selected collection into a DataFrame
-        data = get_collection_data(client, collection_name)
+    # Apply global filters
+    filtered_data = apply_global_filters(data)
 
-        # Apply global filters
-        filtered_data = apply_global_filters(data)
+    # Check if DataFrame is empty after filtering
+    if filtered_data.empty:
+        st.warning("No data available for the selected filters.")
+    else:
+        st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
+        st.dataframe(filtered_data)
 
-        # Check if DataFrame is empty after filtering
-        if filtered_data.empty:
-            st.warning("No data available for the selected filters.")
-        else:
-            st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
-            st.dataframe(filtered_data)
-
-            # Call the visualization function
-            create_visualizations(filtered_data)
+        # Call the visualization function
+        create_visualizations(filtered_data)
 
 if __name__ == "__main__":
     main()
