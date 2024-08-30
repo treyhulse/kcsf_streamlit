@@ -28,13 +28,6 @@ for item in sidebar_content:
 
 ################################################################################################
 
-# Set page config
-st.set_page_config(
-    page_title="Supply Chain Insights",
-    page_icon="📦",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
 
 # Page title and description
 st.title("Supply Chain Insights")

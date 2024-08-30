@@ -32,4 +32,3 @@ st.write(f"You have access to the {user_role} tools on this page.")
 
 ################################################################################################
 
-st.set_page_config(page_title="Shop Schedule", page_icon="🚚", layout="wide")
