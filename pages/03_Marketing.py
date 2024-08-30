@@ -4,7 +4,7 @@ from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
-from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role
+from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role, validate_page_access
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -12,13 +12,9 @@ if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-# Define roles that can access this page
-allowed_roles = ['Sales Manager', 'Administrator']
-# Optionally, define roles that cannot access this page
-# denied_roles = ['Sales Specialist']
-
-# Validate access
-if not validate_access(user_email, allowed_roles=allowed_roles):
+# Validate access to this specific page
+page_name = '01_Shipping Report.py'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 # Sidebar content based on role
@@ -30,9 +26,9 @@ for item in sidebar_content:
     st.sidebar.write(item)
 
 # Page content
-st.title(f"{user_role} Dashboard")
+st.title(f"{user_role} Dashboard - {page_name}")
 st.write(f"Welcome, {user_email}!")
-st.write(f"You have access to the {user_role} tools.")
+st.write(f"You have access to the {user_role} tools on this page.")
 
 
 ################################################################################################
