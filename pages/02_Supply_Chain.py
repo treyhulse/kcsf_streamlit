@@ -202,7 +202,7 @@ def main():
     client = get_mongo_client()
 
     # Load the 'sales' collection into a DataFrame
-    data = get_collection_data(client, 'sales')
+    data = get_collection_data(client, 'items')
 
     # Apply global filters
     filtered_data = apply_global_filters(data)
