@@ -20,47 +20,49 @@ def save_page_access_to_file():
     with open(PAGE_ACCESS_FILE, 'w') as f:
         json.dump(page_access, f, indent=4)
 
-# Function to load roles from a JSON file
+# Function to load roles from a JSON file with error handling
 def load_roles_from_file():
     global roles
     if os.path.exists(ROLES_FILE):
-        with open(ROLES_FILE, 'r') as f:
-            roles = json.load(f)
-    else:
-        # Initialize with default roles if file doesn't exist
-        roles = {
-            "Administrator": ["trey.hulse@kcstorefixtures.com", "treyhulse3@gmail.com", "gina.bliss@kcstorefixtures.com"],
-            "Sales Specialist": ["becky.dean@kcstorefixtures.com", "treyhulse3@kcstorefixtures.com"],
-            "Sales Manager": ["anna.alessi@kcstorefixtures.co", "treyhulse3@kcstorefixtures.com"],
-            "Financial": ["sean.castle@kcstorefixtures.co", "treyhulse3@kcstorefixtures.com"],
-            "Shop Specialist": ["victor@kc-store-fixtures.com", "treyhulse3@kcstorefixtures.com"],
-            "Shop Manager": ["tim@kc-store-fixtures.com", "victor@kc-store-fixtures.com"],
-            "Purchasing Specialist": ["matt@kc-store-fixtures.co", "treyhulse3@kcstorefixtures.com"],
-            "Purchasing Manager": ["mike@kc-store-fixtures.co", "treyhulse3@kcstorefixtures.com"],
-            "Marketing": ["robin.falk@kcstorefixtures.com", "treyhulse3@kcstorefixtures.com"]
-        }
-        save_roles_to_file()
+        try:
+            with open(ROLES_FILE, 'r') as f:
+                roles = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            st.error("Error loading roles from file. Using default roles.")
+            roles = {
+                "Administrator": ["trey.hulse@kcstorefixtures.com", "treyhulse3@gmail.com", "gina.bliss@kcstorefixtures.com"],
+                "Sales Specialist": ["becky.dean@kcstorefixtures.com", "treyhulse3@kcstorefixtures.com"],
+                "Sales Manager": ["anna.alessi@kcstorefixtures.co", "treyhulse3@kcstorefixtures.com"],
+                "Financial": ["sean.castle@kcstorefixtures.co", "treyhulse3@kcstorefixtures.com"],
+                "Shop Specialist": ["victor@kc-store-fixtures.com", "treyhulse3@kcstorefixtures.com"],
+                "Shop Manager": ["tim@kc-store-fixtures.com", "victor@kc-store-fixtures.com"],
+                "Purchasing Specialist": ["matt@kc-store-fixtures.co", "treyhulse3@kcstorefixtures.com"],
+                "Purchasing Manager": ["mike@kc-store-fixtures.co", "treyhulse3@kcstorefixtures.com"],
+                "Marketing": ["robin.falk@kcstorefixtures.com", "treyhulse3@kcstorefixtures.com"]
+            }
+            save_roles_to_file()
 
-# Function to load page access from a JSON file
+# Function to load page access from a JSON file with error handling
 def load_page_access_from_file():
     global page_access
     if os.path.exists(PAGE_ACCESS_FILE):
-        with open(PAGE_ACCESS_FILE, 'r') as f:
-            page_access = json.load(f)
-    else:
-        # Initialize with default page access if file doesn't exist
-        page_access = {
-            "01_Shipping Report.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "02_Supply_Chain.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "03_Marketing.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "03_Sales.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "05_Shop.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "06_Logistics.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "07_AI_Insights.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing", "Developer"],
-            "08_Showcase.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
-            "09_Role_Permissions.py": ["Administrator"]
-        }
-        save_page_access_to_file()
+        try:
+            with open(PAGE_ACCESS_FILE, 'r') as f:
+                page_access = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            st.error("Error loading page access from file. Using default page access.")
+            page_access = {
+                "01_Shipping Report.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "02_Supply_Chain.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "03_Marketing.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "03_Sales.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "05_Shop.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "06_Logistics.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "07_AI_Insights.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing", "Developer"],
+                "08_Showcase.py": ["Administrator", "Sales Specialist", "Sales Manager", "Financial", "Shop Specialist", "Shop Manager", "Purchasing Specialist", "Purchasing Manager", "Marketing"],
+                "09_Role_Permissions.py": ["Administrator"]
+            }
+            save_page_access_to_file()
 
 # Load roles and page access data when the module is imported
 load_roles_from_file()
