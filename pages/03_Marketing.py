@@ -12,9 +12,6 @@ page_name = '01_Shipping Report.py'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
-# Page content
-st.title(f"Dashboard - {page_name}")
-st.write(f"Welcome, {user_email}!")
 st.write(f"You have access to this page.")
 
 
