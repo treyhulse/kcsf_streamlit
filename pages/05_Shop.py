@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role
+from utils.auth import capture_user_email, validate_access, show_permission_violation, get_sidebar_content, get_user_role, validate_page_access
 
 # Capture the user's email
 user_email = capture_user_email()
