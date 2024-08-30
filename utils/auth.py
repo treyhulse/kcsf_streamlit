@@ -2,16 +2,15 @@ import streamlit as st
 
 # Dictionary to store roles and their corresponding emails
 roles = {
-    'Sales Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Sales Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Financial': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Administrator': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Shop Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Shop Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Purchasing Specialist': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Purchasing Manager': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Marketing': ['trey.hulse@kcstorefixtures.co', 'treyhulse3@gmail.com'],
-    'Developer': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Administrator': ['trey.hulse@kcstorefixtures.com', 'treyhulse3@gmail.com'],
+    'Sales Specialist': ['becky.dean@kcstorefixtures.com', 'treyhulse3@kcstorefixtures.com'],
+    'Sales Manager': ['anna.alessi@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
+    'Financial': ['sean.castle@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
+    'Shop Specialist': ['victor@kc-store-fixtures.com', 'treyhulse3@kcstorefixtures.com'],
+    'Shop Manager': ['victor@kc-store-fixtures.com', 'treyhulse3@kcstorefixtures.com'],
+    'Purchasing Specialist': ['matt@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
+    'Purchasing Manager': ['mike@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
+    'Marketing': ['robin.falk@kcstorefixtures.com'],
 }
 
 # Function to validate if an email has a specific role
@@ -35,14 +34,14 @@ def capture_user_email():
 
 # Mapping of pages to roles that have access
 page_access = {
-    '01_Shipping Report.py': ['Sales Manager', 'Administrator'],
-    '02_Supply_Chain.py': ['Purchasing Specialist', 'Purchasing Manager', 'Administrator'],
-    '03_Marketing.py': ['Marketing', 'Administrator'],
-    '03_Sales.py': ['Sales Specialist', 'Sales Manager', 'Administrator'],
-    '05_Shop.py': ['Shop Specialist', 'Shop Manager', 'Administrator'],
-    '06_Logistics.py': ['Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Administrator'],
-    '07_AI_Insights.py': ['Developer', 'Administrator'],
-    '08_Showcase.py': ['Sales Specialist', 'Sales Manager', 'Marketing', 'Administrator'],
+    '01_Shipping Report.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '02_Supply_Chain.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '03_Marketing.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '03_Sales.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '05_Shop.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '06_Logistics.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '07_AI_Insights.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing', 'Developer'],
+    '08_Showcase.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
 }
 
 # Function to validate if a user can access a specific page
