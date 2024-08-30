@@ -1,35 +1,4 @@
 import streamlit as st
-import json
-
-# Load roles and page access from JSON files
-def load_roles_from_file():
-    global roles
-    try:
-        with open('roles.json', 'r') as f:
-            roles = json.load(f)
-    except FileNotFoundError:
-        save_roles_to_file()  # Create the file if it doesn't exist
-
-def load_page_access_from_file():
-    global page_access
-    try:
-        with open('page_access.json', 'r') as f:
-            page_access = json.load(f)
-    except FileNotFoundError:
-        save_page_access_to_file()  # Create the file if it doesn't exist
-
-# Save roles and page access to JSON files (for use in the management page)
-def save_roles_to_file():
-    with open('roles.json', 'w') as f:
-        json.dump(roles, f)
-
-def save_page_access_to_file():
-    with open('page_access.json', 'w') as f:
-        json.dump(page_access, f)
-
-# Load roles and page access data when the module is imported
-load_roles_from_file()
-load_page_access_from_file()
 
 # Dictionary to store roles and their corresponding emails
 roles = {
@@ -42,19 +11,6 @@ roles = {
     'Purchasing Specialist': ['matt@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Purchasing Manager': ['mike@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Marketing': ['robin.falk@kcstorefixtures.com', 'treyhulse3@kcstorefixtures.com'],
-}
-
-# Mapping of pages to roles that have access
-page_access = {
-    '01_Shipping Report.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '02_Supply_Chain.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '03_Marketing.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '03_Sales.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '05_Shop.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '06_Logistics.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '07_AI_Insights.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing', 'Developer'],
-    '08_Showcase.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
-    '09_Role_Permissions.py': ['Administrator'],  # Add the new page and restrict it to 'Administrator'
 }
 
 # Function to validate if an email has a specific role
@@ -75,6 +31,18 @@ def capture_user_email():
         return user_info['email']
     else:
         return None
+
+# Mapping of pages to roles that have access
+page_access = {
+    '01_Shipping Report.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '02_Supply_Chain.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '03_Marketing.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '03_Sales.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '05_Shop.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '06_Logistics.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+    '07_AI_Insights.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing', 'Developer'],
+    '08_Showcase.py': ['Administrator', 'Sales Specialist', 'Sales Manager', 'Financial', 'Shop Specialist', 'Shop Manager', 'Purchasing Specialist', 'Purchasing Manager', 'Marketing'],
+}
 
 # Function to validate if a user can access a specific page
 def validate_page_access(email, page_name):
