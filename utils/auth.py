@@ -7,7 +7,7 @@ roles = {
     'Sales Manager': ['anna.alessi@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Financial': ['sean.castle@kcstorefixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Shop Specialist': ['victor@kc-store-fixtures.com', 'treyhulse3@kcstorefixtures.com'],
-    'Shop Manager': ['victor@kc-store-fixtures.com', 'treyhulse3@kcstorefixtures.com'],
+    'Shop Manager': ['tim@kc-store-fixtures.com', 'victor@kc-store-fixtures.com'],
     'Purchasing Specialist': ['matt@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Purchasing Manager': ['mike@kc-store-fixtures.co', 'treyhulse3@kcstorefixtures.com'],
     'Marketing': ['robin.falk@kcstorefixtures.com', 'treyhulse3@kcstorefixtures.com'],
