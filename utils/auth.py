@@ -1,8 +1,8 @@
 # auth.py
 
 roles = {
-    'Person': ['trey.hulse@kcstorefixtures.com', 'person2@example.com', 'user1@example.com'],
-    'Manager': ['trey.hulse@kcstorefixtures.com', 'manager2@example.com', 'user2@example.com'],
+    'Person': ['trey.huls@kcstorefixtures.com', 'person2@example.com', 'user1@example.com'],
+    'Manager': ['trey.huls@kcstorefixtures.com', 'manager2@example.com', 'user2@example.com'],
     'Director': ['trey.hulse@kcstorefixtures.com', 'director2@example.com', 'user3@example.com'],
 }
 
