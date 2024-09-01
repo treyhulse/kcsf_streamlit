@@ -20,12 +20,12 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import logging
 from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
+import streamlit as st
 
 # Configure logging
 logging.basicConfig(
@@ -165,18 +165,24 @@ def create_visualizations(df):
     # Select the type of chart
     chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
 
+    # Additional customizations
+    chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
+    x_label = st.text_input("X-axis Label", x_column)
+    y_label = st.text_input("Y-axis Label", y_column)
+    color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
+    
     # Create the chart based on user input
     if chart_type == "Bar":
-        fig = px.bar(df, x=x_column, y=y_column)
+        fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
     elif chart_type == "Line":
-        fig = px.line(df, x=x_column, y=y_column)
+        fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
     elif chart_type == "Scatter":
-        fig = px.scatter(df, x=x_column, y=y_column)
+        fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
     elif chart_type == "Histogram":
-        fig = px.histogram(df, x=x_column)
+        fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
     elif chart_type == "Pie":
-        fig = px.pie(df, names=x_column, values=y_column)
-
+        fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
+    
     # Display the chart
     st.plotly_chart(fig)
 
@@ -197,10 +203,13 @@ def main():
         st.warning("No data available for the selected filters.")
     else:
         st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
-        st.dataframe(filtered_data)
-
-        # Call the visualization function
+        
+        # Create visualizations
         create_visualizations(filtered_data)
+
+        # Collapsible section for the DataFrame
+        with st.expander("View DataFrame"):
+            st.dataframe(filtered_data)
 
 if __name__ == "__main__":
     main()
