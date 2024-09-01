@@ -7,7 +7,7 @@ runOnSave = false
 base = "dark"
 primaryColor = "#C70039"
 backgroundColor = "#D3D3D3"
-secondaryBackgroundColor = "#A9A9A9"
+secondaryBackgroundColor = "#E5E4E2"
 textColor = "#000000"
 font = "sans serif"
 
