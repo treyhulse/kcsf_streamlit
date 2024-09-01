@@ -5,9 +5,9 @@ runOnSave = false
 
 [theme]
 base = "dark"
-primaryColor = "#1a73e8"
-backgroundColor = "#0e1117"
-secondaryBackgroundColor = "#262730"
+primaryColor = "#C70039 "
+backgroundColor = "#D3D3D3"
+secondaryBackgroundColor = "#A9A9A9"
 textColor = "#ffffff"
 font = "sans serif"
 
