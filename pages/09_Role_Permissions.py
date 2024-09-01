@@ -1,9 +1,5 @@
 import streamlit as st
-from pymongo import MongoClient
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.mongo_connection import get_mongo_client
-from bson.objectid import ObjectId
-import ast  # Importing ast to safely evaluate strings
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -23,6 +19,10 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+import pandas as pd  # Make sure to import pandas
+from pymongo import MongoClient
+from utils.mongo_connection import get_mongo_client
+from bson.objectid import ObjectId
 
 # Establish MongoDB connection
 client = get_mongo_client()
@@ -48,8 +48,15 @@ def display_editable_table(collection_name):
                 updated_row["_id"] = row["_id"]
                 
                 if collection_name == "roles":
-                    # Convert the emails string back to a list if it's stored as a string
-                    emails_list = ast.literal_eval(row.get("emails", "[]"))
+                    # Handle the emails field correctly
+                    emails = row.get("emails", "")
+                    if isinstance(emails, str):
+                        emails_list = [email.strip() for email in emails.split(',')]
+                    elif isinstance(emails, list):
+                        emails_list = emails
+                    else:
+                        emails_list = []
+
                     emails_str = "\n".join(emails_list)
                     updated_row["role"] = st.text_input(f"Role {index + 1}", value=row.get("role", ""))
                     updated_row["emails"] = st.text_area(f"Emails {index + 1}", value=emails_str)
@@ -91,8 +98,15 @@ def admin_ui():
     st.subheader("Current Roles and Emails")
     roles_data = roles_collection.find()
     for role in roles_data:
-        # Convert emails from string to list for display
-        emails_list = ast.literal_eval(role["emails"])
+        # Handle the emails field correctly
+        emails = role.get("emails", "")
+        if isinstance(emails, str):
+            emails_list = [email.strip() for email in emails.split(',')]
+        elif isinstance(emails, list):
+            emails_list = emails
+        else:
+            emails_list = []
+
         st.write(f"**{role['role']}**: {', '.join(emails_list)}")
 
     st.markdown("---")
@@ -130,7 +144,7 @@ def admin_ui():
 
     elif remove_option == "Remove Email from Role":
         role_selected = st.selectbox("Select role", [role['role'] for role in roles_collection.find()])
-        emails_list = ast.literal_eval(roles_collection.find_one({"role": role_selected})['emails'])
+        emails_list = role_selected.get("emails", [])
         email_selected = st.selectbox("Select email to remove", emails_list)
         if st.button("Remove Email"):
             roles_collection.update_one({"role": role_selected}, {"$pull": {"emails": email_selected}})
