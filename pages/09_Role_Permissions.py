@@ -57,7 +57,11 @@ def display_editable_table(collection_name, table_title):
                     # Handle the emails field correctly
                     emails = row.get("emails", "")
                     if isinstance(emails, str):
-                        emails_list = [email.strip() for email in emails.split(',')]
+                        try:
+                            # Attempt to parse a stringified list if it exists
+                            emails_list = ast.literal_eval(emails)
+                        except:
+                            emails_list = [email.strip() for email in emails.split(',')]
                     elif isinstance(emails, list):
                         emails_list = emails
                     else:
@@ -87,15 +91,17 @@ def display_editable_table(collection_name, table_title):
             # Convert emails back to a list for storage
             if collection_name == "roles":
                 updated_row["emails"] = [email.strip() for email in updated_row["emails"].split("\n") if email.strip()]
-                
-                # Print out the row being updated for debugging purposes
-                st.write("Updating the following row:", updated_row)
+            
+            # Do not modify the '_id' field during the update
+            updated_row_to_save = {key: value for key, value in updated_row.items() if key != "_id"}
+            
+            # Print out the row being updated for debugging purposes
+            st.write("Updating the following row:", updated_row_to_save)
 
-            # Update MongoDB document by _id
             try:
                 collection.update_one(
                     {"_id": ObjectId(updated_row["_id"])},
-                    {"$set": updated_row}
+                    {"$set": updated_row_to_save}
                 )
                 st.success(f"Changes published to {table_title}.")
             except Exception as e:
