@@ -1,0 +1,22 @@
+# ~/.streamlit/config.toml
+
+[server]
+runOnSave = false
+
+[theme]
+base = "dark"
+primaryColor = "#1a73e8"
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#ffffff"
+font = "sans serif"
+
+
+[mapbox]
+token = "your-mapbox-token"
+
+
+[customComponent]
+# Path to a folder containing JavaScript files for custom components
+componentJsPath = "/path/to/components"
+
