@@ -31,8 +31,8 @@ db = client['netsuite']
 roles_collection = db['roles']
 permissions_collection = db['permissions']
 
-def display_editable_table(collection_name):
-    st.subheader(f"{collection_name.capitalize()} Collection")
+def display_editable_table(collection_name, table_title):
+    st.subheader(table_title)
     
     # Fetch data from MongoDB
     df = pd.DataFrame(list(db[collection_name].find()))
@@ -64,16 +64,16 @@ def display_editable_table(collection_name):
                         emails_list = []
 
                     emails_str = "\n".join(emails_list)
-                    updated_row["role"] = st.text_input(f"Role {index + 1}", value=row.get("role", ""))
-                    updated_row["emails"] = st.text_area(f"Emails {index + 1}", value=emails_str)
+                    updated_row["role"] = st.text_input("Role Name", value=row.get("role", ""))
+                    updated_row["emails"] = st.text_area("Role Emails (one per line)", value=emails_str)
                 
                 elif collection_name == "permissions":
-                    # Edit the 'permissions' collection
-                    updated_row["page"] = st.text_input(f"Page {index + 1}", value=row.get("page", ""))
+                    # Edit the 'permissions' collection with labels
+                    updated_row["page"] = st.text_input("Page Name", value=row.get("page", ""))
                     
                     # For 'roles', allow the user to edit the list of roles
                     roles_str = "\n".join(row.get("roles", []))  # Convert list to string for textarea
-                    updated_roles_str = st.text_area(f"Roles {index + 1} (one per line)", value=roles_str)
+                    updated_roles_str = st.text_area("Allowed Roles (one per line)", value=roles_str)
                     updated_row["roles"] = [role.strip() for role in updated_roles_str.split("\n") if role.strip()]
                 
                 updated_rows.append(updated_row)
@@ -93,107 +93,20 @@ def display_editable_table(collection_name):
                 {"_id": ObjectId(updated_row["_id"])},
                 {"$set": updated_row}
             )
-        st.success(f"Changes published to {collection_name.capitalize()} collection.")
+        st.success(f"Changes published to {table_title}.")
 
 def admin_ui():
     st.title("Role and Permissions Management")
 
     st.markdown("---")
 
-    # Section 1: View Current Roles and Emails
-    st.subheader("Current Roles and Emails")
-    roles_data = roles_collection.find()
-    for role in roles_data:
-        # Handle the emails field correctly
-        emails = role.get("emails", "")
-        if isinstance(emails, str):
-            emails_list = [email.strip() for email in emails.split(',')]
-        elif isinstance(emails, list):
-            emails_list = emails
-        else:
-            emails_list = []
-
-        st.write(f"**{role['role']}**: {', '.join(emails_list)}")
-
-    st.markdown("---")
-
-    # Section 2: Add a New Role or Email
-    st.subheader("Add New Role or Email")
-    add_option = st.radio("Choose an option:", ("Add New Role", "Add Email to Existing Role"))
-
-    if add_option == "Add New Role":
-        new_role = st.text_input("Enter new role name")
-        new_emails = st.text_area("Enter emails for this role (one per line)")
-        if st.button("Add Role"):
-            emails_list = [email.strip() for email in new_emails.split('\n') if email.strip()]
-            roles_collection.insert_one({"role": new_role, "emails": emails_list})
-            st.success(f"Role '{new_role}' added with {len(emails_list)} email(s).")
-
-    elif add_option == "Add Email to Existing Role":
-        existing_role = st.selectbox("Select role to add email to", [role['role'] for role in roles_collection.find()])
-        new_email = st.text_input("Enter email to add")
-        if st.button("Add Email"):
-            roles_collection.update_one({"role": existing_role}, {"$addToSet": {"emails": new_email}})
-            st.success(f"Email '{new_email}' added to role '{existing_role}'.")
-
-    st.markdown("---")
-
-    # Section 3: Remove a Role or Email
-    st.subheader("Remove Role or Email")
-    remove_option = st.radio("Choose an option:", ("Remove Entire Role", "Remove Email from Role"))
-
-    if remove_option == "Remove Entire Role":
-        role_to_remove = st.selectbox("Select role to remove", [role['role'] for role in roles_collection.find()])
-        if st.button("Remove Role"):
-            roles_collection.delete_one({"role": role_to_remove})
-            st.success(f"Role '{role_to_remove}' has been removed.")
-
-    elif remove_option == "Remove Email from Role":
-        role_selected = st.selectbox("Select role", [role['role'] for role in roles_collection.find()])
-        emails_list = role_selected.get("emails", [])
-        email_selected = st.selectbox("Select email to remove", emails_list)
-        if st.button("Remove Email"):
-            roles_collection.update_one({"role": role_selected}, {"$pull": {"emails": email_selected}})
-            st.success(f"Email '{email_selected}' has been removed from role '{role_selected}'.")
-
-    st.markdown("---")
-
-    # Section 4: Update Page Access Permissions
-    st.subheader("Update Page Access Permissions")
-    selected_page = st.selectbox("Select page to update access for", [perm['page'] for perm in permissions_collection.find()])
-    permission_entry = permissions_collection.find_one({"page": selected_page})
-    current_roles = permission_entry['roles'] if permission_entry else []
-    all_roles = [role['role'] for role in roles_collection.find()]
-    
-    # Ensure default roles are valid options
-    valid_roles = [role for role in current_roles if role in all_roles]
-    
-    selected_roles = st.multiselect(
-        "Select roles that can access this page",
-        all_roles,
-        default=valid_roles
-    )
-
-    if st.button("Update Page Access"):
-        permissions_collection.update_one(
-            {"page": selected_page},
-            {"$set": {"roles": selected_roles}},
-            upsert=True
-        )
-        st.success(f"Access permissions for page '{selected_page}' have been updated.")
-
-    st.markdown("---")
-
-    # Section 5: Editable Tables
-    st.subheader("Edit Roles and Permissions Collections")
-    
     # Editable table for Roles collection
-    display_editable_table('roles')
+    display_editable_table('roles', 'Roles Management')
 
     st.markdown("---")
 
     # Editable table for Permissions collection
-    display_editable_table('permissions')
+    display_editable_table('permissions', 'Page Permissions')
 
 if __name__ == "__main__":
     admin_ui()
