@@ -45,9 +45,9 @@ def display_editable_table(collection_name, table_title):
     with st.form(key=f"{collection_name}_form"):
         for index, row in df.iterrows():
             if collection_name == "roles":
-                expander_label = f"Edit Role: {row.get('role', 'Unknown Role')}"
+                expander_label = f"{row.get('role', 'Unknown Role')}"
             elif collection_name == "permissions":
-                expander_label = f"Edit Page: {row.get('page', 'Unknown Page')}"
+                expander_label = f"{row.get('page', 'Unknown Page')}"
 
             with st.expander(expander_label):
                 updated_row = {}
