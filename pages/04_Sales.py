@@ -35,6 +35,7 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
+@st.cache_data(ttl=600)  # Cache the data with a time-to-live of 10 minutes
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
@@ -50,6 +51,7 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
+@st.cache_data(ttl=600)  # Cache the collection data with a time-to-live of 10 minutes
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
@@ -57,7 +59,10 @@ def get_collection_data(client, collection_name):
         collection = db[collection_name]
         
         data = []
-        for doc in collection.find():
+        total_docs = collection.estimated_document_count()  # Get the total number of documents
+        progress_bar = st.progress(0)  # Initialize the progress bar
+        
+        for i, doc in enumerate(collection.find()):
             try:
                 # Process each document individually
                 processed_doc = {}
@@ -67,6 +72,10 @@ def get_collection_data(client, collection_name):
                     else:
                         processed_doc[key] = value
                 data.append(processed_doc)
+                
+                # Update the progress bar
+                progress_bar.progress((i + 1) / total_docs)
+                
             except Exception as e:
                 logging.error(f"Skipping problematic document {doc.get('_id', 'Unknown ID')}: {e}")
                 continue  # Skip problematic document
@@ -202,7 +211,7 @@ def main():
     if filtered_data.empty:
         st.warning("No data available for the selected filters.")
     else:
-        st.write(f"Filtered DataFrame: {filtered_data.shape[0]} rows")
+        st.write(f"Number of Rows: {filtered_data.shape[0]}")
         
         # Create visualizations
         create_visualizations(filtered_data)
