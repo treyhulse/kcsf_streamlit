@@ -45,7 +45,7 @@ def display_editable_table(collection_name):
             with st.expander(f"Edit Row {index + 1}"):
                 updated_row = {}
                 updated_row["_id"] = row["_id"]
-                updated_row["role"] = st.text_input(f"Role {index + 1}", value=row["role"])
+                updated_row["roles"] = st.text_input(f"Role {index + 1}", value=row["role"])
                 updated_row["emails"] = st.text_area(f"Emails {index + 1}", value=row["emails"])
                 updated_rows.append(updated_row)
         
