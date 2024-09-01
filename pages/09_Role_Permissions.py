@@ -45,9 +45,9 @@ def display_editable_table(collection_name, table_title):
     with st.form(key=f"{collection_name}_form"):
         for index, row in df.iterrows():
             if collection_name == "roles":
-                expander_label = f"{row.get('role', 'Unknown Role')}"
+                expander_label = f"Edit Role: {row.get('role', 'Unknown Role')}"
             elif collection_name == "permissions":
-                expander_label = f"{row.get('page', 'Unknown Page')}"
+                expander_label = f"Edit Page: {row.get('page', 'Unknown Page')}"
 
             with st.expander(expander_label):
                 updated_row = {}
@@ -68,16 +68,16 @@ def display_editable_table(collection_name, table_title):
                         emails_list = []
 
                     emails_str = "\n".join(emails_list)
-                    updated_row["role"] = st.text_input("Role Name", value=row.get("role", ""))
-                    updated_row["emails"] = st.text_area("Role Emails (one per line)", value=emails_str)
+                    updated_row["role"] = st.text_input(f"Role Name {index}", value=row.get("role", ""), key=f"role_name_{index}")
+                    updated_row["emails"] = st.text_area(f"Role Emails (one per line) {index}", value=emails_str, key=f"emails_{index}")
                 
                 elif collection_name == "permissions":
                     # Edit the 'permissions' collection with labels
-                    updated_row["page"] = st.text_input("Page Name", value=row.get("page", ""))
+                    updated_row["page"] = st.text_input(f"Page Name {index}", value=row.get("page", ""), key=f"page_name_{index}")
                     
                     # For 'roles', allow the user to edit the list of roles
                     roles_str = "\n".join(row.get("roles", []))  # Convert list to string for textarea
-                    updated_roles_str = st.text_area("Allowed Roles (one per line)", value=roles_str)
+                    updated_roles_str = st.text_area(f"Allowed Roles (one per line) {index}", value=roles_str, key=f"roles_{index}")
                     updated_row["roles"] = [role.strip() for role in updated_roles_str.split("\n") if role.strip()]
                 
                 updated_rows.append(updated_row)
