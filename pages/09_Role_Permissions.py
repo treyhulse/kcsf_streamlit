@@ -87,13 +87,19 @@ def display_editable_table(collection_name, table_title):
             # Convert emails back to a list for storage
             if collection_name == "roles":
                 updated_row["emails"] = [email.strip() for email in updated_row["emails"].split("\n") if email.strip()]
-            
+                
+                # Print out the row being updated for debugging purposes
+                st.write("Updating the following row:", updated_row)
+
             # Update MongoDB document by _id
-            collection.update_one(
-                {"_id": ObjectId(updated_row["_id"])},
-                {"$set": updated_row}
-            )
-        st.success(f"Changes published to {table_title}.")
+            try:
+                collection.update_one(
+                    {"_id": ObjectId(updated_row["_id"])},
+                    {"$set": updated_row}
+                )
+                st.success(f"Changes published to {table_title}.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
 
 def admin_ui():
     st.title("Role and Permissions Management")
