@@ -24,6 +24,7 @@ import streamlit as st
 from pymongo import MongoClient
 from utils.mongo_connection import get_mongo_client
 from bson.objectid import ObjectId
+import ast
 
 # Establish MongoDB connection
 client = get_mongo_client()
