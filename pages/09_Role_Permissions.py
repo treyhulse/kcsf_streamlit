@@ -19,14 +19,62 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+import streamlit as st
 from pymongo import MongoClient
 from utils.mongo_connection import get_mongo_client
+from bson.objectid import ObjectId
 
 # Establish MongoDB connection
 client = get_mongo_client()
 db = client['netsuite']
 roles_collection = db['roles']
 permissions_collection = db['permissions']
+
+def display_editable_table(collection_name):
+    st.subheader(f"{collection_name.capitalize()} Collection")
+    
+    # Fetch data from MongoDB
+    df = pd.DataFrame(list(db[collection_name].find()))
+    
+    if not df.empty:
+        df["_id"] = df["_id"].astype(str)  # Convert ObjectId to string for display
+
+    # Create an editable form for each row
+    updated_rows = []
+    with st.form(key=f"{collection_name}_form"):
+        for index, row in df.iterrows():
+            with st.expander(f"Edit Row {index + 1}"):
+                updated_row = {}
+                updated_row["_id"] = row["_id"]
+                
+                if collection_name == "roles":
+                    # Edit the 'roles' collection
+                    updated_row["role"] = st.text_input(f"Role {index + 1}", value=row.get("role", ""))
+                    updated_row["emails"] = st.text_area(f"Emails {index + 1}", value=row.get("emails", ""))
+                
+                elif collection_name == "permissions":
+                    # Edit the 'permissions' collection
+                    updated_row["page"] = st.text_input(f"Page {index + 1}", value=row.get("page", ""))
+                    
+                    # For 'roles', allow the user to edit the list of roles
+                    roles_str = "\n".join(row.get("roles", []))  # Convert list to string for textarea
+                    updated_roles_str = st.text_area(f"Roles {index + 1} (one per line)", value=roles_str)
+                    updated_row["roles"] = [role.strip() for role in updated_roles_str.split("\n") if role.strip()]
+                
+                updated_rows.append(updated_row)
+        
+        submit_button = st.form_submit_button(label="Publish Changes")
+    
+    # Update MongoDB when the form is submitted
+    if submit_button:
+        collection = client['netsuite'][collection_name]
+        for updated_row in updated_rows:
+            # Update MongoDB document by _id
+            collection.update_one(
+                {"_id": ObjectId(updated_row["_id"])},
+                {"$set": updated_row}
+            )
+        st.success(f"Changes published to {collection_name.capitalize()} collection.")
 
 def admin_ui():
     st.title("Role and Permissions Management")
@@ -105,6 +153,19 @@ def admin_ui():
             upsert=True
         )
         st.success(f"Access permissions for page '{selected_page}' have been updated.")
+
+    st.markdown("---")
+
+    # Section 5: Editable Tables
+    st.subheader("Edit Roles and Permissions Collections")
+    
+    # Editable table for Roles collection
+    display_editable_table('roles')
+
+    st.markdown("---")
+
+    # Editable table for Permissions collection
+    display_editable_table('permissions')
 
 if __name__ == "__main__":
     user_email = capture_user_email()
