@@ -19,7 +19,8 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-import pandas as pd  # Make sure to import pandas
+import pandas as pd
+import streamlit as st
 from pymongo import MongoClient
 from utils.mongo_connection import get_mongo_client
 from bson.objectid import ObjectId
@@ -43,7 +44,12 @@ def display_editable_table(collection_name):
     updated_rows = []
     with st.form(key=f"{collection_name}_form"):
         for index, row in df.iterrows():
-            with st.expander(f"Edit Row {index + 1}"):
+            if collection_name == "roles":
+                expander_label = f"Edit Role: {row.get('role', 'Unknown Role')}"
+            elif collection_name == "permissions":
+                expander_label = f"Edit Page: {row.get('page', 'Unknown Page')}"
+
+            with st.expander(expander_label):
                 updated_row = {}
                 updated_row["_id"] = row["_id"]
                 
