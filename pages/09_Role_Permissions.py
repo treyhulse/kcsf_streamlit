@@ -106,7 +106,7 @@ def display_editable_table(collection_name, table_title):
             st.error("An error occurred while updating the data.")
 
 def admin_ui():
-    st.title("Roles and Permissions Management")
+    st.title("Role and Permissions Management")
 
     st.markdown("---")
 
