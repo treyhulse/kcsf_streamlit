@@ -69,12 +69,12 @@ def display_editable_table(collection_name, table_title):
                         emails_list = []
 
                     emails_str = "\n".join(emails_list)
-                    updated_row["role"] = st.text_input(f"Role Name {index}", value=row.get("role", ""), key=f"role_name_{index}")
+                    updated_row["role"] = st.text_input(f"Role Name", value=row.get("role", ""), key=f"role_name_{index}")
                     updated_row["emails"] = st.text_area(f"Role Emails (one per line)", value=emails_str, key=f"emails_{index}")
                 
                 elif collection_name == "permissions":
                     # Edit the 'permissions' collection with labels
-                    updated_row["page"] = st.text_input(f"Page Name {index}", value=row.get("page", ""), key=f"page_name_{index}")
+                    updated_row["page"] = st.text_input(f"Page Name", value=row.get("page", ""), key=f"page_name_{index}")
                     
                     # For 'roles', allow the user to edit the list of roles
                     roles_str = "\n".join(row.get("roles", []))  # Convert list to string for textarea
