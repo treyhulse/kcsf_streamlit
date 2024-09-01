@@ -1,6 +1,7 @@
 import streamlit as st
 from pymongo import MongoClient
 from utils.mongo_connection import get_mongo_client
+import ast
 
 # Establish MongoDB connection
 client = get_mongo_client()
@@ -10,7 +11,7 @@ permissions_collection = db['permissions']
 
 # Function to get roles for an email
 def get_roles_for_email(email):
-    roles = roles_collection.find({"emails": email})
+    roles = roles_collection.find({"emails": {"$regex": f".*{email}.*", "$options": "i"}})
     return [role['role'] for role in roles]
 
 # Function to check if a role has access to a page
