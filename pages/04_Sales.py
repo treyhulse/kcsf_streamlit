@@ -216,7 +216,7 @@ def main():
         create_visualizations(filtered_data)
 
         # Collapsible section for the DataFrame
-        with st.expander("View DataFrame"):
+        with st.expander("View Data"):
             st.dataframe(filtered_data)
 
 if __name__ == "__main__":
