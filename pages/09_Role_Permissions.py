@@ -22,7 +22,7 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
+from bson.objectid import ObjectId
 from utils.mongo_connection import get_mongo_client, get_collection_data
 
 # Initialize MongoDB client
@@ -38,34 +38,27 @@ def display_editable_table(collection_name):
     if not df.empty:
         df["_id"] = df["_id"].astype(str)  # Convert ObjectId to string for display
 
-    # Create an editable grid with streamlit-aggrid
-    gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_pagination(paginationAutoPageSize=True)  # Enable pagination
-    gb.configure_side_bar()  # Add a sidebar
-    gb.configure_selection('multiple', use_checkbox=True)  # Enable multi-row selection
-    gb.configure_grid_options(editable=True)  # Make the grid editable
-    grid_options = gb.build()
-
-    grid_response = AgGrid(
-        df,
-        gridOptions=grid_options,
-        data_return_mode=DataReturnMode.AS_INPUT,
-        update_mode=GridUpdateMode.MODEL_CHANGED,
-        fit_columns_on_grid_load=True,
-        enable_enterprise_modules=True,
-        height=400,
-        width='100%',
-    )
-
-    updated_df = grid_response['data']  # Get the DataFrame after editing
-
-    if st.button(f"Publish Changes to {collection_name.capitalize()}"):
+    # Create an editable form for each row
+    updated_rows = []
+    with st.form(key=f"{collection_name}_form"):
+        for index, row in df.iterrows():
+            with st.expander(f"Edit Row {index + 1}"):
+                updated_row = {}
+                updated_row["_id"] = row["_id"]
+                updated_row["role"] = st.text_input(f"Role {index + 1}", value=row["role"])
+                updated_row["emails"] = st.text_area(f"Emails {index + 1}", value=row["emails"])
+                updated_rows.append(updated_row)
+        
+        submit_button = st.form_submit_button(label="Publish Changes")
+    
+    # Update MongoDB when the form is submitted
+    if submit_button:
         collection = client['netsuite'][collection_name]
-        for index, row in updated_df.iterrows():
+        for updated_row in updated_rows:
             # Update MongoDB document by _id
             collection.update_one(
-                {"_id": row["_id"]},
-                {"$set": row.to_dict()}
+                {"_id": ObjectId(updated_row["_id"])},
+                {"$set": {"role": updated_row["role"], "emails": updated_row["emails"]}}
             )
         st.success(f"Changes published to {collection_name.capitalize()} collection.")
 
