@@ -185,13 +185,14 @@ def apply_global_filters(df):
 
     return df
 
-def save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
+def save_visualization(client, user_email, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
     try:
         db = client['netsuite']
         charts_collection = db['charts']
         
         chart_data = {
             "name": chart_name,
+            "user": user_email,  # Store the user's email
             "type": chart_type,
             "x_column": x_column,
             "y_column": y_column,
@@ -203,10 +204,11 @@ def save_visualization(client, chart_name, chart_type, x_column, y_column, color
         }
 
         charts_collection.insert_one(chart_data)
-        st.success(f"Visualization '{chart_name}' saved successfully.")
+        st.success(f"Visualization '{chart_name}' saved successfully by {user_email}.")
     except Exception as e:
         st.error(f"Failed to save visualization: {e}")
         logging.error(f"Failed to save visualization: {e}")
+
 
 def load_visualizations(client):
     try:
