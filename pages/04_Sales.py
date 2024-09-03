@@ -184,8 +184,6 @@ def apply_global_filters(df):
 
     return df
 
-########################################################################################################################################################################
-
 def calculate_kpis(df):
     # Total Revenue for all 'Billed' orders
     total_revenue = df[df['Status'] == 'Billed']['Amount'].sum()
@@ -199,7 +197,10 @@ def calculate_kpis(df):
     # Total Open Orders (Count of unique document numbers for Sales Order Type != Billed or Closed)
     total_open_orders = df[(df['Type'] == 'Sales Order') & (~df['Status'].isin(['Billed', 'Closed']))]['Document Number'].nunique()
 
-    return total_revenue, average_order_volume, total_open_estimates, total_open_orders
+    # Average Days Open
+    average_days_open = df['Days Open'].mean() if 'Days Open' in df.columns else 0
+
+    return total_revenue, average_order_volume, total_open_estimates, total_open_orders, average_days_open
 
 # Main Streamlit app
 st.title('Sales Dashboard')
@@ -212,11 +213,11 @@ sales_data = get_collection_data(client, 'sales')
 sales_data = apply_global_filters(sales_data)
 
 # Calculate KPIs
-total_revenue, average_order_volume, total_open_estimates, total_open_orders = calculate_kpis(sales_data)
+total_revenue, average_order_volume, total_open_estimates, total_open_orders, average_days_open = calculate_kpis(sales_data)
 
 # Display KPIs in metric boxes
 st.subheader('Key Performance Indicators')
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.metric(label="Total Revenue", value=f"${total_revenue:,.2f}")
@@ -230,7 +231,34 @@ with col3:
 with col4:
     st.metric(label="Total Open Orders", value=total_open_orders)
 
-# Layout with columns for charts
+with col5:
+    st.metric(label="Average Days Open", value=f"{average_days_open:.2f} days")
+
+# Scatterplot of Average Order Volume by Sales Rep over Time
+st.subheader('Average Order Volume by Sales Rep Over Time')
+sales_data['Month'] = sales_data['Date'].dt.to_period('M').dt.to_timestamp()  # Group by month
+
+avg_order_volume_by_rep = (
+    sales_data.groupby(['Month', 'Sales Rep'])['Amount']
+    .mean()
+    .reset_index()
+    .rename(columns={'Amount': 'Average Order Volume'})
+)
+
+fig_scatter = px.scatter(
+    avg_order_volume_by_rep, 
+    x='Month', 
+    y='Average Order Volume', 
+    color='Sales Rep', 
+    title='Average Order Volume by Sales Rep Over Time',
+    line_group='Sales Rep',
+    markers=True
+)
+
+fig_scatter.update_traces(mode='lines+markers')
+st.plotly_chart(fig_scatter)
+
+# Layout with columns for other charts
 col1, col2 = st.columns(2)
 
 with col1:
@@ -247,14 +275,6 @@ with col1:
     st.plotly_chart(fig_bar)
 
 with col2:
-    # Heatmap of Days Open vs. Amount
-    if 'Days Open' in sales_data.columns:
-        st.subheader('Heatmap of Days Open vs. Amount')
-        fig_heatmap = px.density_heatmap(sales_data, x='Days Open', y='Amount', title='Heatmap of Days Open vs. Amount')
-        st.plotly_chart(fig_heatmap)
-    else:
-        st.warning("Days Open column is missing. Please check the data.")
-
     # Pipeline of Steps Based on 'Status'
     st.subheader('Pipeline by Status')
     status_pipeline = sales_data.groupby('Status').size().reset_index(name='count')
@@ -276,6 +296,7 @@ with st.expander("View Data Table"):
         data_return_mode='AS_INPUT', 
         update_mode='MODEL_CHANGED', 
         fit_columns_on_grid_load=True,
+        theme='light',  # Use a valid theme
         enable_enterprise_modules=True,
         height=400, 
         width='100%',
