@@ -9,7 +9,7 @@ icon = ":pig:"
 is_section = true
 
 [[pages]]
-path = "01_Shipping_Report.py"
+path = "./pages/01_Shipping_Report.py"
 name = "Shipping Report"
 icon = ":material/history:"
 
