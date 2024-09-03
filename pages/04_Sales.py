@@ -27,6 +27,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
 
 # Configure logging
 logging.basicConfig(
@@ -183,6 +184,21 @@ def apply_global_filters(df):
 
     return df
 
+def calculate_kpis(df):
+    # Total Revenue for all 'Billed' orders
+    total_revenue = df[df['Status'] == 'Billed']['Amount'].sum()
+
+    # Average Order Volume for all 'Billed' orders
+    average_order_volume = df[df['Status'] == 'Billed']['Amount'].mean()
+
+    # Total Open Estimates (Count of unique document numbers for Estimate Type = Open)
+    total_open_estimates = df[(df['Type'] == 'Estimate') & (df['Status'] == 'Open')]['Document Number'].nunique()
+
+    # Total Open Orders (Count of unique document numbers for Sales Order Type != Billed or Closed)
+    total_open_orders = df[(df['Type'] == 'Sales Order') & (~df['Status'].isin(['Billed', 'Closed']))]['Document Number'].nunique()
+
+    return total_revenue, average_order_volume, total_open_estimates, total_open_orders
+
 # Main Streamlit app
 st.title('Sales Dashboard')
 
@@ -193,7 +209,26 @@ sales_data = get_collection_data(client, 'sales')
 # Apply global filters
 sales_data = apply_global_filters(sales_data)
 
-# Layout with columns
+# Calculate KPIs
+total_revenue, average_order_volume, total_open_estimates, total_open_orders = calculate_kpis(sales_data)
+
+# Display KPIs in metric boxes
+st.subheader('Key Performance Indicators')
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(label="Total Revenue", value=f"${total_revenue:,.2f}")
+
+with col2:
+    st.metric(label="Average Order Volume", value=f"${average_order_volume:,.2f}")
+
+with col3:
+    st.metric(label="Total Open Estimates", value=total_open_estimates)
+
+with col4:
+    st.metric(label="Total Open Orders", value=total_open_orders)
+
+# Layout with columns for charts
 col1, col2 = st.columns(2)
 
 with col1:
@@ -223,3 +258,25 @@ with col2:
     status_pipeline = sales_data.groupby('Status').size().reset_index(name='count')
     fig_pipeline = px.funnel(status_pipeline, x='Status', y='count', title='Pipeline by Status')
     st.plotly_chart(fig_pipeline)
+
+# Expandable AgGrid table at the bottom
+with st.expander("View Data Table"):
+    st.subheader("Sales Data")
+    gb = GridOptionsBuilder.from_dataframe(sales_data)
+    gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
+    gb.configure_side_bar()  # Add a sidebar
+    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
+    gridOptions = gb.build()
+
+    grid_response = AgGrid(
+        sales_data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode='MODEL_CHANGED', 
+        fit_columns_on_grid_load=True,
+        theme='blue',  # Add theme color to the table
+        enable_enterprise_modules=True,
+        height=400, 
+        width='100%',
+        reload_data=True
+    )
