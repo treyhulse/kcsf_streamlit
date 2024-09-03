@@ -1,10 +1,12 @@
 [[pages]]
 path = "streamlit_app.py"
 name = "Home"
+icon = "📖"
 
 [[pages]]
 name = "Sales"
 is_section = true
+icon = "📖"
 
 [[pages]]
 path = "./pages/01_Shipping_Report.py"
