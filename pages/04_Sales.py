@@ -25,10 +25,9 @@ import logging
 from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +79,9 @@ def get_collection_data(client, collection_name):
                 for key, value in doc.items():
                     if isinstance(value, str):
                         processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
+                    elif isinstance(value, int) or isinstance(value, float):
+                        # Convert large numbers to strings
+                        processed_doc[key] = str(value) if value > 1e10 else value
                     else:
                         processed_doc[key] = value
                 data.append(processed_doc)
@@ -293,14 +295,18 @@ with col2:
 # Expandable AgGrid table at the bottom
 with st.expander("View Data Table"):
     st.subheader("Sales Data")
-    gb = GridOptionsBuilder.from_dataframe(sales_data)
+    
+    # Limit the size of data sent to AgGrid to prevent overflow
+    sales_data_sample = sales_data.head(5000)  # Adjust this number based on your performance needs
+
+    gb = GridOptionsBuilder.from_dataframe(sales_data_sample)
     gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
     gb.configure_side_bar()  # Add a sidebar
     gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
     gridOptions = gb.build()
 
     grid_response = AgGrid(
-        sales_data,
+        sales_data_sample,
         gridOptions=gridOptions,
         data_return_mode='AS_INPUT', 
         update_mode='MODEL_CHANGED', 
