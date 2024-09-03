@@ -52,18 +52,26 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
+def get_sales_data(client):
+    # Example function to load sales data
+    db = client['netsuite']
+    sales_collection = db['salesLines']
+    data = pd.DataFrame(list(sales_collection.find()))
+    if '_id' in data.columns:
+        data.drop('_id', axis=1, inplace=True)
+    return data
+
 def load_visualizations(client):
     try:
         db = client['netsuite']
         charts_collection = db['charts']
-        
         return list(charts_collection.find())
     except Exception as e:
         st.error(f"Failed to load visualizations: {e}")
         logging.error(f"Failed to load visualizations: {e}")
         return []
 
-def display_selected_charts(client, page_name):
+def display_selected_charts(client, df, page_name):
     st.title(f"{page_name}")
 
     db = client['netsuite']
@@ -97,7 +105,8 @@ def display_selected_charts(client, page_name):
 
 def main():
     client = get_mongo_client()
-    display_selected_charts(client, "04_Sales")
+    df = get_sales_data(client)  # Load the data
+    display_selected_charts(client, df, "04_Sales")
 
 if __name__ == "__main__":
     main()
