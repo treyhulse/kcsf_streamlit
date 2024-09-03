@@ -241,12 +241,20 @@ st.subheader('Average Order Volume by Sales Rep Over Time')
 if 'Date' in sales_data.columns and not sales_data['Date'].isnull().all():
     sales_data['Month'] = sales_data['Date'].dt.to_period('M').dt.to_timestamp()  # Group by month
 
+    # Debugging: Check data types and content
+    st.write(sales_data[['Month', 'Sales Rep', 'Amount']].head())
+    st.write(sales_data.dtypes)
+
+    # Handle any missing or NaN values
     avg_order_volume_by_rep = (
         sales_data.groupby(['Month', 'Sales Rep'])['Amount']
         .mean()
         .reset_index()
         .rename(columns={'Amount': 'Average Order Volume'})
     )
+
+    # Debugging: Check grouped data
+    st.write(avg_order_volume_by_rep.head())
 
     fig_scatter = px.scatter(
         avg_order_volume_by_rep, 
