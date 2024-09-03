@@ -25,7 +25,7 @@ st.write(f"You have access to this page.")
 import logging
 from pymongo import MongoClient
 import streamlit as st
-from streamlit.components.v1 import html
+from datetime import datetime, timedelta
 
 # Configure logging
 logging.basicConfig(
@@ -60,10 +60,7 @@ def get_collection_data(client, collection_name):
         collection = db[collection_name]
         
         data = []
-        total_docs = collection.estimated_document_count()  # Get the total number of documents
-        progress_bar = st.progress(0)  # Initialize the progress bar
-        
-        for i, doc in enumerate(collection.find()):
+        for doc in collection.find():
             try:
                 # Process each document into a dictionary
                 obj = {
@@ -84,9 +81,6 @@ def get_collection_data(client, collection_name):
                 }
                 data.append(obj)
                 
-                # Update the progress bar
-                progress_bar.progress((i + 1) / total_docs)
-                
             except Exception as e:
                 logging.error(f"Skipping problematic document {doc.get('_id', 'Unknown ID')}: {e}")
                 continue  # Skip problematic document
@@ -96,6 +90,21 @@ def get_collection_data(client, collection_name):
     except Exception as e:
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
         raise
+
+def filter_data(data, status_filter, sub_status_filter, start_date_filter, end_date_filter):
+    filtered_data = []
+
+    for obj in data:
+        start_date = datetime.strptime(obj.get("Start Date"), "%m/%d/%Y")
+        end_date = datetime.strptime(obj.get("Completion Date"), "%m/%d/%Y")
+
+        if (status_filter == 'All' or obj.get("WO Status") == status_filter) and \
+           (sub_status_filter == 'All' or obj.get("Sub Status") == sub_status_filter) and \
+           (start_date_filter <= start_date <= end_date_filter) and \
+           (start_date_filter <= end_date <= end_date_filter):
+            filtered_data.append(obj)
+
+    return filtered_data
 
 def display_object_cards(data):
     st.write("### Work Order Progress")
@@ -155,12 +164,28 @@ def main():
     st.title("NetSuite Work Orders Progress")
 
     client = get_mongo_client()
-    
     collection_name = "workOrders"
-    
+
+    # Sidebar filters
+    status_options = ["All", "Metal Shop", "Painting", "Assembly"]
+    sub_status_options = ["All", "Ready for Shop", "In Progress", "Completed"]
+
+    st.sidebar.header("Filters")
+
+    status_filter = st.sidebar.selectbox("Status", status_options, index=0)
+    sub_status_filter = st.sidebar.selectbox("Sub Status", sub_status_options, index=0)
+
+    today = datetime.today()
+    start_of_week = today - timedelta(days=today.weekday())  # Start of the current week
+    end_of_week = start_of_week + timedelta(days=6)  # End of the current week
+
+    start_date_filter = st.sidebar.date_input("Start Date", value=start_of_week)
+    end_date_filter = st.sidebar.date_input("Completion Date", value=end_of_week)
+
     if st.button("Fetch and Display Work Orders"):
         data = get_collection_data(client, collection_name)
-        display_object_cards(data)
+        filtered_data = filter_data(data, status_filter, sub_status_filter, start_date_filter, end_date_filter)
+        display_object_cards(filtered_data)
 
 if __name__ == "__main__":
     main()
