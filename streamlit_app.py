@@ -1,16 +1,30 @@
 import streamlit as st
-from st_pages import add_page_title, get_nav_from_toml
 
-sections = st.sidebar.toggle("Sections", value=True, key="use_sections")
+st.set_page_config(page_title="NetSuite Data Analytics", 
+                   page_icon="./assets/KCSF_Square.png", 
+                   layout="wide")
 
-nav = get_nav_from_toml(
-    ".streamlit/pages_sections.toml" if sections else ".streamlit/pages.toml"
+st.write("# Welcome to NetSuite Data Analytics! 👋")
+
+st.sidebar.image("./assets/kcsf_red.png", use_column_width=True)
+st.sidebar.success("Select a report above.")
+
+st.markdown(
+    """
+    This app provides various reports and analytics for NetSuite data.
+    
+    👈 Select a report from the sidebar to get started!
+    
+    ### Available Reports:
+    - Shipping Report
+    - Sales Dashboard (still working on this!)
+    - Supply Chain Insights (still working on this!)
+    - Financial Insights (still working on this!)
+    - Operations Insights (still working on this!)
+    - Logistics Insights (still working on this!)
+    - AI Insights (still working on this!)
+
+    
+    More reports coming soon!
+    """
 )
-
-st.logo("./assets/kcsf_red.png")
-
-pg = st.navigation(nav)
-
-add_page_title(pg)
-
-pg.run()
