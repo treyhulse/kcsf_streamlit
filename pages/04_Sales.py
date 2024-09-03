@@ -109,6 +109,12 @@ def apply_global_filters(df):
         selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=statuses)
         df = df[df['Status'].isin(selected_statuses)]
 
+    # Filter by Type
+    if 'Type' in df.columns:
+        statuses = df['Status'].unique().tolist()
+        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=statuses)
+        df = df[df['Status'].isin(selected_statuses)]
+
     # Ensure 'Ship Date (Admin)' is a datetime object
     if 'Ship Date (Admin)' in df.columns:
         df['Ship Date (Admin)'] = pd.to_datetime(df['Ship Date (Admin)'], errors='coerce')
