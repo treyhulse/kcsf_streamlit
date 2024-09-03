@@ -236,27 +236,32 @@ with col5:
 
 # Scatterplot of Average Order Volume by Sales Rep over Time
 st.subheader('Average Order Volume by Sales Rep Over Time')
-sales_data['Month'] = sales_data['Date'].dt.to_period('M').dt.to_timestamp()  # Group by month
 
-avg_order_volume_by_rep = (
-    sales_data.groupby(['Month', 'Sales Rep'])['Amount']
-    .mean()
-    .reset_index()
-    .rename(columns={'Amount': 'Average Order Volume'})
-)
+# Ensure the 'Date' column is available and not empty
+if 'Date' in sales_data.columns and not sales_data['Date'].isnull().all():
+    sales_data['Month'] = sales_data['Date'].dt.to_period('M').dt.to_timestamp()  # Group by month
 
-fig_scatter = px.scatter(
-    avg_order_volume_by_rep, 
-    x='Month', 
-    y='Average Order Volume', 
-    color='Sales Rep', 
-    title='Average Order Volume by Sales Rep Over Time',
-    line_group='Sales Rep',
-    markers=True
-)
+    avg_order_volume_by_rep = (
+        sales_data.groupby(['Month', 'Sales Rep'])['Amount']
+        .mean()
+        .reset_index()
+        .rename(columns={'Amount': 'Average Order Volume'})
+    )
 
-fig_scatter.update_traces(mode='lines+markers')
-st.plotly_chart(fig_scatter)
+    fig_scatter = px.scatter(
+        avg_order_volume_by_rep, 
+        x='Month', 
+        y='Average Order Volume', 
+        color='Sales Rep', 
+        title='Average Order Volume by Sales Rep Over Time',
+        line_group='Sales Rep',
+        markers=True
+    )
+
+    fig_scatter.update_traces(mode='lines+markers')
+    st.plotly_chart(fig_scatter)
+else:
+    st.warning("No valid date data available for creating the scatterplot.")
 
 # Layout with columns for other charts
 col1, col2 = st.columns(2)
