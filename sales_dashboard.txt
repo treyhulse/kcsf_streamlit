@@ -8,7 +8,7 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = '03_Marketing.py'  # Adjust this based on the current page
+page_name = '04_Sales.py'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
@@ -20,7 +20,6 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
- 
 
 import logging
 from pymongo import MongoClient
@@ -185,149 +184,98 @@ def apply_global_filters(df):
 
     return df
 
-def save_visualization(client, user_email, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        
-        chart_data = {
-            "name": chart_name,
-            "user": user_email,  # Store the user's email
-            "type": chart_type,
-            "x_column": x_column,
-            "y_column": y_column,
-            "color_column": color_column,
-            "chart_title": chart_title,
-            "x_label": x_label,
-            "y_label": y_label,
-            "created_at": datetime.utcnow()
-        }
+def calculate_kpis(df):
+    # Total Revenue for all 'Billed' orders
+    total_revenue = df[df['Status'] == 'Billed']['Amount'].sum()
 
-        charts_collection.insert_one(chart_data)
-        st.success(f"Visualization '{chart_name}' saved successfully by {user_email}.")
-    except Exception as e:
-        st.error(f"Failed to save visualization: {e}")
-        logging.error(f"Failed to save visualization: {e}")
+    # Average Order Volume for all 'Billed' orders
+    average_order_volume = df[df['Status'] == 'Billed']['Amount'].mean()
 
+    # Total Open Estimates (Count of unique document numbers for Estimate Type = Open)
+    total_open_estimates = df[(df['Type'] == 'Estimate') & (df['Status'] == 'Open')]['Document Number'].nunique()
 
-def load_visualizations(client):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        
-        return list(charts_collection.find())
-    except Exception as e:
-        st.error(f"Failed to load visualizations: {e}")
-        logging.error(f"Failed to load visualizations: {e}")
-        return []
+    # Total Open Orders (Count of unique document numbers for Sales Order Type != Billed or Closed)
+    total_open_orders = df[(df['Type'] == 'Sales Order') & (~df['Status'].isin(['Billed', 'Closed']))]['Document Number'].nunique()
 
-def create_visualizations(df, client):
-    st.subheader("Create Your Own Visualizations")
+    return total_revenue, average_order_volume, total_open_estimates, total_open_orders
 
-    # Ensure that there are columns available for visualization
-    if df.empty or df.shape[1] < 2:
-        st.warning("Not enough data to create visualizations.")
-        return
+# Main Streamlit app
+st.title('Sales Dashboard')
 
-    # Select columns for X and Y axes
-    x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
-    y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
+# MongoDB Connection
+client = get_mongo_client()
+sales_data = get_collection_data(client, 'sales')
 
-    # Select the type of chart
-    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
+# Apply global filters
+sales_data = apply_global_filters(sales_data)
 
-    # Additional customizations
-    chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
-    x_label = st.text_input("X-axis Label", x_column)
-    y_label = st.text_input("Y-axis Label", y_column)
-    color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
+# Calculate KPIs
+total_revenue, average_order_volume, total_open_estimates, total_open_orders = calculate_kpis(sales_data)
 
-    # Save visualization configuration
-    chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
-    if st.button("Save Visualization"):
-        save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label)
+# Display KPIs in metric boxes
+st.subheader('Key Performance Indicators')
+col1, col2, col3, col4 = st.columns(4)
 
-    # Create the chart based on user input
-    if chart_type == "Bar":
-        fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Line":
-        fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Scatter":
-        fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Histogram":
-        fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
-    elif chart_type == "Pie":
-        fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
-    
-    # Display the chart
-    st.plotly_chart(fig)
+with col1:
+    st.metric(label="Total Revenue", value=f"${total_revenue:,.2f}")
 
-def display_saved_visualizations(client):
-    st.subheader("Load Saved Visualizations")
+with col2:
+    st.metric(label="Average Order Volume", value=f"${average_order_volume:,.2f}")
 
-    saved_visualizations = load_visualizations(client)
-    if not saved_visualizations:
-        st.warning("No saved visualizations found.")
-        return
+with col3:
+    st.metric(label="Total Open Estimates", value=total_open_estimates)
 
-    chart_names = [viz['name'] for viz in saved_visualizations]
-    selected_chart = st.selectbox("Select Visualization to Load", chart_names)
+with col4:
+    st.metric(label="Total Open Orders", value=total_open_orders)
 
-    if st.button("Load Visualization"):
-        selected_viz = next(viz for viz in saved_visualizations if viz['name'] == selected_chart)
-        st.write(f"Loading visualization: {selected_chart}")
+# Layout with columns for charts
+col1, col2 = st.columns(2)
 
-        fig = None
-        if selected_viz['type'] == "Bar":
-            fig = px.bar(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                         title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                         selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Line":
-            fig = px.line(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                          title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                          selected_viz['y_column']: selected_viz['y_label']})
-        # Add other chart types as needed
+with col1:
+    # Revenue by Sales Rep (Pie Chart)
+    st.subheader('Revenue by Sales Rep')
+    sales_rep_revenue = sales_data.groupby('Sales Rep')['Amount'].sum().reset_index()
+    fig_pie = px.pie(sales_rep_revenue, names='Sales Rep', values='Amount', title='Revenue by Sales Rep')
+    st.plotly_chart(fig_pie)
 
-        if fig:
-            st.plotly_chart(fig)
+    # Sales by Category (Bar Graph)
+    st.subheader('Sales by Category')
+    sales_by_category = sales_data.groupby('Category')['Amount'].sum().reset_index()
+    fig_bar = px.bar(sales_by_category, x='Category', y='Amount', title='Sales by Category')
+    st.plotly_chart(fig_bar)
 
-def main():
-    st.title("Data Visualization Tool")
-
-    # Connect to MongoDB using the utility function
-    client = get_mongo_client()
-
-    # Load the 'sales' collection into a DataFrame
-    data = get_collection_data(client, 'salesLines')
-
-    # Apply global filters
-    filtered_data = apply_global_filters(data)
-
-    # Check if DataFrame is empty after filtering
-    if filtered_data.empty:
-        st.warning("No data available for the selected filters.")
+with col2:
+    # Heatmap of Amount vs. Quantity
+    if 'Days Open' in sales_data.columns:
+        st.subheader('Heatmap of Amount vs. Days Open')
+        fig_heatmap = px.density_heatmap(sales_data, x='Days Open', y='Amount', title='Heatmap of Amount vs. Days Open')
+        st.plotly_chart(fig_heatmap)
     else:
-        st.write(f"Number of Rows: {filtered_data.shape[0]}")
+        st.warning("Quantity column is missing. Please check the data.")
 
-        # Create visualizations
-        create_visualizations(filtered_data, client)
+    # Pipeline of Steps Based on 'Status'
+    st.subheader('Pipeline by Status')
+    status_pipeline = sales_data.groupby('Status').size().reset_index(name='count')
+    fig_pipeline = px.funnel(status_pipeline, x='Status', y='count', title='Pipeline by Status')
+    st.plotly_chart(fig_pipeline)
 
-        # Load and display saved visualizations
-        display_saved_visualizations(client)
+# Expandable AgGrid table at the bottom
+with st.expander("View Data Table"):
+    st.subheader("Sales Data")
+    gb = GridOptionsBuilder.from_dataframe(sales_data)
+    gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
+    gb.configure_side_bar()  # Add a sidebar
+    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
+    gridOptions = gb.build()
 
-        # Collapsible section for the DataFrame with aggrid
-        with st.expander("View Data"):
-            gb = GridOptionsBuilder.from_dataframe(filtered_data)
-            gb.configure_pagination(paginationAutoPageSize=True)
-            gb.configure_side_bar()
-            grid_options = gb.build()
-
-            AgGrid(
-                filtered_data, 
-                gridOptions=grid_options, 
-                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-                update_mode="MODEL_CHANGED"
-            )
-
-if __name__ == "__main__":
-    main()
+    grid_response = AgGrid(
+        sales_data,
+        gridOptions=gridOptions,
+        data_return_mode='AS_INPUT', 
+        update_mode='MODEL_CHANGED', 
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=True,
+        height=400, 
+        width='100%',
+        reload_data=True
+    )
