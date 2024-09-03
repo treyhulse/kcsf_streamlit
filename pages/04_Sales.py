@@ -27,7 +27,6 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
 
 # Configure logging
 logging.basicConfig(
@@ -94,166 +93,45 @@ def get_collection_data(client, collection_name):
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
         raise
 
-def apply_global_filters(df):
-    st.sidebar.header("Global Filters")
+# Main Streamlit app
+st.title('Sales Dashboard')
 
-    # Filter by Sales Rep
-    sales_reps = ['All'] + df['Sales Rep'].unique().tolist()
-    selected_sales_reps = st.sidebar.multiselect("Filter by Sales Rep", sales_reps, default='All')
-    
-    if 'All' not in selected_sales_reps:
-        df = df[df['Sales Rep'].isin(selected_sales_reps)]
+# MongoDB Connection
+client = get_mongo_client()
+sales_data = get_collection_data(client, 'sales')
 
-    # Filter by Status
-    if 'Status' in df.columns:
-        statuses = ['All'] + df['Status'].unique().tolist()
-        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default='All')
-        if 'All' not in selected_statuses:
-            df = df[df['Status'].isin(selected_statuses)]
+# Convert 'trandate' to datetime
+sales_data['trandate'] = pd.to_datetime(sales_data['trandate'])
 
-    # Filter by Type
-    if 'Type' in df.columns:
-        types = ['All'] + df['Type'].unique().tolist()
-        selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
-        if 'All' not in selected_types:
-            df = df[df['Type'].isin(selected_types)]
+# Revenue by Sales Rep (Pie Chart)
+st.subheader('Revenue by Sales Rep')
+sales_rep_revenue = sales_data.groupby('sales_rep')['revenue'].sum().reset_index()
+fig_pie = px.pie(sales_rep_revenue, names='sales_rep', values='revenue', title='Revenue by Sales Rep')
+st.plotly_chart(fig_pie)
 
-    # Ensure 'Date' is a datetime object
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+# Revenue This Month vs. Last Month (Line Graph)
+st.subheader('Revenue This Month vs. Last Month')
+this_month = sales_data[sales_data['trandate'].dt.month == datetime.now().month]
+last_month = sales_data[sales_data['trandate'].dt.month == (datetime.now().month - 1)]
+this_month_revenue = this_month.groupby(this_month['trandate'].dt.day)['revenue'].sum().reset_index()
+last_month_revenue = last_month.groupby(last_month['trandate'].dt.day)['revenue'].sum().reset_index()
+fig_line = px.line(this_month_revenue, x='trandate', y='revenue', title='Revenue This Month vs. Last Month')
+fig_line.add_scatter(x=last_month_revenue['trandate'], y=last_month_revenue['revenue'], mode='lines', name='Last Month')
+st.plotly_chart(fig_line)
 
-        # Filter by Date (Admin)
-        date_filter = st.sidebar.selectbox(
-            "Filter by Date", 
-            ["Custom", "This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
-             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
-            index=0  # Default to "Custom"
-        )
+# Sales by Category (Bar Graph)
+st.subheader('Sales by Category')
+sales_by_category = sales_data.groupby('category')['revenue'].sum().reset_index()
+fig_bar = px.bar(sales_by_category, x='category', y='revenue', title='Sales by Category')
+st.plotly_chart(fig_bar)
 
-        today = datetime.today().date()
+# Heatmap of Amount vs. Quantity
+st.subheader('Heatmap of Amount vs. Quantity')
+fig_heatmap = px.density_heatmap(sales_data, x='quantity', y='amount', title='Heatmap of Amount vs. Quantity')
+st.plotly_chart(fig_heatmap)
 
-        if date_filter == "Today":
-            start_date = today
-            end_date = today
-        elif date_filter == "Tomorrow":
-            start_date = today + timedelta(days=1)
-            end_date = start_date
-        elif date_filter == "This Week":
-            start_date = today - timedelta(days=today.weekday())
-            end_date = start_date + timedelta(days=6)
-        elif date_filter == "Last Week":
-            start_date = today - timedelta(days=today.weekday() + 7)
-            end_date = start_date + timedelta(days=6)
-        elif date_filter == "This Month":
-            start_date = today.replace(day=1)
-            next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
-            end_date = next_month - timedelta(days=next_month.day)
-        elif date_filter == "Last Month":
-            first_day_this_month = today.replace(day=1)
-            start_date = (first_day_this_month - timedelta(days=1)).replace(day=1)
-            end_date = first_day_this_month - timedelta(days=1)
-        elif date_filter == "First Quarter":
-            start_date = datetime(today.year, 1, 1).date()
-            end_date = datetime(today.year, 3, 31).date()
-        elif date_filter == "Second Quarter":
-            start_date = datetime(today.year, 4, 1).date()
-            end_date = datetime(today.year, 6, 30).date()
-        elif date_filter == "Third Quarter":
-            start_date = datetime(today.year, 7, 1).date()
-            end_date = datetime(today.year, 9, 30).date()
-        elif date_filter == "Fourth Quarter":
-            start_date = datetime(today.year, 10, 1).date()
-            end_date = datetime(today.year, 12, 31).date()
-        elif date_filter == "Next Month":
-            first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
-            start_date = first_day_next_month
-            end_date = (first_day_next_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        elif date_filter == "Custom":
-            start_date = st.sidebar.date_input("Start Date")
-            end_date = st.sidebar.date_input("End Date")
-
-            if start_date and not end_date:
-                st.sidebar.error("Select an end date")
-            elif end_date and not start_date:
-                st.sidebar.error("Select a start date")
-
-        # Apply date filter
-        if start_date and end_date:
-            df = df[(df['Date'] >= pd.to_datetime(start_date)) & 
-                    (df['Date'] <= pd.to_datetime(end_date))]
-
-    return df
-
-def create_visualizations(df):
-    st.subheader("Create Your Own Visualizations")
-
-    # Ensure that there are columns available for visualization
-    if df.empty or df.shape[1] < 2:
-        st.warning("Not enough data to create visualizations.")
-        return
-
-    # Select columns for X and Y axes
-    x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
-    y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
-
-    # Select the type of chart
-    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
-
-    # Additional customizations
-    chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
-    x_label = st.text_input("X-axis Label", x_column)
-    y_label = st.text_input("Y-axis Label", y_column)
-    color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
-    
-    # Create the chart based on user input
-    if chart_type == "Bar":
-        fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Line":
-        fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Scatter":
-        fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-    elif chart_type == "Histogram":
-        fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
-    elif chart_type == "Pie":
-        fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
-    
-    # Display the chart
-    st.plotly_chart(fig)
-
-def main():
-    st.title("Data Visualization Tool")
-
-    # Connect to MongoDB using the utility function
-    client = get_mongo_client()
-
-    # Load the 'sales' collection into a DataFrame
-    data = get_collection_data(client, 'sales')
-
-    # Apply global filters
-    filtered_data = apply_global_filters(data)
-
-    # Check if DataFrame is empty after filtering
-    if filtered_data.empty:
-        st.warning("No data available for the selected filters.")
-    else:
-        st.write(f"Number of Rows: {filtered_data.shape[0]}")
-        
-        # Create visualizations
-        create_visualizations(filtered_data)
-
-        # Collapsible section for the DataFrame with aggrid
-        with st.expander("View Data"):
-            gb = GridOptionsBuilder.from_dataframe(filtered_data)
-            gb.configure_pagination(paginationAutoPageSize=True)
-            gb.configure_side_bar()
-            grid_options = gb.build()
-
-            AgGrid(
-                filtered_data, 
-                gridOptions=grid_options, 
-                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-                update_mode="MODEL_CHANGED"
-            )
-
-if __name__ == "__main__":
-    main()
+# Pipeline of Steps Based on 'Status'
+st.subheader('Pipeline by Status')
+status_pipeline = sales_data.groupby('status').size().reset_index(name='count')
+fig_pipeline = px.funnel(status_pipeline, x='status', y='count', title='Pipeline by Status')
+st.plotly_chart(fig_pipeline)
