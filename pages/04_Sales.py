@@ -26,8 +26,7 @@ from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
-from datetime import datetime, timedelta
+from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Configure logging
 logging.basicConfig(
@@ -72,16 +71,13 @@ def get_collection_data(client, collection_name):
         total_docs = collection.estimated_document_count()  # Get the total number of documents
         progress_bar = st.progress(0)  # Initialize the progress bar
         
-        for i, doc in enumerate(collection.find()):
+        for i, doc in enumerate(collection.find().limit(100)):
             try:
                 # Process each document individually
                 processed_doc = {}
                 for key, value in doc.items():
                     if isinstance(value, str):
                         processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
-                    elif isinstance(value, int) or isinstance(value, float):
-                        # Convert large numbers to strings
-                        processed_doc[key] = str(value) if value > 1e10 else value
                     else:
                         processed_doc[key] = value
                 data.append(processed_doc)
@@ -132,66 +128,6 @@ def apply_global_filters(df):
     # Ensure 'Date' is a datetime object
     if 'Date' in df.columns:
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-
-        # Filter by Date (Admin)
-        date_filter = st.sidebar.selectbox(
-            "Filter by Date", 
-            ["Custom", "This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
-             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
-            index=0  # Default to "Custom"
-        )
-
-        today = datetime.today().date()
-
-        if date_filter == "Today":
-            start_date = today
-            end_date = today
-        elif date_filter == "Tomorrow":
-            start_date = today + timedelta(days=1)
-            end_date = start_date
-        elif date_filter == "This Week":
-            start_date = today - timedelta(days=today.weekday())
-            end_date = start_date + timedelta(days=6)
-        elif date_filter == "Last Week":
-            start_date = today - timedelta(days=today.weekday() + 7)
-            end_date = start_date + timedelta(days=6)
-        elif date_filter == "This Month":
-            start_date = today.replace(day=1)
-            next_month = start_date.replace(day=28) + timedelta(days=4)  # this will never fail
-            end_date = next_month - timedelta(days=next_month.day)
-        elif date_filter == "Last Month":
-            first_day_this_month = today.replace(day=1)
-            start_date = (first_day_this_month - timedelta(days=1)).replace(day=1)
-            end_date = first_day_this_month - timedelta(days=1)
-        elif date_filter == "First Quarter":
-            start_date = datetime(today.year, 1, 1).date()
-            end_date = datetime(today.year, 3, 31).date()
-        elif date_filter == "Second Quarter":
-            start_date = datetime(today.year, 4, 1).date()
-            end_date = datetime(today.year, 6, 30).date()
-        elif date_filter == "Third Quarter":
-            start_date = datetime(today.year, 7, 1).date()
-            end_date = datetime(today.year, 9, 30).date()
-        elif date_filter == "Fourth Quarter":
-            start_date = datetime(today.year, 10, 1).date()
-            end_date = datetime(today.year, 12, 31).date()
-        elif date_filter == "Next Month":
-            first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
-            start_date = first_day_next_month
-            end_date = (first_day_next_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        elif date_filter == "Custom":
-            start_date = st.sidebar.date_input("Start Date")
-            end_date = st.sidebar.date_input("End Date")
-
-            if start_date and not end_date:
-                st.sidebar.error("Select an end date")
-            elif end_date and not start_date:
-                st.sidebar.error("Select a start date")
-
-        # Apply date filter
-        if start_date and end_date:
-            df = df[(df['Date'] >= pd.to_datetime(start_date)) & 
-                    (df['Date'] <= pd.to_datetime(end_date))]
 
     return df
 
@@ -296,8 +232,8 @@ with col2:
 with st.expander("View Data Table"):
     st.subheader("Sales Data")
     
-    # Limit the size of data sent to AgGrid to prevent overflow
-    sales_data_sample = sales_data.head(5000)  # Adjust this number based on your performance needs
+    # Limit the data shown to 100 rows
+    sales_data_sample = sales_data.head(100)
 
     gb = GridOptionsBuilder.from_dataframe(sales_data_sample)
     gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
