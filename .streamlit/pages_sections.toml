@@ -1,6 +1,6 @@
 [[pages]]
-path = "example_one.py"
-name = "st-pages"
+path = "streamlit_app.py"
+name = "Home"
 icon = "📄"
 
 [[pages]]
@@ -9,13 +9,13 @@ icon = ":pig:"
 is_section = true
 
 [[pages]]
-path = "example_two.py"
-name = "Example Two"
+path = "01_Shipping_Report.py"
+name = "Shipping Report"
 icon = ":material/history:"
 
 [[pages]]
-path = "example_four.py"
-name = "Try hiding pages"
+path = "02_Supply_Chain.py"
+name = "O2_Supply_Chain.py"
 icon = "📖"
 
 [[pages]]
