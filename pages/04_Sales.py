@@ -118,13 +118,13 @@ def apply_global_filters(df):
         if 'All' not in selected_types:
             df = df[df['Type'].isin(selected_types)]
 
-    # Ensure 'Ship Date (Admin)' is a datetime object
-    if 'Ship Date (Admin)' in df.columns:
-        df['Ship Date (Admin)'] = pd.to_datetime(df['Ship Date (Admin)'], errors='coerce')
+    # Ensure 'Date' is a datetime object
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
-        # Filter by Ship Date (Admin)
+        # Filter by Date (Admin)
         date_filter = st.sidebar.selectbox(
-            "Filter by Ship Date (Admin)", 
+            "Filter by Date", 
             ["Custom", "This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
              "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
             index=0  # Default to "Custom"
@@ -179,8 +179,8 @@ def apply_global_filters(df):
 
         # Apply date filter
         if start_date and end_date:
-            df = df[(df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) & 
-                    (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))]
+            df = df[(df['Date'] >= pd.to_datetime(start_date)) & 
+                    (df['Date'] <= pd.to_datetime(end_date))]
 
     return df
 
