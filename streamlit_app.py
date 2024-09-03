@@ -1,6 +1,7 @@
 import streamlit as st
 
-st.set_page_config(page_title="NetSuite Data Analytics", page_icon="📊", layout="wide")
+st.set_page_config(page_title="NetSuite Data Analytics", 
+                   page_icon="./assets/kcsf_red.png", layout="wide")
 
 st.write("# Welcome to NetSuite Data Analytics! 👋")
 
