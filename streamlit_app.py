@@ -1,10 +1,11 @@
 import streamlit as st
 
 st.set_page_config(page_title="NetSuite Data Analytics", 
-                   page_icon="./assets/kcsf_red.png", layout="wide")
+                   page_icon="./assets/KCSF_Sqaure.png", layout="wide")
 
 st.write("# Welcome to NetSuite Data Analytics! 👋")
 
+st.sidebar.image("./assets/kcsf_red.png", use_column_width=True)
 st.sidebar.success("Select a report above.")
 
 st.markdown(
