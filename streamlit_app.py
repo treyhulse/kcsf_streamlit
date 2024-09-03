@@ -9,7 +9,7 @@ nav = get_nav_from_toml(
     ".streamlit/pages_sections.toml" if sections else ".streamlit/pages.toml"
 )
 
-st.logo(".assets/kcsf_red.png")
+st.logo("./assets/kcsf_red.png")
 
 pg = st.navigation(nav)
 
