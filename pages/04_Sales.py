@@ -184,9 +184,6 @@ def apply_global_filters(df):
 
     return df
 
-########################################################################################################################################################################
-
-
 def calculate_kpis(df):
     # Total Revenue for all 'Billed' orders
     total_revenue = df[df['Status'] == 'Billed']['Amount'].sum()
