@@ -35,8 +35,8 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-# Use st.experimental_singleton to cache the MongoDB client
-@st.experimental_singleton
+# Use st.cache_resource to cache the MongoDB client
+@st.cache_resource
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
