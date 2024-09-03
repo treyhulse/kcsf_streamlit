@@ -100,38 +100,34 @@ st.title('Sales Dashboard')
 client = get_mongo_client()
 sales_data = get_collection_data(client, 'sales')
 
-# Convert 'trandate' to datetime
-sales_data['trandate'] = pd.to_datetime(sales_data['trandate'])
+# Assuming 'Amount' is your revenue column, replace 'trandate' with the correct date column
+# sales_data['Date'] = pd.to_datetime(sales_data['Date'])  # Adjust 'Date' to match your actual column
 
 # Revenue by Sales Rep (Pie Chart)
 st.subheader('Revenue by Sales Rep')
-sales_rep_revenue = sales_data.groupby('sales_rep')['revenue'].sum().reset_index()
-fig_pie = px.pie(sales_rep_revenue, names='sales_rep', values='revenue', title='Revenue by Sales Rep')
+sales_rep_revenue = sales_data.groupby('Sales Rep')['Amount'].sum().reset_index()
+fig_pie = px.pie(sales_rep_revenue, names='Sales Rep', values='Amount', title='Revenue by Sales Rep')
 st.plotly_chart(fig_pie)
 
-# Revenue This Month vs. Last Month (Line Graph)
-st.subheader('Revenue This Month vs. Last Month')
-this_month = sales_data[sales_data['trandate'].dt.month == datetime.now().month]
-last_month = sales_data[sales_data['trandate'].dt.month == (datetime.now().month - 1)]
-this_month_revenue = this_month.groupby(this_month['trandate'].dt.day)['revenue'].sum().reset_index()
-last_month_revenue = last_month.groupby(last_month['trandate'].dt.day)['revenue'].sum().reset_index()
-fig_line = px.line(this_month_revenue, x='trandate', y='revenue', title='Revenue This Month vs. Last Month')
-fig_line.add_scatter(x=last_month_revenue['trandate'], y=last_month_revenue['revenue'], mode='lines', name='Last Month')
-st.plotly_chart(fig_line)
+# Since we don't have a date column, let's skip the line graph and focus on other charts
 
 # Sales by Category (Bar Graph)
 st.subheader('Sales by Category')
-sales_by_category = sales_data.groupby('category')['revenue'].sum().reset_index()
-fig_bar = px.bar(sales_by_category, x='category', y='revenue', title='Sales by Category')
+sales_by_category = sales_data.groupby('Category')['Amount'].sum().reset_index()
+fig_bar = px.bar(sales_by_category, x='Category', y='Amount', title='Sales by Category')
 st.plotly_chart(fig_bar)
 
 # Heatmap of Amount vs. Quantity
-st.subheader('Heatmap of Amount vs. Quantity')
-fig_heatmap = px.density_heatmap(sales_data, x='quantity', y='amount', title='Heatmap of Amount vs. Quantity')
-st.plotly_chart(fig_heatmap)
+# Assuming there is a 'Quantity' column, if not, this part should be adjusted based on your data
+if 'Quantity' in sales_data.columns:
+    st.subheader('Heatmap of Amount vs. Quantity')
+    fig_heatmap = px.density_heatmap(sales_data, x='Quantity', y='Amount', title='Heatmap of Amount vs. Quantity')
+    st.plotly_chart(fig_heatmap)
+else:
+    st.warning("Quantity column is missing. Please check the data.")
 
 # Pipeline of Steps Based on 'Status'
 st.subheader('Pipeline by Status')
-status_pipeline = sales_data.groupby('status').size().reset_index(name='count')
-fig_pipeline = px.funnel(status_pipeline, x='status', y='count', title='Pipeline by Status')
+status_pipeline = sales_data.groupby('Status').size().reset_index(name='count')
+fig_pipeline = px.funnel(status_pipeline, x='Status', y='count', title='Pipeline by Status')
 st.plotly_chart(fig_pipeline)
