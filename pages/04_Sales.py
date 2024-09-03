@@ -20,6 +20,7 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
 import logging
 from pymongo import MongoClient
 import pandas as pd
@@ -105,15 +106,17 @@ def apply_global_filters(df):
 
     # Filter by Status
     if 'Status' in df.columns:
-        statuses = df['Status'].unique().tolist()
-        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=statuses)
-        df = df[df['Status'].isin(selected_statuses)]
+        statuses = ['All'] + df['Status'].unique().tolist()
+        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default='All')
+        if 'All' not in selected_statuses:
+            df = df[df['Status'].isin(selected_statuses)]
 
     # Filter by Type
     if 'Type' in df.columns:
-        statuses = df['Status'].unique().tolist()
-        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=statuses)
-        df = df[df['Status'].isin(selected_statuses)]
+        types = ['All'] + df['Type'].unique().tolist()
+        selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
+        if 'All' not in selected_types:
+            df = df[df['Type'].isin(selected_types)]
 
     # Ensure 'Ship Date (Admin)' is a datetime object
     if 'Ship Date (Admin)' in df.columns:
@@ -122,9 +125,9 @@ def apply_global_filters(df):
         # Filter by Ship Date (Admin)
         date_filter = st.sidebar.selectbox(
             "Filter by Ship Date (Admin)", 
-            ["This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
-             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month", "Custom"],
-            index=0  # Default to "This Month"
+            ["Custom", "This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
+             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
+            index=0  # Default to "Custom"
         )
 
         today = datetime.today().date()
