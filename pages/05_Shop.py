@@ -129,6 +129,26 @@ def filter_data(data, status_filter, sub_status_filter, start_date_filter, end_d
 
     return filtered_data
 
+def get_sub_status_color(sub_status):
+    if sub_status == "Ready for Shop":
+        return "#ffc107"  # Yellow
+    elif sub_status == "In Progress":
+        return "#17a2b8"  # Blue
+    elif sub_status == "Completed":
+        return "#28a745"  # Green
+    else:
+        return "#6c757d"  # Grey
+
+def get_progress(sub_status):
+    if sub_status == "Ready for Shop":
+        return 0.25
+    elif sub_status == "In Progress":
+        return 0.50
+    elif sub_status == "Completed":
+        return 1.0
+    else:
+        return 0.0
+
 def display_object_cards(data):
     st.write("### Work Order Progress")
     
@@ -153,7 +173,9 @@ def display_object_cards(data):
         color: #28a745;  /* Green for success */
     }
     .card .sub-status {
-        color: #ffc107;  /* Yellow for warning */
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 4px;
     }
     </style>
     """
@@ -161,20 +183,31 @@ def display_object_cards(data):
 
     # Display each work order as a card
     for obj in data:
+        progress = get_progress(obj['Sub Status'])
+        sub_status_color = get_sub_status_color(obj['Sub Status'])
+
         st.markdown(
             f"""
             <div class="card">
-                <h4>Work Order #{obj['WO #']}</h4>
-                <p><strong>Item:</strong> {obj['Item']}</p>
-                <p><strong>Description:</strong> {obj['Description']}</p>
-                <p><strong>Quantity:</strong> {obj['Qty']}</p>
-                <p><strong>Name:</strong> {obj['Name']}</p>
-                <p><strong>Sales Order #:</strong> {obj['SO#']}</p>
-                <p><strong>Back Order:</strong> {obj['BO']}</p>
-                <p class="status"><strong>Status:</strong> {obj['WO Status']}</p>
-                <p class="sub-status"><strong>Sub Status:</strong> {obj['Sub Status']}</p>
-                <p><strong>Start Date:</strong> {obj['Start Date']}</p>
-                <p><strong>Completion Date:</strong> {obj['Completion Date']}</p>
+                <div style="display: flex; justify-content: space-between;">
+                    <p class="status">Status: {obj['WO Status']}</p>
+                    <p class="sub-status" style="background-color: {sub_status_color};">Sub Status: {obj['Sub Status']}</p>
+                </div>
+                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px;"></progress>
+                <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                    <div>
+                        <p><strong>Item:</strong> {obj['Item']}</p>
+                        <p><strong>Description:</strong> {obj['Description']}</p>
+                        <p><strong>Quantity:</strong> {obj['Qty']}</p>
+                        <p><strong>Name:</strong> {obj['Name']}</p>
+                    </div>
+                    <div>
+                        <p><strong>Sales Order #:</strong> {obj['SO#']}</p>
+                        <p><strong>Back Order:</strong> {obj['BO']}</p>
+                        <p><strong>Start Date:</strong> {obj['Start Date']}</p>
+                        <p><strong>Completion Date:</strong> {obj['Completion Date']}</p>
+                    </div>
+                </div>
                 <p><strong>Ship Via:</strong> {obj['Ship Via']}</p>
                 <p><strong>*Here?:</strong> {obj['*Here?']}</p>
             </div>
