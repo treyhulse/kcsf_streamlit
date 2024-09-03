@@ -55,7 +55,7 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
-@st.cache(suppress_st_warning=True)
+@st.cache_resource
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
