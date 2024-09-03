@@ -25,7 +25,6 @@ import logging
 from pymongo import MongoClient
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
 
@@ -37,7 +36,6 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-# Use st.cache_resource to cache the MongoDB client
 @st.cache_resource
 def get_mongo_client():
     try:
@@ -45,9 +43,9 @@ def get_mongo_client():
         connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
         client = MongoClient(connection_string, 
                              ssl=True,
-                             serverSelectionTimeoutMS=30000,
-                             connectTimeoutMS=30000,
-                             socketTimeoutMS=30000)
+                             serverSelectionTimeoutMS=60000,  # Increase server selection timeout
+                             connectTimeoutMS=60000,          # Increase connection timeout
+                             socketTimeoutMS=60000)           # Increase socket timeout
         logging.info("MongoDB connection successful")
         return client
     except Exception as e:
@@ -57,42 +55,28 @@ def get_mongo_client():
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
-        db = client['netsuite']  # Ensure the database name is correct
+        db = client['netsuite']
         collection = db[collection_name]
-        
+
         data = []
-        total_docs = collection.estimated_document_count()  # Get the total number of documents
-        progress_bar = st.progress(0)  # Initialize the progress bar
+        cursor = collection.find()
         
-        for i, doc in enumerate(collection.find()):
-            try:
-                # Process each document individually
-                processed_doc = {}
-                for key, value in doc.items():
-                    if isinstance(value, str):
-                        processed_doc[key] = value.encode('utf-8', 'ignore').decode('utf-8')
-                    else:
-                        processed_doc[key] = value
-                data.append(processed_doc)
-                
-                # Update the progress bar
-                progress_bar.progress((i + 1) / total_docs)
-                
-            except Exception as e:
-                logging.error(f"Skipping problematic document {doc.get('_id', 'Unknown ID')}: {e}")
-                continue  # Skip problematic document
+        for doc in cursor:
+            data.append(doc)
         
         df = pd.DataFrame(data)
-
-        # Remove the '_id' column if it exists
         if '_id' in df.columns:
-            df.drop(columns=['_id'], inplace=True)
-
-        logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
+            df.drop('_id', axis=1, inplace=True)
+        
         return df
+    except pymongo.errors.NetworkTimeout as e:
+        st.error("Network timeout occurred while fetching data. Please try again later.")
+        logging.error(f"Network timeout error: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame as a fallback
     except Exception as e:
-        logging.error(f"Error fetching data from collection {collection_name}: {e}")
-        raise
+        logging.error(f"Error fetching data: {e}")
+        st.error(f"An error occurred: {e}")
+        return pd.DataFrame()  # Return an empty DataFrame as a fallback
 
 def apply_global_filters(df):
     st.sidebar.header("Global Filters")
@@ -190,41 +174,6 @@ def apply_global_filters(df):
 
     return df
 
-def save_visualization(client, user_email, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        
-        chart_data = {
-            "name": chart_name,
-            "user": user_email,  # Store the user's email
-            "type": chart_type,
-            "x_column": x_column,
-            "y_column": y_column,
-            "color_column": color_column,
-            "chart_title": chart_title,
-            "x_label": x_label,
-            "y_label": y_label,
-            "created_at": datetime.utcnow()
-        }
-
-        charts_collection.insert_one(chart_data)
-        st.success(f"Visualization '{chart_name}' saved successfully by {user_email}.")
-    except Exception as e:
-        st.error(f"Failed to save visualization: {e}")
-        logging.error(f"Failed to save visualization: {e}")
-
-def load_visualizations(client):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        
-        return list(charts_collection.find())
-    except Exception as e:
-        st.error(f"Failed to load visualizations: {e}")
-        logging.error(f"Failed to load visualizations: {e}")
-        return []
-
 def create_visualizations(df, client):
     st.subheader("Create Your Own Visualizations")
 
@@ -301,127 +250,44 @@ def create_visualizations(df, client):
                                st.session_state.chart_details["x_label"], 
                                st.session_state.chart_details["y_label"])
 
-def display_saved_visualizations(client, df):
-    st.subheader("Load Saved Visualizations")
-
-    saved_visualizations = load_visualizations(client)
-    if not saved_visualizations:
-        st.warning("No saved visualizations found.")
-        return
-
-    chart_names = [viz['name'] for viz in saved_visualizations]
-    selected_chart = st.selectbox("Select Visualization to Load", chart_names)
-
-    if st.button("Load Visualization"):
-        selected_viz = next(viz for viz in saved_visualizations if viz['name'] == selected_chart)
-        st.write(f"Loading visualization: {selected_chart}")
-
-        fig = None
-        if selected_viz['type'] == "Bar":
-            fig = px.bar(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                         title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                         selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Line":
-            fig = px.line(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                          title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                          selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Scatter":
-            fig = px.scatter(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                             title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                             selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Histogram":
-            fig = px.histogram(df, x=selected_viz['x_column'], color=selected_viz['color_column'], 
-                               title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label']})
-        elif selected_viz['type'] == "Pie":
-            fig = px.pie(df, names=selected_viz['x_column'], values=selected_viz['y_column'], 
-                         title=selected_viz['chart_title'])
-
-        # Display the chart
-        if fig:
-            st.plotly_chart(fig)
-
-def display_selected_charts(client, df, page_name):
-    st.title(f"{page_name}")
-
-    db = client['netsuite']
-    pages_collection = db['pages']
-
-    page_config = pages_collection.find_one({"page_name": page_name})
-    if not page_config or not page_config.get("selected_charts"):
-        st.warning(f"No charts configured for {page_name}.")
-        return
-
-    saved_visualizations = load_visualizations(client)
-    selected_charts = page_config['selected_charts']
-
-    for chart_name in selected_charts:
-        chart = next((viz for viz in saved_visualizations if viz['name'] == chart_name), None)
-        if chart:
-            st.subheader(chart['chart_title'])
-            fig = None
-            if chart['type'] == "Bar":
-                fig = px.bar(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                             title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                             chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Line":
-                fig = px.line(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                              title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                              chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Scatter":
-                fig = px.scatter(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                                 title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                                 chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Histogram":
-                fig = px.histogram(df, x=chart['x_column'], color=chart['color_column'], 
-                                   title=chart['chart_title'], labels={chart['x_column']: chart['x_label']})
-            elif chart['type'] == "Pie":
-                fig = px.pie(df, names=chart['x_column'], values=chart['y_column'], title=chart['chart_title'])
-
-            # Display the chart
-            if fig:
-                st.plotly_chart(fig)
-
 def main():
     st.title("Data Visualization Tool")
 
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
 
-    # Load the 'salesLines' collection into a DataFrame
-    data = get_collection_data(client, 'salesLines')
+    # Display form and wait for submission
+    form_submitted = st.sidebar.button("Submit Query")
 
-    # Apply global filters
-    filtered_data = apply_global_filters(data)
+    if form_submitted:
+        # Load the 'salesLines' collection into a DataFrame
+        data = get_collection_data(client, 'salesLines')
 
-    # Check if DataFrame is empty after filtering
-    if filtered_data.empty:
-        st.warning("No data available for the selected filters.")
-    else:
-        st.write(f"Number of Rows: {filtered_data.shape[0]}")
+        # Apply global filters
+        filtered_data = apply_global_filters(data)
 
-        # Create visualizations with preview and save functionality
-        create_visualizations(filtered_data, client)
+        # Check if DataFrame is empty after filtering
+        if filtered_data.empty:
+            st.warning("No data available for the selected filters.")
+        else:
+            st.write(f"Number of Rows: {filtered_data.shape[0]}")
 
-        # Load and display saved visualizations
-        display_saved_visualizations(client, filtered_data)
+            # Create visualizations with preview and save functionality
+            create_visualizations(filtered_data, client)
 
-        # Optionally display selected charts from a specific page
-        # Uncomment the following line if you have page configurations
-        # display_selected_charts(client, filtered_data, "04_Sales")
+            # Collapsible section for the DataFrame with aggrid
+            with st.expander("View Data"):
+                gb = GridOptionsBuilder.from_dataframe(filtered_data)
+                gb.configure_pagination(paginationAutoPageSize=True)
+                gb.configure_side_bar()
+                grid_options = gb.build()
 
-        # Collapsible section for the DataFrame with aggrid
-        with st.expander("View Data"):
-            gb = GridOptionsBuilder.from_dataframe(filtered_data)
-            gb.configure_pagination(paginationAutoPageSize=True)
-            gb.configure_side_bar()
-            grid_options = gb.build()
-
-            AgGrid(
-                filtered_data, 
-                gridOptions=grid_options, 
-                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-                update_mode="MODEL_CHANGED"
-            )
+                AgGrid(
+                    filtered_data, 
+                    gridOptions=grid_options, 
+                    columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+                    update_mode="MODEL_CHANGED"
+                )
 
 if __name__ == "__main__":
     main()
