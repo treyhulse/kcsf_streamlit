@@ -103,6 +103,12 @@ def apply_global_filters(df):
     if 'All' not in selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
 
+    # Filter by Status
+    if 'Status' in df.columns:
+        statuses = df['Status'].unique().tolist()
+        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=statuses)
+        df = df[df['Status'].isin(selected_statuses)]
+
     # Ensure 'Ship Date (Admin)' is a datetime object
     if 'Ship Date (Admin)' in df.columns:
         df['Ship Date (Admin)'] = pd.to_datetime(df['Ship Date (Admin)'], errors='coerce')
@@ -111,7 +117,7 @@ def apply_global_filters(df):
         date_filter = st.sidebar.selectbox(
             "Filter by Ship Date (Admin)", 
             ["This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
-             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
+             "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month", "Custom"],
             index=0  # Default to "This Month"
         )
 
@@ -153,10 +159,19 @@ def apply_global_filters(df):
             first_day_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
             start_date = first_day_next_month
             end_date = (first_day_next_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        elif date_filter == "Custom":
+            start_date = st.sidebar.date_input("Start Date")
+            end_date = st.sidebar.date_input("End Date")
+
+            if start_date and not end_date:
+                st.sidebar.error("Select an end date")
+            elif end_date and not start_date:
+                st.sidebar.error("Select a start date")
 
         # Apply date filter
-        df = df[(df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) & 
-                (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))]
+        if start_date and end_date:
+            df = df[(df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) & 
+                    (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))]
 
     return df
 
