@@ -246,9 +246,9 @@ with col1:
 
 with col2:
     # Heatmap of Amount vs. Quantity
-    if 'Quantity' in sales_data.columns:
-        st.subheader('Heatmap of Amount vs. Quantity')
-        fig_heatmap = px.density_heatmap(sales_data, x='Quantity', y='Amount', title='Heatmap of Amount vs. Quantity')
+    if 'Days Open' in sales_data.columns:
+        st.subheader('Heatmap of Amount vs. Days Open')
+        fig_heatmap = px.density_heatmap(sales_data, x='Days Open', y='Amount', title='Heatmap of Amount vs. Days Open')
         st.plotly_chart(fig_heatmap)
     else:
         st.warning("Quantity column is missing. Please check the data.")
