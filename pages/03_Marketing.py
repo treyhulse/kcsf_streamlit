@@ -39,7 +39,7 @@ logging.basicConfig(
 )
 
 # Use st.cache_resource to cache the MongoDB client
-@st.cache_resource(suppress_st_warning=True)
+@st.cache_resource
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
