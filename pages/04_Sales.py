@@ -228,7 +228,6 @@ def main():
                 filtered_data, 
                 gridOptions=grid_options, 
                 columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-                theme="light",
                 update_mode="MODEL_CHANGED"
             )
 
