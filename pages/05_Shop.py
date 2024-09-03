@@ -129,25 +129,58 @@ def filter_data(data, status_filter, sub_status_filter, start_date_filter, end_d
 
     return filtered_data
 
+def get_status_color(status):
+    # Define colors for each status
+    status_colors = {
+        "Design/Eng.": "#007bff",  # Blue
+        "In Shop": "#28a745",  # Green
+        "To Be Scheduled": "#ffc107",  # Yellow
+        "Done": "#6c757d",  # Grey
+        "Metal Shop": "#17a2b8",  # Teal
+        "On Hold": "#dc3545"  # Red
+    }
+    return status_colors.get(status, "#6c757d")  # Default to grey
+
 def get_sub_status_color(sub_status):
-    if sub_status == "Ready for Shop":
-        return "#ffc107"  # Yellow
-    elif sub_status == "In Progress":
-        return "#17a2b8"  # Blue
-    elif sub_status == "Completed":
-        return "#28a745"  # Green
-    else:
-        return "#6c757d"  # Grey
+    sub_status_colors = {
+        "Ready for Shop": "#ffc107",  # Yellow
+        "Approval Drawing": "#6f42c1",  # Purple
+        "Pending Customer Approval": "#e83e8c",  # Pink
+        "Shop Drawing": "#20c997",  # Teal
+        "CNC Files": "#007bff",  # Blue
+        "Cut Sheet": "#795548",  # Brown
+        "Work Order": "#6c757d",  # Grey
+        "Cutting/EB": "#17a2b8",  # Light Blue
+        "Machining": "#28a745",  # Green
+        "Assembly (Stock)": "#e83e8c",  # Pink
+        "Assembly (CF)": "#adb5bd",  # Light Grey
+        "Packing": "#343a40",  # Dark Grey
+        "Done": "#6c757d",  # Grey
+        "TBD": "#ff851b",  # Orange
+        "BOM Drawing": "#6f42c1"  # Maroon
+    }
+    return sub_status_colors.get(sub_status, "#6c757d")  # Default to grey
 
 def get_progress(sub_status):
-    if sub_status == "Ready for Shop":
-        return 0.25
-    elif sub_status == "In Progress":
-        return 0.50
-    elif sub_status == "Completed":
-        return 1.0
-    else:
-        return 0.0
+    # Define progress percentages for sub-status
+    progress_values = {
+        "Ready for Shop": 0.25,
+        "Approval Drawing": 0.20,
+        "Pending Customer Approval": 0.30,
+        "Shop Drawing": 0.40,
+        "CNC Files": 0.50,
+        "Cut Sheet": 0.60,
+        "Work Order": 0.70,
+        "Cutting/EB": 0.75,
+        "Machining": 0.80,
+        "Assembly (Stock)": 0.85,
+        "Assembly (CF)": 0.90,
+        "Packing": 0.95,
+        "Done": 1.0,
+        "TBD": 0.10,
+        "BOM Drawing": 0.15
+    }
+    return progress_values.get(sub_status, 0.0)  # Default to 0%
 
 def display_object_cards(data):
     st.write("### Work Order Progress")
@@ -170,7 +203,6 @@ def display_object_cards(data):
     }
     .card .status {
         font-weight: bold;
-        color: #28a745;  /* Green for success */
     }
     .card .sub-status {
         font-weight: bold;
@@ -184,16 +216,17 @@ def display_object_cards(data):
     # Display each work order as a card
     for obj in data:
         progress = get_progress(obj['Sub Status'])
+        status_color = get_status_color(obj['WO Status'])
         sub_status_color = get_sub_status_color(obj['Sub Status'])
 
         st.markdown(
             f"""
             <div class="card">
                 <div style="display: flex; justify-content: space-between;">
-                    <p class="status">Status: {obj['WO Status']}</p>
+                    <p class="status" style="color: {status_color};">Status: {obj['WO Status']}</p>
                     <p class="sub-status" style="background-color: {sub_status_color};">Sub Status: {obj['Sub Status']}</p>
                 </div>
-                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px;"></progress>
+                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px; background-color: red;"></progress>
                 <div style="display: flex; justify-content: space-between; margin-top: 20px;">
                     <div>
                         <p><strong>Item:</strong> {obj['Item']}</p>
@@ -223,8 +256,10 @@ def main():
     collection_name = "workOrders"
 
     # Sidebar filters
-    status_options = ["All", "Metal Shop", "Painting", "Assembly"]
-    sub_status_options = ["All", "Ready for Shop", "In Progress", "Completed"]
+    status_options = ["All", "Design/Eng.", "In Shop", "To Be Scheduled", "Done", "Metal Shop", "On Hold"]
+    sub_status_options = ["All", "Ready for Shop", "Approval Drawing", "Pending Customer Approval", "Shop Drawing",
+                          "CNC Files", "Cut Sheet", "Work Order", "Cutting/EB", "Machining", "Assembly (Stock)",
+                          "Assembly (CF)", "Packing", "Done", "TBD", "BOM Drawing"]
     
     st.sidebar.header("Filters")
 
