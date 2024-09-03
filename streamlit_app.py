@@ -7,8 +7,8 @@ st.set_page_config(page_title="NetSuite Data Analytics",
 # Add the logo to the top of the sidebar
 st.sidebar.image("./assets/kcsf_red.png", use_column_width=True)
 
-# Rename the default app title to 'Home'
-st.sidebar.header("Home")
+# Rename the title to 'Home' in the sidebar
+st.sidebar.markdown("## Home")
 
 # Add a success message below the title in the sidebar
 st.sidebar.success("Select a report above.")
