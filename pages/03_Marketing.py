@@ -185,7 +185,41 @@ def apply_global_filters(df):
 
     return df
 
-def create_visualizations(df):
+def save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
+    try:
+        db = client['netsuite']
+        charts_collection = db['charts']
+        
+        chart_data = {
+            "name": chart_name,
+            "type": chart_type,
+            "x_column": x_column,
+            "y_column": y_column,
+            "color_column": color_column,
+            "chart_title": chart_title,
+            "x_label": x_label,
+            "y_label": y_label,
+            "created_at": datetime.utcnow()
+        }
+
+        charts_collection.insert_one(chart_data)
+        st.success(f"Visualization '{chart_name}' saved successfully.")
+    except Exception as e:
+        st.error(f"Failed to save visualization: {e}")
+        logging.error(f"Failed to save visualization: {e}")
+
+def load_visualizations(client):
+    try:
+        db = client['netsuite']
+        charts_collection = db['charts']
+        
+        return list(charts_collection.find())
+    except Exception as e:
+        st.error(f"Failed to load visualizations: {e}")
+        logging.error(f"Failed to load visualizations: {e}")
+        return []
+
+def create_visualizations(df, client):
     st.subheader("Create Your Own Visualizations")
 
     # Ensure that there are columns available for visualization
@@ -205,7 +239,12 @@ def create_visualizations(df):
     x_label = st.text_input("X-axis Label", x_column)
     y_label = st.text_input("Y-axis Label", y_column)
     color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
-    
+
+    # Save visualization configuration
+    chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
+    if st.button("Save Visualization"):
+        save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label)
+
     # Create the chart based on user input
     if chart_type == "Bar":
         fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
@@ -220,6 +259,35 @@ def create_visualizations(df):
     
     # Display the chart
     st.plotly_chart(fig)
+
+def display_saved_visualizations(client):
+    st.subheader("Load Saved Visualizations")
+
+    saved_visualizations = load_visualizations(client)
+    if not saved_visualizations:
+        st.warning("No saved visualizations found.")
+        return
+
+    chart_names = [viz['name'] for viz in saved_visualizations]
+    selected_chart = st.selectbox("Select Visualization to Load", chart_names)
+
+    if st.button("Load Visualization"):
+        selected_viz = next(viz for viz in saved_visualizations if viz['name'] == selected_chart)
+        st.write(f"Loading visualization: {selected_chart}")
+
+        fig = None
+        if selected_viz['type'] == "Bar":
+            fig = px.bar(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
+                         title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
+                         selected_viz['y_column']: selected_viz['y_label']})
+        elif selected_viz['type'] == "Line":
+            fig = px.line(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
+                          title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
+                          selected_viz['y_column']: selected_viz['y_label']})
+        # Add other chart types as needed
+
+        if fig:
+            st.plotly_chart(fig)
 
 def main():
     st.title("Data Visualization Tool")
@@ -238,9 +306,12 @@ def main():
         st.warning("No data available for the selected filters.")
     else:
         st.write(f"Number of Rows: {filtered_data.shape[0]}")
-        
+
         # Create visualizations
-        create_visualizations(filtered_data)
+        create_visualizations(filtered_data, client)
+
+        # Load and display saved visualizations
+        display_saved_visualizations(client)
 
         # Collapsible section for the DataFrame with aggrid
         with st.expander("View Data"):
