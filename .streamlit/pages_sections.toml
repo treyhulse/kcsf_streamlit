@@ -1,11 +1,9 @@
 [[pages]]
 path = "streamlit_app.py"
 name = "Home"
-icon = "📄"
 
 [[pages]]
-name = "Cool apps"
-icon = ":pig:"
+name = "Sales"
 is_section = true
 
 [[pages]]
@@ -19,7 +17,7 @@ name = "O2_Supply_Chain.py"
 icon = "📖"
 
 [[pages]]
-name = "Other apps"
+name = "Operations"
 icon = ":horse:"
 is_section = true
 
