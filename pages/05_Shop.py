@@ -78,7 +78,9 @@ def get_collection_data(client, collection_name):
                     "Start Date": doc.get("Start Date"),
                     "Completion Date": doc.get("Completion Date"),
                     "Ship Via": doc.get("Ship Via"),
-                    "*Here?": doc.get("*Here?")
+                    "*Here?": doc.get("*Here?"),
+                    "Shop Drawing (PDF)": doc.get("Shop Drawing (PDF)"),
+                    "Shop Drawing Link": doc.get("Shop Drawing Link")
                 }
                 data.append(obj)
                 
@@ -219,6 +221,10 @@ def display_object_cards(data):
         status_color = get_status_color(obj['WO Status'])
         sub_status_color = get_sub_status_color(obj['Sub Status'])
 
+        # Prepare the Shop Drawing link
+        shop_drawing_link = obj.get('Shop Drawing Link', None)
+        shop_drawing_pdf = obj.get('Shop Drawing (PDF)', 'Unavailable')
+
         st.markdown(
             f"""
             <div class="card">
@@ -243,6 +249,9 @@ def display_object_cards(data):
                 </div>
                 <p><strong>Ship Via:</strong> {obj['Ship Via']}</p>
                 <p><strong>*Here?:</strong> {obj['*Here?']}</p>
+                <p><strong>Shop Drawing:</strong> 
+                    {f'<a href="{shop_drawing_link}" target="_blank">{shop_drawing_pdf}</a>' if shop_drawing_link else 'Unavailable'}
+                </p>
             </div>
             """,
             unsafe_allow_html=True
