@@ -22,6 +22,30 @@ st.write(f"You have access to this page.")
 ################################################################################################
  
 
+import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = '03_Marketing.py'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+
+st.write(f"You have access to this page.")
+
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+ 
+
 import logging
 from pymongo import MongoClient
 import pandas as pd
@@ -177,28 +201,21 @@ def apply_global_filters(df):
                 st.sidebar.error("Select an end date")
             elif end_date and not start_date:
                 st.sidebar.error("Select a start date")
-            elif start_date and end_date:
-                if start_date > end_date:
-                    st.sidebar.error("Start date must be before end date")
 
-        # Apply date filter if start_date and end_date are defined
-        if 'start_date' in locals() and 'end_date' in locals():
-            if isinstance(start_date, datetime) or isinstance(start_date, pd.Timestamp):
-                start_date = pd.to_datetime(start_date).date()
-            if isinstance(end_date, datetime) or isinstance(end_date, pd.Timestamp):
-                end_date = pd.to_datetime(end_date).date()
-            df = df[(df['Date'].dt.date >= start_date) & (df['Date'].dt.date <= end_date)]
+        # Apply date filter
+        if start_date and end_date:
+            df = df[(df['Date'] >= pd.to_datetime(start_date)) & 
+                    (df['Date'] <= pd.to_datetime(end_date))]
 
     return df
 
-def save_visualization(client, user_email, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
+def save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label):
     try:
         db = client['netsuite']
         charts_collection = db['charts']
         
         chart_data = {
             "name": chart_name,
-            "user": user_email,  # Store the user's email
             "type": chart_type,
             "x_column": x_column,
             "y_column": y_column,
@@ -210,7 +227,7 @@ def save_visualization(client, user_email, chart_name, chart_type, x_column, y_c
         }
 
         charts_collection.insert_one(chart_data)
-        st.success(f"Visualization '{chart_name}' saved successfully by {user_email}.")
+        st.success(f"Visualization '{chart_name}' saved successfully.")
     except Exception as e:
         st.error(f"Failed to save visualization: {e}")
         logging.error(f"Failed to save visualization: {e}")
@@ -234,75 +251,40 @@ def create_visualizations(df, client):
         st.warning("Not enough data to create visualizations.")
         return
 
-    # Initialize session state variables for chart details
-    if 'chart_details' not in st.session_state:
-        st.session_state.chart_details = {}
+    # Select columns for X and Y axes
+    x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
+    y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
 
-    # Form for visualization creation
-    with st.form(key='visualization_form'):
-        # Select columns for X and Y axes
-        x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
-        y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
+    # Select the type of chart
+    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
 
-        # Select the type of chart
-        chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
+    # Additional customizations
+    chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
+    x_label = st.text_input("X-axis Label", x_column)
+    y_label = st.text_input("Y-axis Label", y_column)
+    color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
 
-        # Additional customizations
-        chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
-        x_label = st.text_input("X-axis Label", x_column)
-        y_label = st.text_input("Y-axis Label", y_column)
-        color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
+    # Save visualization configuration
+    chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
+    if st.button("Save Visualization"):
+        save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label)
 
-        # Preview button
-        preview_button = st.form_submit_button("Preview Visualization")
+    # Create the chart based on user input
+    if chart_type == "Bar":
+        fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+    elif chart_type == "Line":
+        fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+    elif chart_type == "Scatter":
+        fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+    elif chart_type == "Histogram":
+        fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
+    elif chart_type == "Pie":
+        fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
+    
+    # Display the chart
+    st.plotly_chart(fig)
 
-    # If the user clicks "Preview Visualization"
-    if preview_button:
-        # Store the chart details in session state to retain data after preview
-        st.session_state.chart_details = {
-            "chart_type": chart_type,
-            "x_column": x_column,
-            "y_column": y_column,
-            "color_column": color_column,
-            "chart_title": chart_title,
-            "x_label": x_label,
-            "y_label": y_label
-        }
-
-        # Create the chart based on user input
-        fig = None
-        if chart_type == "Bar":
-            fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-        elif chart_type == "Line":
-            fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-        elif chart_type == "Scatter":
-            fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
-        elif chart_type == "Histogram":
-            fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
-        elif chart_type == "Pie":
-            fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
-
-        # Display the chart
-        if fig:
-            st.plotly_chart(fig)
-
-        # Provide option to save the visualization
-        with st.form(key='save_visualization_form'):
-            chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
-            save_button = st.form_submit_button("Save Visualization")
-
-        if save_button:
-            user_email = st.session_state.get("user_email", "unknown_user@example.com")  # Replace with actual user email retrieval
-            save_visualization(client, user_email, chart_name, 
-                               st.session_state.chart_details["chart_type"], 
-                               st.session_state.chart_details["x_column"], 
-                               st.session_state.chart_details["y_column"], 
-                               st.session_state.chart_details["color_column"], 
-                               st.session_state.chart_details["chart_title"], 
-                               st.session_state.chart_details["x_label"], 
-                               st.session_state.chart_details["y_label"])
-
-def display_saved_visualizations(client, df):
+def display_saved_visualizations(client):
     st.subheader("Load Saved Visualizations")
 
     saved_visualizations = load_visualizations(client)
@@ -326,61 +308,10 @@ def display_saved_visualizations(client, df):
             fig = px.line(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
                           title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
                           selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Scatter":
-            fig = px.scatter(df, x=selected_viz['x_column'], y=selected_viz['y_column'], color=selected_viz['color_column'], 
-                             title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label'], 
-                             selected_viz['y_column']: selected_viz['y_label']})
-        elif selected_viz['type'] == "Histogram":
-            fig = px.histogram(df, x=selected_viz['x_column'], color=selected_viz['color_column'], 
-                               title=selected_viz['chart_title'], labels={selected_viz['x_column']: selected_viz['x_label']})
-        elif selected_viz['type'] == "Pie":
-            fig = px.pie(df, names=selected_viz['x_column'], values=selected_viz['y_column'], 
-                         title=selected_viz['chart_title'])
+        # Add other chart types as needed
 
-        # Display the chart
         if fig:
             st.plotly_chart(fig)
-
-def display_selected_charts(client, df, page_name):
-    st.title(f"{page_name}")
-
-    db = client['netsuite']
-    pages_collection = db['pages']
-
-    page_config = pages_collection.find_one({"page_name": page_name})
-    if not page_config or not page_config.get("selected_charts"):
-        st.warning(f"No charts configured for {page_name}.")
-        return
-
-    saved_visualizations = load_visualizations(client)
-    selected_charts = page_config['selected_charts']
-
-    for chart_name in selected_charts:
-        chart = next((viz for viz in saved_visualizations if viz['name'] == chart_name), None)
-        if chart:
-            st.subheader(chart['chart_title'])
-            fig = None
-            if chart['type'] == "Bar":
-                fig = px.bar(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                             title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                             chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Line":
-                fig = px.line(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                              title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                              chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Scatter":
-                fig = px.scatter(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
-                                 title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
-                                 chart['y_column']: chart['y_label']})
-            elif chart['type'] == "Histogram":
-                fig = px.histogram(df, x=chart['x_column'], color=chart['color_column'], 
-                                   title=chart['chart_title'], labels={chart['x_column']: chart['x_label']})
-            elif chart['type'] == "Pie":
-                fig = px.pie(df, names=chart['x_column'], values=chart['y_column'], title=chart['chart_title'])
-
-            # Display the chart
-            if fig:
-                st.plotly_chart(fig)
 
 def main():
     st.title("Data Visualization Tool")
@@ -388,7 +319,7 @@ def main():
     # Connect to MongoDB using the utility function
     client = get_mongo_client()
 
-    # Load the 'salesLines' collection into a DataFrame
+    # Load the 'sales' collection into a DataFrame
     data = get_collection_data(client, 'salesLines')
 
     # Apply global filters
@@ -400,15 +331,11 @@ def main():
     else:
         st.write(f"Number of Rows: {filtered_data.shape[0]}")
 
-        # Create visualizations with preview and save functionality
+        # Create visualizations
         create_visualizations(filtered_data, client)
 
         # Load and display saved visualizations
-        display_saved_visualizations(client, filtered_data)
-
-        # Optionally display selected charts from a specific page
-        # Uncomment the following line if you have page configurations
-        # display_selected_charts(client, filtered_data, "04_Sales")
+        display_saved_visualizations(client)
 
         # Collapsible section for the DataFrame with aggrid
         with st.expander("View Data"):
