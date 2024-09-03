@@ -32,7 +32,7 @@ from dateutil.relativedelta import relativedelta
 logging.basicConfig(
     filename="netsuite_page.log", 
     filemode="a", 
-    format="%(asctime)s - %(levelname)s - %(message)s", 
+    format="%(asctime)s - %(levellevelname)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -145,23 +145,23 @@ def get_status_color(status):
 
 def get_sub_status_color(sub_status):
     sub_status_colors = {
-        "Ready for Shop": "#ffc107",  # Yellow
-        "Approval Drawing": "#6f42c1",  # Purple
-        "Pending Customer Approval": "#e83e8c",  # Pink
-        "Shop Drawing": "#20c997",  # Teal
-        "CNC Files": "#007bff",  # Blue
-        "Cut Sheet": "#795548",  # Brown
-        "Work Order": "#6c757d",  # Grey
-        "Cutting/EB": "#17a2b8",  # Light Blue
-        "Machining": "#28a745",  # Green
-        "Assembly (Stock)": "#e83e8c",  # Pink
-        "Assembly (CF)": "#adb5bd",  # Light Grey
-        "Packing": "#343a40",  # Dark Grey
-        "Done": "#6c757d",  # Grey
-        "TBD": "#ff851b",  # Orange
-        "BOM Drawing": "#6f42c1"  # Maroon
+        "Ready for Shop": "#ff9999",  # Light Red
+        "Approval Drawing": "#ff6666",  # Medium Red
+        "Pending Customer Approval": "#ff3333",  # Darker Red
+        "Shop Drawing": "#ff0000",  # Red
+        "CNC Files": "#cc0000",  # Dark Red
+        "Cut Sheet": "#990000",  # Darker Red
+        "Work Order": "#660000",  # Very Dark Red
+        "Cutting/EB": "#ff6666",  # Medium Red
+        "Machining": "#cc0000",  # Dark Red
+        "Assembly (Stock)": "#ff3333",  # Darker Red
+        "Assembly (CF)": "#990000",  # Darker Red
+        "Packing": "#660000",  # Very Dark Red
+        "Done": "#990000",  # Darker Red
+        "TBD": "#cc0000",  # Dark Red
+        "BOM Drawing": "#ff0000"  # Red
     }
-    return sub_status_colors.get(sub_status, "#6c757d")  # Default to grey
+    return sub_status_colors.get(sub_status, "#660000")  # Default to a very dark red
 
 def get_progress(sub_status):
     # Define progress percentages for sub-status
@@ -232,7 +232,7 @@ def display_object_cards(data):
                     <p class="status" style="color: {status_color};">Status: {obj['WO Status']}</p>
                     <p class="sub-status" style="background-color: {sub_status_color};">Sub Status: {obj['Sub Status']}</p>
                 </div>
-                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px; background-color: red;"></progress>
+                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px; background-color: #e3342f;"></progress>
                 <div style="display: flex; justify-content: space-between; margin-top: 20px;">
                     <div>
                         <p><strong>Item:</strong> {obj['Item']}</p>
