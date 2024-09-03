@@ -6,4 +6,4 @@ requests-oauthlib
 matplotlib
 openai
 pymongo
-st_pages
+st-pages
