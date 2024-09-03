@@ -229,23 +229,48 @@ def create_visualizations(df, client):
         st.warning("Not enough data to create visualizations.")
         return
 
-    # Select columns for X and Y axes
-    x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
-    y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
+    # Form for visualization creation
+    with st.form(key='visualization_form'):
+        # Select columns for X and Y axes
+        x_column = st.selectbox("Select X-axis column", df.columns, index=df.columns.get_loc("Date") if "Date" in df.columns else 0)
+        y_column = st.selectbox("Select Y-axis column", df.columns, index=df.columns.get_loc("Amount") if "Amount" in df.columns else 0)
 
-    # Select the type of chart
-    chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
+        # Select the type of chart
+        chart_type = st.selectbox("Select chart type", ["Bar", "Line", "Scatter", "Histogram", "Pie"])
 
-    # Additional customizations
-    chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
-    x_label = st.text_input("X-axis Label", x_column)
-    y_label = st.text_input("Y-axis Label", y_column)
-    color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
+        # Additional customizations
+        chart_title = st.text_input("Chart Title", f"{chart_type} of {y_column} vs {x_column}")
+        x_label = st.text_input("X-axis Label", x_column)
+        y_label = st.text_input("Y-axis Label", y_column)
+        color_column = st.selectbox("Color By", [None] + list(df.columns), index=0)
 
-    # Save visualization configuration
-    chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
-    if st.button("Save Visualization"):
-        save_visualization(client, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label)
+        # Preview button
+        preview_button = st.form_submit_button("Preview Visualization")
+
+    # If the user clicks "Preview Visualization"
+    if preview_button:
+        # Create the chart based on user input
+        fig = None
+        if chart_type == "Bar":
+            fig = px.bar(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+        elif chart_type == "Line":
+            fig = px.line(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+        elif chart_type == "Scatter":
+            fig = px.scatter(df, x=x_column, y=y_column, color=color_column, title=chart_title, labels={x_column: x_label, y_column: y_label})
+        elif chart_type == "Histogram":
+            fig = px.histogram(df, x=x_column, color=color_column, title=chart_title, labels={x_column: x_label})
+        elif chart_type == "Pie":
+            fig = px.pie(df, names=x_column, values=y_column, title=chart_title)
+        
+        # Display the chart
+        st.plotly_chart(fig)
+
+        # Save visualization configuration
+        chart_name = st.text_input("Save Visualization As", f"{chart_type}_{x_column}_{y_column}")
+        if st.button("Save Visualization"):
+            user_email = st.session_state.get("user_email", "unknown_user@example.com")  # Example of how you might retrieve the user's email
+            save_visualization(client, user_email, chart_name, chart_type, x_column, y_column, color_column, chart_title, x_label, y_label)
+
 
     # Create the chart based on user input
     if chart_type == "Bar":
