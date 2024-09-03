@@ -26,6 +26,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 import streamlit as st
+from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode
 
 # Configure logging
 logging.basicConfig(
@@ -216,9 +217,20 @@ def main():
         # Create visualizations
         create_visualizations(filtered_data)
 
-        # Collapsible section for the DataFrame
+        # Collapsible section for the DataFrame with aggrid
         with st.expander("View Data"):
-            st.dataframe(filtered_data)
+            gb = GridOptionsBuilder.from_dataframe(filtered_data)
+            gb.configure_pagination(paginationAutoPageSize=True)
+            gb.configure_side_bar()
+            grid_options = gb.build()
+
+            AgGrid(
+                filtered_data, 
+                gridOptions=grid_options, 
+                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+                theme="blue",
+                update_mode="MODEL_CHANGED"
+            )
 
 if __name__ == "__main__":
     main()
