@@ -276,7 +276,6 @@ with st.expander("View Data Table"):
         data_return_mode='AS_INPUT', 
         update_mode='MODEL_CHANGED', 
         fit_columns_on_grid_load=True,
-        theme='light',  # Use a valid theme
         enable_enterprise_modules=True,
         height=400, 
         width='100%',
