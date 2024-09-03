@@ -14,7 +14,7 @@ name = "Shipping Report"
 icon = ":material/history:"
 
 [[pages]]
-path = "02_Supply_Chain.py"
+path = "./pages/02_Supply_Chain.py"
 name = "O2_Supply_Chain.py"
 icon = "📖"
 
@@ -24,9 +24,9 @@ icon = ":horse:"
 is_section = true
 
 [[pages]]
-path = "03_Marketing.py"
+path = "./pages/03_Marketing.py"
 
 [[pages]]
-path = "04_Sales.py"
+path = "./pages/04_Sales.py"
 name = "Sales"
 icon = "🧰"
