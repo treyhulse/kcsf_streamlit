@@ -51,6 +51,7 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
+@st.cache(ttl=600)  # Cache the data fetched from MongoDB with a time-to-live of 10 minutes
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
