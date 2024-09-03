@@ -26,6 +26,7 @@ import logging
 from pymongo import MongoClient
 import streamlit as st
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 # Configure logging
 logging.basicConfig(
@@ -90,6 +91,28 @@ def get_collection_data(client, collection_name):
     except Exception as e:
         logging.error(f"Error fetching data from collection {collection_name}: {e}")
         raise
+
+def get_date_range(option):
+    today = datetime.today()
+    
+    if option == "Today":
+        start_date = today
+        end_date = today
+    elif option == "This Week":
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+    elif option == "This Month":
+        start_date = today.replace(day=1)
+        end_date = today.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
+    elif option == "This Quarter":
+        quarter = (today.month - 1) // 3 + 1
+        start_date = datetime(today.year, 3 * quarter - 2, 1)
+        end_date = (start_date + relativedelta(months=3)) - timedelta(days=1)
+    else:
+        start_date = today.replace(day=1)
+        end_date = today.replace(day=1) + relativedelta(months=1) - timedelta(days=1)
+    
+    return start_date, end_date
 
 def filter_data(data, status_filter, sub_status_filter, start_date_filter, end_date_filter):
     filtered_data = []
@@ -169,18 +192,19 @@ def main():
     # Sidebar filters
     status_options = ["All", "Metal Shop", "Painting", "Assembly"]
     sub_status_options = ["All", "Ready for Shop", "In Progress", "Completed"]
-
+    
     st.sidebar.header("Filters")
 
     status_filter = st.sidebar.selectbox("Status", status_options, index=0)
     sub_status_filter = st.sidebar.selectbox("Sub Status", sub_status_options, index=0)
 
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday())  # Start of the current week
-    end_of_week = start_of_week + timedelta(days=6)  # End of the current week
+    date_options = ["Today", "This Week", "This Month", "This Quarter"]
+    
+    start_date_option = st.sidebar.selectbox("Start Date Range", date_options, index=2)
+    completion_date_option = st.sidebar.selectbox("Completion Date Range", date_options, index=2)
 
-    start_date_filter = st.sidebar.date_input("Start Date", value=start_of_week)
-    end_date_filter = st.sidebar.date_input("Completion Date", value=end_of_week)
+    start_date_filter, _ = get_date_range(start_date_option)
+    _, end_date_filter = get_date_range(completion_date_option)
 
     if st.button("Fetch and Display Work Orders"):
         data = get_collection_data(client, collection_name)
