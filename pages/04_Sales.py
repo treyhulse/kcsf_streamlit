@@ -184,6 +184,8 @@ def apply_global_filters(df):
 
     return df
 
+########################################################################################################################################################################
+
 def calculate_kpis(df):
     # Total Revenue for all 'Billed' orders
     total_revenue = df[df['Status'] == 'Billed']['Amount'].sum()
@@ -245,13 +247,13 @@ with col1:
     st.plotly_chart(fig_bar)
 
 with col2:
-    # Heatmap of Amount vs. Quantity
-    if 'Quantity' in sales_data.columns:
-        st.subheader('Heatmap of Amount vs. Quantity')
-        fig_heatmap = px.density_heatmap(sales_data, x='Quantity', y='Amount', title='Heatmap of Amount vs. Quantity')
+    # Heatmap of Days Open vs. Amount
+    if 'Days Open' in sales_data.columns:
+        st.subheader('Heatmap of Days Open vs. Amount')
+        fig_heatmap = px.density_heatmap(sales_data, x='Days Open', y='Amount', title='Heatmap of Days Open vs. Amount')
         st.plotly_chart(fig_heatmap)
     else:
-        st.warning("Quantity column is missing. Please check the data.")
+        st.warning("Days Open column is missing. Please check the data.")
 
     # Pipeline of Steps Based on 'Status'
     st.subheader('Pipeline by Status')
@@ -274,7 +276,7 @@ with st.expander("View Data Table"):
         data_return_mode='AS_INPUT', 
         update_mode='MODEL_CHANGED', 
         fit_columns_on_grid_load=True,
-        theme='blue',  # Add theme color to the table
+        theme='light',  # Use a valid theme
         enable_enterprise_modules=True,
         height=400, 
         width='100%',
