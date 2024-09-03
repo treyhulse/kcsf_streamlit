@@ -205,6 +205,10 @@ def calculate_kpis(df):
 # Main Streamlit app
 st.title('Sales Dashboard')
 
+# MongoDB Connection
+client = get_mongo_client()
+sales_data = get_collection_data(client, 'sales')
+
 # Apply global filters
 sales_data = apply_global_filters(sales_data)
 
@@ -230,13 +234,18 @@ with col4:
 with col5:
     st.metric(label="Average Days Open", value=f"{average_days_open:.2f} days")
 
-# Line chart of Average Order Volume by Sales Rep over Time
+# Scatterplot of Average Order Volume by Sales Rep over Time
 st.subheader('Average Order Volume by Sales Rep Over Time')
 
 # Ensure the 'Date' column is available and not empty
 if 'Date' in sales_data.columns and not sales_data['Date'].isnull().all():
     sales_data['Month'] = sales_data['Date'].dt.to_period('M').dt.to_timestamp()  # Group by month
 
+    # Debugging: Check data types and content
+    st.write(sales_data[['Month', 'Sales Rep', 'Amount']].head())
+    st.write(sales_data.dtypes)
+
+    # Handle any missing or NaN values
     avg_order_volume_by_rep = (
         sales_data.groupby(['Month', 'Sales Rep'])['Amount']
         .mean()
@@ -244,18 +253,23 @@ if 'Date' in sales_data.columns and not sales_data['Date'].isnull().all():
         .rename(columns={'Amount': 'Average Order Volume'})
     )
 
-    fig_line = px.line(
-        avg_order_volume_by_rep,
-        x='Month',
-        y='Average Order Volume',
-        color='Sales Rep',
+    # Debugging: Check grouped data
+    st.write(avg_order_volume_by_rep.head())
+
+    fig_scatter = px.scatter(
+        avg_order_volume_by_rep, 
+        x='Month', 
+        y='Average Order Volume', 
+        color='Sales Rep', 
         title='Average Order Volume by Sales Rep Over Time',
+        line_group='Sales Rep',
         markers=True
     )
 
-    st.plotly_chart(fig_line)
+    fig_scatter.update_traces(mode='lines+markers')
+    st.plotly_chart(fig_scatter)
 else:
-    st.warning("No valid date data available for creating the line chart.")
+    st.warning("No valid date data available for creating the scatterplot.")
 
 # Layout with columns for other charts
 col1, col2 = st.columns(2)
