@@ -1,0 +1,33 @@
+[[pages]]
+path = "example_one.py"
+name = "st-pages"
+icon = "📄"
+
+[[pages]]
+name = "Cool apps"
+icon = ":pig:"
+is_section = true
+
+[[pages]]
+path = "example_two.py"
+name = "Example Two"
+icon = ":material/history:"
+
+[[pages]]
+path = "example_four.py"
+name = "Try hiding pages"
+icon = "📖"
+
+[[pages]]
+name = "Other apps"
+icon = ":horse:"
+is_section = true
+
+[[pages]]
+path = "example_three.py"
+
+[[pages]]
+path = "example_five.py"
+name = "Example Five"
+icon = "🧰"
+url_path = "a_very_long_page_title"
