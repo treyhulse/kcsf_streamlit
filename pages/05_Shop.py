@@ -32,7 +32,7 @@ from dateutil.relativedelta import relativedelta
 logging.basicConfig(
     filename="netsuite_page.log", 
     filemode="a", 
-    format="%(asctime)s - %(levellevelname)s - %(message)s", 
+    format="%(asctime)s - %(levelname)s - %(message)s", 
     level=logging.DEBUG
 )
 
@@ -131,38 +131,6 @@ def filter_data(data, status_filter, sub_status_filter, start_date_filter, end_d
 
     return filtered_data
 
-def get_status_color(status):
-    # Define colors for each status
-    status_colors = {
-        "Design/Eng.": "#007bff",  # Blue
-        "In Shop": "#28a745",  # Green
-        "To Be Scheduled": "#ffc107",  # Yellow
-        "Done": "#6c757d",  # Grey
-        "Metal Shop": "#17a2b8",  # Teal
-        "On Hold": "#dc3545"  # Red
-    }
-    return status_colors.get(status, "#6c757d")  # Default to grey
-
-def get_sub_status_color(sub_status):
-    sub_status_colors = {
-        "Ready for Shop": "#ff9999",  # Light Red
-        "Approval Drawing": "#ff6666",  # Medium Red
-        "Pending Customer Approval": "#ff3333",  # Darker Red
-        "Shop Drawing": "#ff0000",  # Red
-        "CNC Files": "#cc0000",  # Dark Red
-        "Cut Sheet": "#990000",  # Darker Red
-        "Work Order": "#660000",  # Very Dark Red
-        "Cutting/EB": "#ff6666",  # Medium Red
-        "Machining": "#cc0000",  # Dark Red
-        "Assembly (Stock)": "#ff3333",  # Darker Red
-        "Assembly (CF)": "#990000",  # Darker Red
-        "Packing": "#660000",  # Very Dark Red
-        "Done": "#990000",  # Darker Red
-        "TBD": "#cc0000",  # Dark Red
-        "BOM Drawing": "#ff0000"  # Red
-    }
-    return sub_status_colors.get(sub_status, "#660000")  # Default to a very dark red
-
 def get_progress(sub_status):
     # Define progress percentages for sub-status
     progress_values = {
@@ -196,6 +164,7 @@ def display_object_cards(data):
         padding: 20px;
         margin-bottom: 20px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
     }
     .card h4 {
         margin-top: 0;
@@ -203,36 +172,30 @@ def display_object_cards(data):
     .card p {
         margin: 5px 0;
     }
-    .card .status {
-        font-weight: bold;
-    }
-    .card .sub-status {
-        font-weight: bold;
-        padding: 5px;
-        border-radius: 4px;
-    }
     </style>
     """
     st.markdown(card_css, unsafe_allow_html=True)
 
-    # Display each work order as a card
-    for obj in data:
+    # Display each work order as a selectable card
+    selected_index = None
+    for index, obj in enumerate(data):
         progress = get_progress(obj['Sub Status'])
-        status_color = get_status_color(obj['WO Status'])
-        sub_status_color = get_sub_status_color(obj['Sub Status'])
 
         # Prepare the Shop Drawing link
         shop_drawing_link = obj.get('Shop Drawing Link', None)
         shop_drawing_pdf = obj.get('Shop Drawing (PDF)', 'Unavailable')
 
+        if st.checkbox(f"Select Work Order #{obj['WO #']}", key=index):
+            selected_index = index
+        
         st.markdown(
             f"""
             <div class="card">
                 <div style="display: flex; justify-content: space-between;">
-                    <p class="status" style="color: {status_color};">Status: {obj['WO Status']}</p>
-                    <p class="sub-status" style="background-color: {sub_status_color};">Sub Status: {obj['Sub Status']}</p>
+                    <p>Status: {obj['WO Status']}</p>
+                    <p>Sub Status: {obj['Sub Status']}</p>
                 </div>
-                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px; background-color: #e3342f;"></progress>
+                <progress value="{progress}" max="1.0" style="width: 100%; height: 20px;"></progress>
                 <div style="display: flex; justify-content: space-between; margin-top: 20px;">
                     <div>
                         <p><strong>Item:</strong> {obj['Item']}</p>
@@ -256,6 +219,9 @@ def display_object_cards(data):
             """,
             unsafe_allow_html=True
         )
+
+    if selected_index is not None:
+        st.write(f"Selected Work Order: {data[selected_index]['WO #']}")
 
 # Streamlit page layout
 def main():
