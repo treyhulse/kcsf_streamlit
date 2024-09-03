@@ -50,7 +50,7 @@ def get_mongo_client():
 
 def get_collection_data(client):
     db = client['netsuite']
-    collection = db['salesLines']
+    collection = db['sales']
     data = pd.DataFrame(list(collection.find()))
     if '_id' in data.columns:
         data.drop('_id', axis=1, inplace=True)
@@ -172,12 +172,12 @@ def main():
 
     client = get_mongo_client()
 
-    # Load the 'salesLines' collection into a DataFrame and apply filters
+    # Load the 'sales' collection into a DataFrame and apply filters
     data = get_collection_data(client)
     filtered_data = apply_global_filters(data)
 
     # Show the first 5 rows of the filtered data
-    st.write(f"First 5 rows of the filtered `salesLines` collection:")
+    st.write(f"First 5 rows of the filtered `sales` collection:")
     st.dataframe(filtered_data.head(5))
 
     # Proceed if there is data after filtering
