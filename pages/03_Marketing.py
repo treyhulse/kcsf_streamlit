@@ -23,6 +23,7 @@ def load_filtered_data(collection_name, batch_size=100):
     
     # Query to filter by date (This Month) and status (Billed)
     query = {
+        "Date": {"$gte": first_day_of_month, "$lt": today + timedelta(days=1)},
         "Status": "Billed"
     }
     
@@ -59,6 +60,13 @@ def save_chart(client, user_email, chart_config):
     }
     charts_collection.insert_one(chart_data)
     st.success("Chart configuration saved successfully!")
+
+# Function to capture user email from st.experimental_user
+def capture_user_email():
+    user_info = st.experimental_user
+    if user_info:
+        return user_info.get('email')
+    return None
 
 # Function to apply additional filters after pre-applied ones
 def apply_filters(df):
@@ -155,20 +163,23 @@ def main():
                 st.plotly_chart(fig)
                 
                 # Save the chart configuration
-                user_email = st.secrets["user_email"]  # Assuming user email is in secrets
-                chart_config = {
-                    "collection_name": "sales",
-                    "x_column": x_column,
-                    "y_column": y_column,
-                    "color_column": color_column,
-                    "chart_type": chart_type,
-                    "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
-                    "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
-                    "selected_types": selected_types if 'Type' in df_filtered.columns else None,
-                    "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
-                    "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
-                }
-                save_chart(client, user_email, chart_config)
+                user_email = capture_user_email()  # Get the user email using the capture_user_email function
+                if user_email:
+                    chart_config = {
+                        "collection_name": "sales",
+                        "x_column": x_column,
+                        "y_column": y_column,
+                        "color_column": color_column,
+                        "chart_type": chart_type,
+                        "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
+                        "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
+                        "selected_types": selected_types if 'Type' in df_filtered.columns else None,
+                        "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
+                        "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
+                    }
+                    save_chart(client, user_email, chart_config)
+                else:
+                    st.error("Unable to capture user email.")
 
 if __name__ == "__main__":
     main()
