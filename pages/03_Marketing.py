@@ -4,24 +4,33 @@ import plotly.express as px
 from pymongo import MongoClient
 from datetime import datetime
 
-# MongoDB connection (not cached)
+# MongoDB connection with increased timeout values
 def get_mongo_client():
     connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
-    client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=30000, connectTimeoutMS=30000, socketTimeoutMS=30000)
+    client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
     return client
 
-# Cache only the data, not the MongoDB client
-@st.cache_data
-def load_data(collection_name):
-    client = get_mongo_client()  # Create MongoClient inside the function
+# Function to get paginated data from MongoDB in batches to avoid timeouts
+def load_data_in_batches(collection_name, batch_size=100):
+    client = get_mongo_client()
     db = client['netsuite']
     collection = db[collection_name]
-    data = pd.DataFrame(list(collection.find()))
     
-    if '_id' in data.columns:
-        data.drop(columns=['_id'], inplace=True)
+    data = []
+    progress_bar = st.progress(0)
     
-    return data
+    total_docs = collection.estimated_document_count()  # Get the total number of documents
+    cursor = collection.find().batch_size(batch_size)  # Use batch_size to control data loading
+
+    for i, doc in enumerate(cursor):
+        data.append(doc)
+        progress_bar.progress((i + 1) / total_docs)  # Update progress bar
+
+    df = pd.DataFrame(data)
+    if '_id' in df.columns:
+        df.drop(columns=['_id'], inplace=True)
+
+    return df
 
 # Save visualization config to MongoDB
 def save_chart(client, user_email, chart_config):
@@ -67,10 +76,11 @@ def apply_filters(df):
     return df
 
 # Main function
-@st.cache_data
 def main():
-    # Load and cache the data from 'salesLines'
-    df = load_data('salesLines')
+    st.title("Marketing Dashboard")
+
+    # Load data in batches to avoid timeout issues
+    df = load_data_in_batches('salesLines')
 
     # Apply global filters
     df_filtered = apply_filters(df)
