@@ -49,20 +49,23 @@ def render_dashboard(client, dashboard_name):
                     chart_config = chart['chart_config']
                     st.subheader(chart_config['chart_title'])
                     
-                    # Create a chart based on its saved configuration
-                    fig = None
-                    if chart_config['chart_type'] == "Bar":
-                        fig = px.bar(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
-                    elif chart_config['chart_type'] == "Line":
-                        fig = px.line(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
-                    elif chart_config['chart_type'] == "Scatter":
-                        fig = px.scatter(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
-                    elif chart_config['chart_type'] == "Pie":
-                        fig = px.pie(chart_config['data'], names=chart_config['x_column'], values=chart_config['y_column'])
-                    
-                    # Render the chart
-                    if fig:
-                        st.plotly_chart(fig)
+                    # Check if 'data' exists in chart_config
+                    if 'data' in chart_config:
+                        fig = None
+                        if chart_config['chart_type'] == "Bar":
+                            fig = px.bar(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
+                        elif chart_config['chart_type'] == "Line":
+                            fig = px.line(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
+                        elif chart_config['chart_type'] == "Scatter":
+                            fig = px.scatter(chart_config['data'], x=chart_config['x_column'], y=chart_config['y_column'], color=chart_config['color_column'])
+                        elif chart_config['chart_type'] == "Pie":
+                            fig = px.pie(chart_config['data'], names=chart_config['x_column'], values=chart_config['y_column'])
+                        
+                        # Render the chart if the figure is created
+                        if fig:
+                            st.plotly_chart(fig)
+                    else:
+                        st.warning(f"No data found for chart: {chart_config['chart_title']}")
                 
                 chart_count += 1
 

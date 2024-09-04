@@ -52,44 +52,66 @@ def delete_dashboard(client, dashboard_name):
     dashboards_collection.delete_one({"dashboard_name": dashboard_name})
     st.success(f"Dashboard '{dashboard_name}' deleted successfully!")
 
-# Main function to setup dashboard creation and chart assignment
+# Main function to setup dashboard creation, update, and deletion
 def main():
     st.title("Dashboard Setup")
     
     client = get_mongo_client()
-    
-    # Step 1: Create or Update Dashboard
-    st.subheader("Create or Update Dashboard")
-    
-    dashboard_name = st.text_input("Dashboard Name")
-    
-    # Step 2: Show all available charts to assign to the dashboard
-    charts = get_all_charts(client)
-    
-    if charts:
-        # Check if chart_config and chart_title exist
-        chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
-        selected_charts = st.multiselect("Select Charts to Add to Dashboard", chart_names)
+
+    # Expandable section for creating a dashboard
+    with st.expander("Create New Dashboard"):
+        st.subheader("Create Dashboard")
         
-        # Get the selected chart IDs for saving
-        selected_chart_ids = [chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') in selected_charts]
+        dashboard_name = st.text_input("New Dashboard Name")
         
-        # Save or update the dashboard
-        if st.button("Save Dashboard"):
-            save_dashboard(client, dashboard_name, selected_chart_ids)
-    
-    # Step 3: Manage Dashboards (View existing dashboards, update, or delete them)
-    st.subheader("Manage Dashboards")
-    
-    dashboards = get_all_dashboards(client)
-    
-    if dashboards:
-        dashboard_names = [dashboard['dashboard_name'] for dashboard in dashboards]
-        selected_dashboard = st.selectbox("Select Dashboard to Update/Delete", dashboard_names)
+        # Show available charts to assign to the dashboard
+        charts = get_all_charts(client)
         
-        if selected_dashboard:
-            if st.button("Delete Dashboard"):
-                delete_dashboard(client, selected_dashboard)
+        if charts:
+            chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
+            selected_charts = st.multiselect("Select Charts to Add to Dashboard", chart_names)
+            
+            # Get the selected chart IDs for saving
+            selected_chart_ids = [chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') in selected_charts]
+            
+            if st.button("Create Dashboard"):
+                save_dashboard(client, dashboard_name, selected_chart_ids)
+
+    # Expandable section for updating an existing dashboard
+    with st.expander("Update Existing Dashboard"):
+        st.subheader("Update Dashboard")
+        
+        dashboards = get_all_dashboards(client)
+        
+        if dashboards:
+            dashboard_names = [dashboard['dashboard_name'] for dashboard in dashboards]
+            selected_dashboard = st.selectbox("Select Dashboard to Update", dashboard_names)
+            
+            if selected_dashboard:
+                # Show available charts to update the dashboard
+                charts = get_all_charts(client)
+                if charts:
+                    chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
+                    selected_charts = st.multiselect("Select Charts to Update Dashboard", chart_names)
+                    
+                    selected_chart_ids = [chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') in selected_charts]
+                    
+                    if st.button("Update Dashboard"):
+                        save_dashboard(client, selected_dashboard, selected_chart_ids)
+
+    # Expandable section for deleting a dashboard
+    with st.expander("Delete Dashboard"):
+        st.subheader("Delete Dashboard")
+        
+        dashboards = get_all_dashboards(client)
+        
+        if dashboards:
+            dashboard_names = [dashboard['dashboard_name'] for dashboard in dashboards]
+            selected_dashboard = st.selectbox("Select Dashboard to Delete", dashboard_names)
+            
+            if selected_dashboard:
+                if st.button("Delete Dashboard"):
+                    delete_dashboard(client, selected_dashboard)
 
 if __name__ == "__main__":
     main()
