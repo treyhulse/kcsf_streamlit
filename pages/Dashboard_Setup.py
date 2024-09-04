@@ -67,11 +67,12 @@ def main():
     charts = get_all_charts(client)
     
     if charts:
-        chart_names = [f"{chart['chart_config']['chart_title']}" for chart in charts]
+        # Check if chart_config and chart_title exist
+        chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
         selected_charts = st.multiselect("Select Charts to Add to Dashboard", chart_names)
         
         # Get the selected chart IDs for saving
-        selected_chart_ids = [chart['_id'] for chart in charts if chart['chart_config']['chart_title'] in selected_charts]
+        selected_chart_ids = [chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') in selected_charts]
         
         # Save or update the dashboard
         if st.button("Save Dashboard"):
