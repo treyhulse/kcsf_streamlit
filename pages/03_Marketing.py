@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pymongo import MongoClient
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # MongoDB connection with increased timeout values
 def get_mongo_client():
@@ -17,20 +17,12 @@ def load_filtered_data(collection_name, batch_size=100):
     db = client['netsuite']
     collection = db[collection_name]
     
-    # Default filter: This Month's data and Billed status
-    today = datetime.today()
-    first_day_of_month = today.replace(day=1)
-    
-    # Query to filter by date (This Month) and status (Billed)
-    query = {
-        "Status": "Billed"
-    }
-    
+    # Remove the date filter, load all data
     data = []
     progress_bar = st.progress(0)
     
-    total_docs = collection.count_documents(query)  # Get the total number of documents
-    cursor = collection.find(query).batch_size(batch_size)  # Use batch_size to control data loading
+    total_docs = collection.count_documents({})  # Count all documents
+    cursor = collection.find({}).batch_size(batch_size)  # Fetch all documents without filtering
 
     for i, doc in enumerate(cursor):
         # Convert 'Date' field to a datetime object if it's a string
@@ -71,19 +63,8 @@ def capture_user_email():
 def apply_filters(df):
     st.sidebar.header("Global Filters")
 
-    # Check if 'Date' column exists
-    if 'Date' in df.columns:
-        # Date range filter (still allow users to change it from This Month)
-        start_date = st.sidebar.date_input("Start Date", df['Date'].min().date())
-        end_date = st.sidebar.date_input("End Date", df['Date'].max().date())
-
-        # Apply Date Filter
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
-    else:
-        st.warning("The 'Date' column is missing from the data.")
-
     # Filter by Type with 'All' option
+    selected_types = []
     if 'Type' in df.columns:
         types = ['All'] + df['Type'].unique().tolist()
         selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
@@ -95,6 +76,7 @@ def apply_filters(df):
         st.warning("The 'Type' column is missing from the data.")
 
     # Filter by Status with 'All' option (default 'Billed')
+    selected_statuses = []
     if 'Status' in df.columns:
         statuses = ['All'] + df['Status'].unique().tolist()
         selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=['Billed'])
@@ -105,18 +87,18 @@ def apply_filters(df):
     else:
         st.warning("The 'Status' column is missing from the data.")
     
-    return df
+    return df, selected_types, selected_statuses
 
 # Main function
 def main():
     st.title("Marketing Dashboard")
 
-    # Load filtered data by default (This Month, Billed status) using cached data
+    # Load filtered data using cached data
     df = load_filtered_data('sales')  # Now using 'sales' collection
 
     # Apply additional filters
     if not df.empty:
-        df_filtered = apply_filters(df)
+        df_filtered, selected_types, selected_statuses = apply_filters(df)
     else:
         st.warning("No data was returned from the database.")
 
@@ -170,10 +152,8 @@ def main():
                         "y_column": y_column,
                         "color_column": color_column,
                         "chart_type": chart_type,
-                        "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
-                        "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
-                        "selected_types": selected_types if 'Type' in df_filtered.columns else None,
-                        "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
+                        "selected_types": selected_types,
+                        "selected_statuses": selected_statuses,
                         "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
                     }
                     save_chart(client, user_email, chart_config)
