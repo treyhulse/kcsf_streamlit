@@ -91,7 +91,7 @@ def apply_filters(df):
 
 # Main function
 def main():
-    st.title("Sales Dashboard")
+    st.title("Sales Dashboard (Lines)")
 
     # Load filtered data using cached data
     df = load_filtered_data('salesLines')  # Now using 'sales' collection

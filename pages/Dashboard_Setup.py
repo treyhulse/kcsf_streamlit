@@ -1,7 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
 from datetime import datetime
-import json
 
 # MongoDB connection
 def get_mongo_client():
@@ -71,40 +70,20 @@ def delete_dashboard(client, dashboard_name):
     except Exception as e:
         st.error(f"Error deleting dashboard: {str(e)}")
 
-# Create a new chart
-def save_chart(client, chart_title, chart_data):
+# Update an existing chart's title
+def update_chart_title(client, chart_id, chart_title):
     try:
         db = client['netsuite']
         charts_collection = db['charts']
         
-        chart_data = {
-            "chart_title": chart_title,
-            "chart_config": chart_data,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-        
-        # Create a new chart
-        charts_collection.insert_one(chart_data)
-        st.success(f"Chart '{chart_title}' created successfully!")
-    except Exception as e:
-        st.error(f"Error saving chart: {str(e)}")
-
-# Update an existing chart
-def update_chart(client, chart_id, chart_title, chart_data):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        
-        # Update the existing chart
+        # Update the existing chart title
         charts_collection.update_one({"_id": chart_id}, {"$set": {
             "chart_title": chart_title,
-            "chart_config": chart_data,
             "updated_at": datetime.utcnow()
         }})
-        st.success(f"Chart '{chart_title}' updated successfully!")
+        st.success(f"Chart title updated successfully!")
     except Exception as e:
-        st.error(f"Error updating chart: {str(e)}")
+        st.error(f"Error updating chart title: {str(e)}")
 
 # Delete a chart
 def delete_chart(client, chart_id):
@@ -185,53 +164,22 @@ def main():
         # Charts section
         st.header("Charts")
         
-        # Example chart config JSON structure
-        example_chart_config = '''{
-  "collection_name": "sales",
-  "x_column": "Date",
-  "y_column": "Amount",
-  "color_column": "Sales Rep",
-  "chart_type": "Bar",
-  "selected_types": ["All"],
-  "selected_statuses": ["Billed"],
-  "chart_title": "Bar Chart of Amount vs Date"
-}'''
-
-        # Expandable section for creating a new chart
-        with st.expander("Create New Chart"):
-            st.subheader("Create Chart")
-            
-            chart_title = st.text_input("Chart Title")
-            chart_config = st.text_area("Enter Chart Configuration (JSON format)", example_chart_config)
-            
-            if st.button("Create Chart"):
-                try:
-                    chart_data = json.loads(chart_config)  # Parse the JSON input
-                    save_chart(client, chart_title, chart_data)
-                except json.JSONDecodeError as e:
-                    st.error(f"Invalid JSON format: {str(e)}")
-    
-        # Expandable section for updating an existing chart
-        with st.expander("Update Existing Chart"):
-            st.subheader("Update Chart")
+        # Expandable section for updating an existing chart title
+        with st.expander("Update Existing Chart Title"):
+            st.subheader("Update Chart Title")
             
             charts = get_all_charts(client)
             
             if charts:
                 chart_titles = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts]
-                selected_chart = st.selectbox("Select Chart to Update", chart_titles)
+                selected_chart = st.selectbox("Select Chart to Update Title", chart_titles)
                 
                 if selected_chart:
                     chart_id = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
                     new_chart_title = st.text_input("New Chart Title", value=selected_chart)
-                    new_chart_config = st.text_area("Enter New Chart Configuration (JSON format)", example_chart_config)
                     
-                    if st.button("Update Chart"):
-                        try:
-                            chart_data = json.loads(new_chart_config)  # Parse the updated JSON input
-                            update_chart(client, chart_id, new_chart_title, chart_data)
-                        except json.JSONDecodeError as e:
-                            st.error(f"Invalid JSON format: {str(e)}")
+                    if st.button("Update Chart Title"):
+                        update_chart_title(client, chart_id, new_chart_title)
 
         # Expandable section for deleting a chart
         with st.expander("Delete Chart"):
