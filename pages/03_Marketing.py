@@ -71,7 +71,7 @@ def create_visualizations(df):
 # Main function
 def main():
     client = get_mongo_client()
-    df = get_paginated_data(client, 'marketing')  # Load the data with pagination
+    df = get_paginated_data(client, 'sales')  # Load the data with pagination
     
     if df.empty:
         st.warning("No data available")
