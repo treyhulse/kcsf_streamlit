@@ -4,6 +4,18 @@ import plotly.express as px
 from pymongo import MongoClient
 from datetime import datetime
 
+st.set_page_config(
+    page_title="Dashboard Viewer",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.kcstorefixtures.streamlit.app',
+        'Report a bug': 'https://www.kc-store-fixtures.com/bug',
+        'About': "This is a dashboard and chart management tool."
+    }
+)
+
 # MongoDB connection with increased timeout values
 def get_mongo_client():
     connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
