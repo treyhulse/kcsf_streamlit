@@ -8,6 +8,13 @@ def get_mongo_client():
     client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
     return client
 
+# Fetch all dashboards from the 'dashboards' collection
+def get_all_dashboards(client):
+    db = client['netsuite']
+    dashboards_collection = db['dashboards']
+    dashboards = list(dashboards_collection.find({}))
+    return dashboards
+
 # Fetch the selected dashboard
 def get_dashboard(client, dashboard_name):
     db = client['netsuite']
