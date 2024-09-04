@@ -52,9 +52,16 @@ def delete_dashboard(client, dashboard_name):
     dashboards_collection.delete_one({"dashboard_name": dashboard_name})
     st.success(f"Dashboard '{dashboard_name}' deleted successfully!")
 
-# Main function to setup dashboard creation, update, and deletion
+# Delete a chart
+def delete_chart(client, chart_id):
+    db = client['netsuite']
+    charts_collection = db['charts']
+    charts_collection.delete_one({"_id": chart_id})
+    st.success("Chart deleted successfully!")
+
+# Main function to setup dashboard and chart management
 def main():
-    st.title("Dashboard Setup")
+    st.title("Dashboard and Chart Management")
     
     client = get_mongo_client()
 
@@ -112,6 +119,23 @@ def main():
             if selected_dashboard:
                 if st.button("Delete Dashboard"):
                     delete_dashboard(client, selected_dashboard)
+
+    # Expandable section for deleting individual charts
+    with st.expander("Delete Charts"):
+        st.subheader("Delete Charts")
+        
+        charts = get_all_charts(client)
+        
+        if charts:
+            chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
+            selected_chart = st.selectbox("Select Chart to Delete", chart_names)
+            
+            if selected_chart:
+                # Get the chart ID
+                chart_to_delete = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
+                
+                if st.button("Delete Chart"):
+                    delete_chart(client, chart_to_delete)
 
 if __name__ == "__main__":
     main()
