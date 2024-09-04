@@ -67,6 +67,7 @@ def apply_filters(df):
     return df
 
 # Main function
+@st.cache_data
 def main():
     # Load and cache the data from 'salesLines'
     df = load_data('salesLines')
