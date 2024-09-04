@@ -23,6 +23,7 @@ def load_filtered_data(collection_name, batch_size=100):
     
     # Query to filter by date (This Month) and status (Billed)
     query = {
+        "Date": {"$gte": first_day_of_month, "$lt": today + timedelta(days=1)},
         "Status": "Billed"
     }
     
@@ -134,10 +135,10 @@ def main():
         # Chart type selection
         chart_type = st.selectbox("Select Chart Type", ["Bar", "Line", "Scatter", "Pie"])
         
-        # Submit button for preview
-        submit_button = st.form_submit_button(label="Preview")
+        # Submit button for preview and saving the chart
+        submit_button = st.form_submit_button(label="Preview and Save Chart")
         
-        # If the button is clicked, render the chart
+        # If the button is clicked, render the chart and save it
         if submit_button:
             # Create visualization based on user input
             fig = None
@@ -154,22 +155,21 @@ def main():
             if fig:
                 st.plotly_chart(fig)
                 
-                # Move Save Chart button to show after chart preview
-                if st.button("Save Chart"):
-                    user_email = st.secrets["user_email"]  # Assuming user email is in secrets
-                    chart_config = {
-                        "collection_name": "sales",
-                        "x_column": x_column,
-                        "y_column": y_column,
-                        "color_column": color_column,
-                        "chart_type": chart_type,
-                        "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
-                        "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
-                        "selected_types": selected_types if 'Type' in df_filtered.columns else None,
-                        "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
-                        "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
-                    }
-                    save_chart(client, user_email, chart_config)
+                # Save the chart configuration
+                user_email = st.secrets["user_email"]  # Assuming user email is in secrets
+                chart_config = {
+                    "collection_name": "sales",
+                    "x_column": x_column,
+                    "y_column": y_column,
+                    "color_column": color_column,
+                    "chart_type": chart_type,
+                    "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
+                    "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
+                    "selected_types": selected_types if 'Type' in df_filtered.columns else None,
+                    "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
+                    "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
+                }
+                save_chart(client, user_email, chart_config)
 
 if __name__ == "__main__":
     main()
