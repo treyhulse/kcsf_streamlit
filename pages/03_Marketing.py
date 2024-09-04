@@ -143,6 +143,9 @@ def main():
             if fig:
                 st.plotly_chart(fig)
                 
+                # Get the Mongo client
+                client = get_mongo_client()
+
                 # Save the chart configuration
                 user_email = capture_user_email()  # Get the user email using the capture_user_email function
                 if user_email:
