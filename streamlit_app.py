@@ -1,8 +1,16 @@
 import streamlit as st
 
-st.set_page_config(page_title="NetSuite Data Analytics", 
-                   page_icon="./assets/KCSF_Square.png", 
-                   layout="wide")
+st.set_page_config(
+    page_title="NetSuite Data Analytics",
+    page_icon="./assets/KCSF_Square.png",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://kcstorefixtures.streamlit.app/',
+        'Report a bug': 'https://www.kc-store-fixtures.com/bug',
+        'About': "This is a dashboard and chart management tool."
+    }
+)
 
 st.write("# Welcome to NetSuite Data Analytics! 👋")
 
