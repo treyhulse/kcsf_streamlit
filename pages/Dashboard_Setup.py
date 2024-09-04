@@ -15,13 +15,6 @@ def get_all_charts(client):
     charts = list(charts_collection.find({}))
     return charts
 
-# Fetch all dashboards from the 'dashboards' collection
-def get_all_dashboards(client):
-    db = client['netsuite']
-    dashboards_collection = db['dashboards']
-    dashboards = list(dashboards_collection.find({}))
-    return dashboards
-
 # Create or update a dashboard
 def save_dashboard(client, dashboard_name, selected_chart_ids):
     db = client['netsuite']
@@ -155,12 +148,24 @@ def main():
     # Charts section
     st.header("Charts")
     
+    # Example chart config JSON structure
+    example_chart_config = '''{
+  "collection_name": "sales",
+  "x_column": "Date",
+  "y_column": "Amount",
+  "color_column": "Sales Rep",
+  "chart_type": "Bar",
+  "selected_types": ["All"],
+  "selected_statuses": ["Billed"],
+  "chart_title": "Bar Chart of Amount vs Date"
+}'''
+
     # Expandable section for creating a new chart
     with st.expander("Create New Chart"):
         st.subheader("Create Chart")
         
         chart_title = st.text_input("Chart Title")
-        chart_config = st.text_area("Enter Chart Configuration (JSON format)")
+        chart_config = st.text_area("Enter Chart Configuration (JSON format)", example_chart_config)
         
         if st.button("Create Chart"):
             save_chart(client, chart_title, chart_config)
@@ -178,7 +183,7 @@ def main():
             if selected_chart:
                 chart_id = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
                 new_chart_title = st.text_input("New Chart Title", value=selected_chart)
-                new_chart_config = st.text_area("Enter New Chart Configuration (JSON format)")
+                new_chart_config = st.text_area("Enter New Chart Configuration (JSON format)", example_chart_config)
                 
                 if st.button("Update Chart"):
                     update_chart(client, chart_id, new_chart_title, new_chart_config)
