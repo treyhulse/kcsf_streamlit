@@ -23,7 +23,6 @@ def load_filtered_data(collection_name, batch_size=100):
     
     # Query to filter by date (This Month) and status (Billed)
     query = {
-        "Date": {"$gte": first_day_of_month, "$lt": today + timedelta(days=1)},
         "Status": "Billed"
     }
     
