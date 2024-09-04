@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # MongoDB connection with increased timeout values
 def get_mongo_client():
@@ -10,17 +10,27 @@ def get_mongo_client():
     client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
     return client
 
-# Function to get paginated data from MongoDB in batches to avoid timeouts
-def load_data_in_batches(collection_name, batch_size=100):
+# Function to apply default filters (This Month, Billed status) when loading data
+def load_filtered_data(collection_name, batch_size=100):
     client = get_mongo_client()
     db = client['netsuite']
     collection = db[collection_name]
     
+    # Default filter: This Month's data
+    today = datetime.today()
+    first_day_of_month = today.replace(day=1)
+    
+    # Query to filter by date (This Month) and status (Billed)
+    query = {
+        "Date": {"$gte": first_day_of_month, "$lt": today + timedelta(days=1)},
+        "Status": "Billed"
+    }
+    
     data = []
     progress_bar = st.progress(0)
     
-    total_docs = collection.estimated_document_count()  # Get the total number of documents
-    cursor = collection.find().batch_size(batch_size)  # Use batch_size to control data loading
+    total_docs = collection.count_documents(query)  # Get the total number of documents
+    cursor = collection.find(query).batch_size(batch_size)  # Use batch_size to control data loading
 
     for i, doc in enumerate(cursor):
         data.append(doc)
@@ -45,11 +55,11 @@ def save_chart(client, user_email, chart_config):
     charts_collection.insert_one(chart_data)
     st.success("Chart configuration saved successfully!")
 
-# Function to apply global filters
+# Function to apply additional filters after pre-applied ones
 def apply_filters(df):
     st.sidebar.header("Global Filters")
 
-    # Date range filter
+    # Date range filter (still allow users to change it from This Month)
     start_date = st.sidebar.date_input("Start Date", df['Date'].min().date())
     end_date = st.sidebar.date_input("End Date", df['Date'].max().date())
 
@@ -57,9 +67,9 @@ def apply_filters(df):
     types = ['All'] + df['Type'].unique().tolist()
     selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
     
-    # Filter by Status with 'All' option
+    # Filter by Status with 'All' option (default 'Billed')
     statuses = ['All'] + df['Status'].unique().tolist()
-    selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default='All')
+    selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=['Billed'])
 
     # Apply Date Filter
     df['Date'] = pd.to_datetime(df['Date'])
@@ -79,10 +89,10 @@ def apply_filters(df):
 def main():
     st.title("Marketing Dashboard")
 
-    # Load data in batches to avoid timeout issues
-    df = load_data_in_batches('sales')
+    # Load filtered data by default (This Month, Billed status)
+    df = load_filtered_data('salesLines')
 
-    # Apply global filters
+    # Apply additional filters
     df_filtered = apply_filters(df)
 
     # Expandable section to view first 10 rows of the filtered dataframe
@@ -127,7 +137,7 @@ def main():
                 if st.button("Save Chart"):
                     user_email = st.secrets["user_email"]  # Assuming user email is in secrets
                     chart_config = {
-                        "collection_name": "sales",
+                        "collection_name": "salesLines",
                         "x_column": x_column,
                         "y_column": y_column,
                         "color_column": color_column,
