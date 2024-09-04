@@ -24,7 +24,6 @@ st.write(f"You have access to this page.")
 import logging
 from pymongo import MongoClient
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 
 # Configure logging
@@ -35,41 +34,30 @@ logging.basicConfig(
     level=logging.DEBUG
 )
 
-# Use st.cache_resource to cache the MongoDB client
-@st.cache_resource
-def get_mongo_client():
-    try:
-        logging.debug("Attempting to connect to MongoDB...")
-        connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
-        client = MongoClient(connection_string, 
-                             ssl=True,
-                             serverSelectionTimeoutMS=30000,
-                             connectTimeoutMS=30000,
-                             socketTimeoutMS=30000)
-        logging.info("MongoDB connection successful")
-        return client
-    except Exception as e:
-        logging.error(f"Failed to connect to MongoDB: {e}")
-        raise
+# Import mongo connection function
+from mongo_connection import get_mongo_client
 
-def get_sales_data(client):
-    # Example function to load sales data
+# Pagination function to load large datasets
+def get_paginated_data(client, collection_name, batch_size=100):
     db = client['netsuite']
-    sales_collection = db['salesLines']
-    data = pd.DataFrame(list(sales_collection.find()))
-    if '_id' in data.columns:
-        data.drop('_id', axis=1, inplace=True)
-    return data
+    collection = db[collection_name]
 
-def load_visualizations(client):
-    try:
-        db = client['netsuite']
-        charts_collection = db['charts']
-        return list(charts_collection.find())
-    except Exception as e:
-        st.error(f"Failed to load visualizations: {e}")
-        logging.error(f"Failed to load visualizations: {e}")
-        return []
+    data = []
+    total_docs = collection.estimated_document_count()
+    progress_bar = st.progress(0)
+
+    # Fetching documents in batches for better performance
+    for i, doc in enumerate(collection.find().batch_size(batch_size)):
+        processed_doc = {key: value for key, value in doc.items()}
+        data.append(processed_doc)
+        progress_bar.progress((i + 1) / total_docs)
+
+    df = pd.DataFrame(data)
+
+    if '_id' in df.columns:
+        df.drop(columns=['_id'], inplace=True)
+
+    return df
 
 def display_selected_charts(client, df, page_name):
     st.title(f"{page_name}")
@@ -82,7 +70,7 @@ def display_selected_charts(client, df, page_name):
         st.warning(f"No charts configured for {page_name}.")
         return
 
-    saved_visualizations = load_visualizations(client)
+    saved_visualizations = list(db['charts'].find())
     selected_charts = page_config['selected_charts']
 
     for chart_name in selected_charts:
@@ -98,14 +86,12 @@ def display_selected_charts(client, df, page_name):
                 fig = px.line(df, x=chart['x_column'], y=chart['y_column'], color=chart['color_column'], 
                               title=chart['chart_title'], labels={chart['x_column']: chart['x_label'], 
                               chart['y_column']: chart['y_label']})
-            # Add other chart types as needed
-
             if fig:
                 st.plotly_chart(fig)
 
 def main():
     client = get_mongo_client()
-    df = get_sales_data(client)  # Load the data
+    df = get_paginated_data(client, 'salesLines')  # Load the data with pagination
     display_selected_charts(client, df, "04_Sales")
 
 if __name__ == "__main__":
