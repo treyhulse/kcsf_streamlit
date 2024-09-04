@@ -10,18 +10,20 @@ def get_mongo_client():
     client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
     return client
 
-# Function to apply default filters (This Month, Billed status) when loading data
+# Cache the data loaded from MongoDB to improve speed
+@st.cache_data
 def load_filtered_data(collection_name, batch_size=100):
     client = get_mongo_client()
     db = client['netsuite']
     collection = db[collection_name]
     
-    # Default filter: This Month's data
+    # Default filter: This Month's data and Billed status
     today = datetime.today()
     first_day_of_month = today.replace(day=1)
     
     # Query to filter by date (This Month) and status (Billed)
     query = {
+        "Date": {"$gte": first_day_of_month, "$lt": today + timedelta(days=1)},
         "Status": "Billed"
     }
     
@@ -40,13 +42,13 @@ def load_filtered_data(collection_name, batch_size=100):
 
     df = pd.DataFrame(data)
     
-    # Drop the '_id' column and handle missing columns like 'Date'
+    # Drop the '_id' column
     if '_id' in df.columns:
         df.drop(columns=['_id'], inplace=True)
     
     return df
 
-# Save visualization config to MongoDB
+# Save the visualization criteria to MongoDB
 def save_chart(client, user_email, chart_config):
     db = client['netsuite']
     charts_collection = db['charts']
@@ -63,29 +65,39 @@ def save_chart(client, user_email, chart_config):
 def apply_filters(df):
     st.sidebar.header("Global Filters")
 
-    # Date range filter (still allow users to change it from This Month)
-    start_date = st.sidebar.date_input("Start Date", df['Date'].min().date())
-    end_date = st.sidebar.date_input("End Date", df['Date'].max().date())
+    # Check if 'Date' column exists
+    if 'Date' in df.columns:
+        # Date range filter (still allow users to change it from This Month)
+        start_date = st.sidebar.date_input("Start Date", df['Date'].min().date())
+        end_date = st.sidebar.date_input("End Date", df['Date'].max().date())
+
+        # Apply Date Filter
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
+    else:
+        st.warning("The 'Date' column is missing from the data.")
 
     # Filter by Type with 'All' option
-    types = ['All'] + df['Type'].unique().tolist()
-    selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
-    
+    if 'Type' in df.columns:
+        types = ['All'] + df['Type'].unique().tolist()
+        selected_types = st.sidebar.multiselect("Filter by Type", types, default='All')
+        
+        # Apply Type Filter
+        if 'All' not in selected_types:
+            df = df[df['Type'].isin(selected_types)]
+    else:
+        st.warning("The 'Type' column is missing from the data.")
+
     # Filter by Status with 'All' option (default 'Billed')
-    statuses = ['All'] + df['Status'].unique().tolist()
-    selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=['Billed'])
-
-    # Apply Date Filter
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
-
-    # Apply Type Filter
-    if 'All' not in selected_types:
-        df = df[df['Type'].isin(selected_types)]
-    
-    # Apply Status Filter
-    if 'All' not in selected_statuses:
-        df = df[df['Status'].isin(selected_statuses)]
+    if 'Status' in df.columns:
+        statuses = ['All'] + df['Status'].unique().tolist()
+        selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=['Billed'])
+        
+        # Apply Status Filter
+        if 'All' not in selected_statuses:
+            df = df[df['Status'].isin(selected_statuses)]
+    else:
+        st.warning("The 'Status' column is missing from the data.")
     
     return df
 
@@ -93,15 +105,21 @@ def apply_filters(df):
 def main():
     st.title("Marketing Dashboard")
 
-    # Load filtered data by default (This Month, Billed status)
+    # Load filtered data by default (This Month, Billed status) using cached data
     df = load_filtered_data('sales')  # Now using 'sales' collection
 
     # Apply additional filters
-    df_filtered = apply_filters(df)
+    if not df.empty:
+        df_filtered = apply_filters(df)
+    else:
+        st.warning("No data was returned from the database.")
 
     # Expandable section to view first 10 rows of the filtered dataframe
-    with st.expander("View First 10 Rows of Filtered Data"):
-        st.dataframe(df_filtered.head(10))
+    if not df_filtered.empty:
+        with st.expander("View First 10 Rows of Filtered Data"):
+            st.dataframe(df_filtered.head(10))
+    else:
+        st.warning("No data available after filtering.")
 
     # Form for selecting visualization options
     st.subheader("Create Custom Visualization")
@@ -146,10 +164,10 @@ def main():
                         "y_column": y_column,
                         "color_column": color_column,
                         "chart_type": chart_type,
-                        "start_date": str(df_filtered['Date'].min()),
-                        "end_date": str(df_filtered['Date'].max()),
-                        "selected_types": selected_types,
-                        "selected_statuses": selected_statuses,
+                        "start_date": str(df_filtered['Date'].min()) if 'Date' in df_filtered.columns else None,
+                        "end_date": str(df_filtered['Date'].max()) if 'Date' in df_filtered.columns else None,
+                        "selected_types": selected_types if 'Type' in df_filtered.columns else None,
+                        "selected_statuses": selected_statuses if 'Status' in df_filtered.columns else None,
                         "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
                     }
                     save_chart(client, user_email, chart_config)
