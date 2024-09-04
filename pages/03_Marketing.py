@@ -4,15 +4,16 @@ import plotly.express as px
 from pymongo import MongoClient
 from datetime import datetime
 
-# MongoDB connection
+# MongoDB connection (not cached)
 def get_mongo_client():
     connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
     client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=30000, connectTimeoutMS=30000, socketTimeoutMS=30000)
     return client
 
-# Cache data to avoid multiple reloads
+# Cache only the data, not the MongoDB client
 @st.cache_data
-def load_data(client, collection_name):
+def load_data(collection_name):
+    client = get_mongo_client()  # Create MongoClient inside the function
     db = client['netsuite']
     collection = db[collection_name]
     data = pd.DataFrame(list(collection.find()))
@@ -67,10 +68,8 @@ def apply_filters(df):
 
 # Main function
 def main():
-    client = get_mongo_client()
-    
     # Load and cache the data from 'salesLines'
-    df = load_data(client, 'salesLines')
+    df = load_data('salesLines')
 
     # Apply global filters
     df_filtered = apply_filters(df)
@@ -122,8 +121,8 @@ def main():
                         "y_column": y_column,
                         "color_column": color_column,
                         "chart_type": chart_type,
-                        "start_date": str(start_date),
-                        "end_date": str(end_date),
+                        "start_date": str(df_filtered['Date'].min()),
+                        "end_date": str(df_filtered['Date'].max()),
                         "selected_types": selected_types,
                         "selected_statuses": selected_statuses,
                         "chart_title": f"{chart_type} Chart of {y_column} vs {x_column}"
