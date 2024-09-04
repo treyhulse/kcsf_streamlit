@@ -90,7 +90,7 @@ def main():
     st.title("Marketing Dashboard")
 
     # Load filtered data by default (This Month, Billed status)
-    df = load_filtered_data('salesLines')
+    df = load_filtered_data('sales')
 
     # Apply additional filters
     df_filtered = apply_filters(df)
@@ -137,7 +137,7 @@ def main():
                 if st.button("Save Chart"):
                     user_email = st.secrets["user_email"]  # Assuming user email is in secrets
                     chart_config = {
-                        "collection_name": "salesLines",
+                        "collection_name": "sales",
                         "x_column": x_column,
                         "y_column": y_column,
                         "color_column": color_column,
