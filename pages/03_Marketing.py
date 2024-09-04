@@ -33,13 +33,18 @@ def load_filtered_data(collection_name, batch_size=100):
     cursor = collection.find(query).batch_size(batch_size)  # Use batch_size to control data loading
 
     for i, doc in enumerate(cursor):
+        # Convert 'Date' field to a datetime object if it's a string
+        if 'Date' in doc:
+            doc['Date'] = pd.to_datetime(doc['Date'], errors='coerce')
         data.append(doc)
         progress_bar.progress((i + 1) / total_docs)  # Update progress bar
 
     df = pd.DataFrame(data)
+    
+    # Drop the '_id' column and handle missing columns like 'Date'
     if '_id' in df.columns:
         df.drop(columns=['_id'], inplace=True)
-
+    
     return df
 
 # Save visualization config to MongoDB
@@ -72,7 +77,7 @@ def apply_filters(df):
     selected_statuses = st.sidebar.multiselect("Filter by Status", statuses, default=['Billed'])
 
     # Apply Date Filter
-    df['Date'] = pd.to_datetime(df['Date'])
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
 
     # Apply Type Filter
@@ -90,7 +95,7 @@ def main():
     st.title("Marketing Dashboard")
 
     # Load filtered data by default (This Month, Billed status)
-    df = load_filtered_data('sales')
+    df = load_filtered_data('sales')  # Now using 'sales' collection
 
     # Apply additional filters
     df_filtered = apply_filters(df)
