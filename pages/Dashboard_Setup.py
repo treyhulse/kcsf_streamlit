@@ -52,6 +52,35 @@ def delete_dashboard(client, dashboard_name):
     dashboards_collection.delete_one({"dashboard_name": dashboard_name})
     st.success(f"Dashboard '{dashboard_name}' deleted successfully!")
 
+# Create a new chart
+def save_chart(client, chart_title, chart_data):
+    db = client['netsuite']
+    charts_collection = db['charts']
+    
+    chart_data = {
+        "chart_title": chart_title,
+        "chart_config": chart_data,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    # Create a new chart
+    charts_collection.insert_one(chart_data)
+    st.success(f"Chart '{chart_title}' created successfully!")
+
+# Update an existing chart
+def update_chart(client, chart_id, chart_title, chart_data):
+    db = client['netsuite']
+    charts_collection = db['charts']
+    
+    # Update the existing chart
+    charts_collection.update_one({"_id": chart_id}, {"$set": {
+        "chart_title": chart_title,
+        "chart_config": chart_data,
+        "updated_at": datetime.utcnow()
+    }})
+    st.success(f"Chart '{chart_title}' updated successfully!")
+
 # Delete a chart
 def delete_chart(client, chart_id):
     db = client['netsuite']
@@ -65,6 +94,9 @@ def main():
     
     client = get_mongo_client()
 
+    # Dashboards section
+    st.header("Dashboards")
+    
     # Expandable section for creating a dashboard
     with st.expander("Create New Dashboard"):
         st.subheader("Create Dashboard")
@@ -120,22 +152,52 @@ def main():
                 if st.button("Delete Dashboard"):
                     delete_dashboard(client, selected_dashboard)
 
-    # Expandable section for deleting individual charts
-    with st.expander("Delete Charts"):
-        st.subheader("Delete Charts")
+    # Charts section
+    st.header("Charts")
+    
+    # Expandable section for creating a new chart
+    with st.expander("Create New Chart"):
+        st.subheader("Create Chart")
+        
+        chart_title = st.text_input("Chart Title")
+        chart_config = st.text_area("Enter Chart Configuration (JSON format)")
+        
+        if st.button("Create Chart"):
+            save_chart(client, chart_title, chart_config)
+    
+    # Expandable section for updating an existing chart
+    with st.expander("Update Existing Chart"):
+        st.subheader("Update Chart")
         
         charts = get_all_charts(client)
         
         if charts:
-            chart_names = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts if 'chart_config' in chart]
-            selected_chart = st.selectbox("Select Chart to Delete", chart_names)
+            chart_titles = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts]
+            selected_chart = st.selectbox("Select Chart to Update", chart_titles)
             
             if selected_chart:
-                # Get the chart ID
-                chart_to_delete = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
+                chart_id = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
+                new_chart_title = st.text_input("New Chart Title", value=selected_chart)
+                new_chart_config = st.text_area("Enter New Chart Configuration (JSON format)")
+                
+                if st.button("Update Chart"):
+                    update_chart(client, chart_id, new_chart_title, new_chart_config)
+
+    # Expandable section for deleting a chart
+    with st.expander("Delete Chart"):
+        st.subheader("Delete Chart")
+        
+        charts = get_all_charts(client)
+        
+        if charts:
+            chart_titles = [f"{chart['chart_config'].get('chart_title', 'Untitled Chart')}" for chart in charts]
+            selected_chart = st.selectbox("Select Chart to Delete", chart_titles)
+            
+            if selected_chart:
+                chart_id = next(chart['_id'] for chart in charts if chart['chart_config'].get('chart_title') == selected_chart)
                 
                 if st.button("Delete Chart"):
-                    delete_chart(client, chart_to_delete)
+                    delete_chart(client, chart_id)
 
 if __name__ == "__main__":
     main()
