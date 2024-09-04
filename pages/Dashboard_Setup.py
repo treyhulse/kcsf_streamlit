@@ -7,11 +7,6 @@ st.set_page_config(
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={
-        'Get Help': 'https://www.kcstorefixtures.streamlit.app',
-        'Report a bug': 'https://www.kc-store-fixtures.com/bug',
-        'About': "This is a dashboard and chart management tool."
-    }
 )
 
 
