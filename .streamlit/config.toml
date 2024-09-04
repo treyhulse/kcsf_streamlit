@@ -10,13 +10,11 @@ backgroundColor = "#f9f9f9"
 secondaryBackgroundColor = "#E5E4E2"
 textColor = "#000000"
 font = "sans serif"
-
+layout = "wide"
 
 [mapbox]
 token = "your-mapbox-token"
 
-
 [customComponent]
 # Path to a folder containing JavaScript files for custom components
 componentJsPath = "/path/to/components"
-
