@@ -154,7 +154,7 @@ def main():
 
         # Add an expandable section for the DataFrame at the bottom
         with st.expander("View Detailed Data"):
-            st.dataframe(df)
+            st.dataframe(df_aggregated)
 
 if __name__ == "__main__":
     main()
