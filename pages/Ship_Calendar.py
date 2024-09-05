@@ -110,12 +110,20 @@ def main():
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
                 with cols[j]:
+                    day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
+
+                    # Generate the list of ship vias and their corresponding order counts
+                    if not day_data.empty:
+                        order_summary = ""
+                        for _, row in day_data.iterrows():
+                            order_summary += f"{row['Ship Via']}: {row['order_count']} orders<br>"
+
                     st.markdown(
                         f"""
                         <div style='border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
-                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: 150px;'>
+                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: auto;'>
                             <h3 style='margin-bottom: 10px;'>{date.strftime('%Y-%m-%d')}</h3>
-                            <p style='font-size: 18px; color: #666;'>Total Orders: {filtered_df[filtered_df['Ship Date (Admin)'] == date]['order_count'].sum()}</p>
+                            <p style='font-size: 18px; color: #666;'>{order_summary if day_data.empty == False else "No shipments"}</p>
                         </div>
                         """,
                         unsafe_allow_html=True
