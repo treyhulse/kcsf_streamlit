@@ -22,6 +22,7 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+import streamlit as st
 import pandas as pd
 from pymongo import MongoClient
 
@@ -63,9 +64,18 @@ def load_inventory_data():
     
     return inventory_df
 
-# Function to merge the two dataframes on 'Internal ID'
+# Function to merge the two dataframes on 'Internal ID' and ensure all data is on one line
 def merge_dataframes(items_df, inventory_df):
-    merged_df = pd.merge(items_df, inventory_df, on="Internal ID", how="inner")
+    # Rename columns to avoid conflicts during merge
+    inventory_df = inventory_df.add_prefix('inventory_')
+
+    # Merge the dataframes on 'Internal ID' (inventory_Internal ID will map to the items Internal ID)
+    merged_df = pd.merge(items_df, inventory_df, left_on="Internal ID", right_on="inventory_Internal ID", how="inner")
+    
+    # Drop the duplicate 'inventory_Internal ID' after merging
+    if 'inventory_Internal ID' in merged_df.columns:
+        merged_df.drop(columns=['inventory_Internal ID'], inplace=True)
+
     return merged_df
 
 # Main function to render the Streamlit page
