@@ -23,102 +23,134 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import pandas as pd
-import pydeck as pdk
+from pymongo import MongoClient
 from datetime import datetime, timedelta
 
-# Page title
-st.title("Logistics Insights")
+st.set_page_config(
+    page_title="Shipping Calendar",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
-# Generate more sample order data
-data = {
-    "Order No.": [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010],
-    "Ship Date": [
-        "2024-08-01", "2024-08-03", "2024-08-05", "2024-08-08", "2024-08-10",
-        "2024-08-12", "2024-08-15", "2024-08-18", "2024-08-19", "2024-08-21"
-    ],
-    "Ship Via": ["FedEx", "UPS", "DHL", "FedEx", "UPS", "FedEx", "UPS", "DHL", "FedEx", "UPS"],
-    "lat": [37.7749, 34.0522, 40.7128, 41.8781, 29.7604, 39.7392, 32.7767, 47.6062, 33.4484, 25.7617],
-    "lon": [-122.4194, -118.2437, -74.0060, -87.6298, -95.3698, -104.9903, -96.7969, -122.3321, -112.0740, -80.1918],
-}
+# MongoDB connection with increased timeout values
+def get_mongo_client():
+    connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
+    client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
+    return client
 
-# Create a DataFrame from the sample data
-df = pd.DataFrame(data)
-df["Ship Date"] = pd.to_datetime(df["Ship Date"])
+# Cache the data loaded from MongoDB to improve speed
+@st.cache_data
+def load_shipping_data(batch_size=100):
+    client = get_mongo_client()
+    db = client['netsuite']
+    collection = db['sales']  # Assuming 'sales' collection has shipping data
 
-# Sidebar filters
-st.sidebar.header("Filters")
+    data = []
+    cursor = collection.find({}).batch_size(batch_size)
 
-# Order number search
-order_filter = st.sidebar.text_input("Search Order No.", "")
+    for doc in cursor:
+        if 'Ship Date (Admin)' in doc:
+            doc['Ship Date (Admin)'] = pd.to_datetime(doc['Ship Date (Admin)'], errors='coerce').normalize()
+        data.append(doc)
 
-# Ship date filter
-ship_date_filter = st.sidebar.selectbox("Filter by Ship Date", ["Custom", "Today", "Yesterday", "This Week", "Last Week", "Last 30 Days"])
+    df = pd.DataFrame(data)
+    
+    # Drop the '_id' column if it exists
+    if '_id' in df.columns:
+        df.drop(columns=['_id'], inplace=True)
+    
+    return df
 
-if ship_date_filter == "Custom":
-    start_date = st.sidebar.date_input("Start Date", value=df["Ship Date"].min())
-    end_date = st.sidebar.date_input("End Date", value=df["Ship Date"].max())
-    date_mask = (df["Ship Date"] >= pd.to_datetime(start_date)) & (df["Ship Date"] <= pd.to_datetime(end_date))
-elif ship_date_filter == "Today":
-    today = datetime.today().date()
-    date_mask = df["Ship Date"].dt.date == today
-elif ship_date_filter == "Yesterday":
-    yesterday = (datetime.today() - timedelta(days=1)).date()
-    date_mask = df["Ship Date"].dt.date == yesterday
-elif ship_date_filter == "This Week":
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday())
-    date_mask = df["Ship Date"] >= start_of_week
-elif ship_date_filter == "Last Week":
-    today = datetime.today()
-    start_of_last_week = today - timedelta(days=today.weekday() + 7)
-    end_of_last_week = today - timedelta(days=today.weekday() + 1)
-    date_mask = (df["Ship Date"] >= start_of_last_week) & (df["Ship Date"] <= end_of_last_week)
-elif ship_date_filter == "Last 30 Days":
-    today = datetime.today()
-    last_30_days = today - timedelta(days=30)
-    date_mask = df["Ship Date"] >= last_30_days
+# Group data by 'Ship Date (Admin)' and 'Ship Via', counting rows instead of summing quantities
+def aggregate_data(df):
+    return df.groupby(['Ship Date (Admin)', 'Ship Via']).size().reset_index(name='order_count')
 
-# Ship via filter
-ship_via_filter = st.sidebar.multiselect("Filter by Ship Via", options=df["Ship Via"].unique(), default=df["Ship Via"].unique())
+# Custom date picker for "This Week", "Next Week", "This Month", and custom range
+def get_date_range():
+    option = st.selectbox(
+        "Select Date Range",
+        ["Custom Range", "This Week", "Next Week", "This Month"]
+    )
 
-# Apply filters to the data
-filtered_df = df[
-    (df["Order No."].astype(str).str.contains(order_filter, case=False)) &
-    (df["Ship Via"].isin(ship_via_filter)) &
-    (date_mask)
-]
+    today = datetime.today().date()  # Work with date instead of datetime
+    if option == "This Week":
+        start_date = today - timedelta(days=today.weekday())  # Start of the current week (Monday)
+        end_date = start_date + timedelta(days=4)  # End of the current week (Friday)
+    elif option == "Next Week":
+        start_date = today - timedelta(days=today.weekday()) + timedelta(weeks=1)  # Start of next week (Monday)
+        end_date = start_date + timedelta(days=4)  # End of next week (Friday)
+    elif option == "This Month":
+        start_date = today.replace(day=1)  # First day of the current month
+        next_month = (start_date + timedelta(days=32)).replace(day=1)  # First day of the next month
+        end_date = next_month - timedelta(days=1)  # Last day of the current month
+    else:
+        # Custom range with date input
+        start_date = st.date_input("Start Date", value=today)
+        end_date = st.date_input("End Date", value=today + timedelta(days=7))
 
-# Layout with map on the left and table on the right
-col1, col2 = st.columns([2, 1])
+    return start_date, end_date
 
-with col1:
-    # Map settings
-    selected_order = st.selectbox("Select Order No.", filtered_df["Order No."])
+# Skip weekends (Saturday and Sunday)
+def filter_weekdays(date_range):
+    return [date for date in date_range if date.weekday() < 5]  # 0 = Monday, 4 = Friday
 
-    # Filter map data based on the selected order
-    selected_data = filtered_df[filtered_df["Order No."] == selected_order]
+# Main function
+def main():
+    st.title("Shipping Calendar")
 
-    # Display the map with highlighted selection
-    st.pydeck_chart(pdk.Deck(
-        map_style="mapbox://styles/mapbox/light-v9",
-        initial_view_state=pdk.ViewState(
-            latitude=selected_data["lat"].values[0] if not selected_data.empty else df["lat"].mean(),
-            longitude=selected_data["lon"].values[0] if not selected_data.empty else df["lon"].mean(),
-            zoom=5,
-            pitch=50,
-        ),
-        layers=[
-            pdk.Layer(
-                "ScatterplotLayer",
-                data=filtered_df,
-                get_position='[lon, lat]',
-                get_color=['[200, 30, 0, 160]' if x == selected_order else '[100, 100, 100, 160]' for x in filtered_df["Order No."]],
-                get_radius=50000,
-            ),
-        ],
-    ))
+    # Load shipping data
+    df = load_shipping_data()
 
-with col2:
-    # Display the filtered table
-    st.subheader("Orders")
-    st.dataframe(filtered_df[["Order No.", "Ship Date", "Ship Via"]])
+    if not df.empty:
+        df_aggregated = aggregate_data(df)
+
+        # Get unique 'Ship Via' values for filtering
+        all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
+        selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='All')
+
+        # Apply 'Ship Via' filter (if 'All' is selected, include all)
+        if 'All' not in selected_ship_vias:
+            df_aggregated = df_aggregated[df_aggregated['Ship Via'].isin(selected_ship_vias)]
+
+        # Get the date range using custom date picker
+        start_date, end_date = get_date_range()
+
+        # Filter data to the selected date range
+        filtered_df = df_aggregated[
+            (df_aggregated['Ship Date (Admin)'] >= pd.to_datetime(start_date)) &
+            (df_aggregated['Ship Date (Admin)'] <= pd.to_datetime(end_date))
+        ]
+
+        # Create a list of weekdays to display (max 15 days)
+        date_range = pd.date_range(start=start_date, end=end_date).normalize()
+        date_range = filter_weekdays(date_range)  # Skip weekends
+
+        if len(date_range) > 15:
+            date_range = date_range[:15]
+
+        # Create a 5-column layout for the calendar with improved cards for each day
+        for i in range(0, len(date_range), 5):
+            cols = st.columns(5)
+            for j, date in enumerate(date_range[i:i + 5]):
+                with cols[j]:
+                    day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
+
+                    # Generate the list of ship vias and their corresponding order counts
+                    if not day_data.empty:
+                        order_summary = ""
+                        for _, row in day_data.iterrows():
+                            order_summary += f"{row['Ship Via']}: {row['order_count']} orders<br>"
+
+                    st.markdown(
+                        f"""
+                        <div style='border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
+                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: auto;'>
+                            <h3 style='margin-bottom: 10px;'>{date.strftime('%Y-%m-%d')}</h3>
+                            <p style='font-size: 18px; color: #666;'>{order_summary if day_data.empty == False else "No shipments"}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+if __name__ == "__main__":
+    main()
