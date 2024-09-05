@@ -1,5 +1,9 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.data_functions import process_netsuite_data_csv
+from datetime import date, timedelta
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -13,21 +17,6 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 st.write(f"You have access to this page.")
-
-
-################################################################################################
-
-## AUTHENTICATED
-
-################################################################################################
-
-import pandas as pd
-import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv
-from datetime import date, timedelta
-
-
-st.title("Shipping Report")
 
 # Sales Rep mapping
 sales_rep_mapping = {
@@ -74,7 +63,6 @@ terms_mapping = {
     18: "No Charge"
 }
 
-
 st.markdown(
     """
     <style>
@@ -108,6 +96,21 @@ def create_ship_date_chart(df):
         height=400,
         margin=dict(l=40, r=40, t=40, b=40)
     )
+    return fig
+
+def create_pie_chart(matched_orders, unmatched_orders):
+    pie_data = pd.DataFrame({
+        'Task Status': ['Tasked Orders', 'Untasked Orders'],
+        'Count': [matched_orders, unmatched_orders]
+    })
+    fig = px.pie(
+        pie_data,
+        names='Task Status',
+        values='Count',
+        title='Tasked vs Untasked Orders',
+        hole=0.4
+    )
+    fig.update_layout(margin=dict(l=40, r=40, t=40, b=40))
     return fig
 
 def get_date_range(preset):
@@ -186,16 +189,22 @@ def main():
     merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
     merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
-    # Create and display the line chart for filtered data
-    if not merged_df.empty:
-        st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
-    else:
-        st.write("No data available for the selected filters.")
-
-    # Matching Statistics for Metric Boxes
+    # Calculate totals for tasked and untasked orders
     total_orders = len(merged_df)
     matched_orders = merged_df['Task ID'].notna().sum()
     unmatched_orders = merged_df['Task ID'].isna().sum()
+
+    # Create and display the line chart for filtered data
+    if not merged_df.empty:
+        col_chart, col_pie = st.columns([2, 1])  # Allocate 2/3 space for chart and 1/3 for pie chart
+        with col_chart:
+            st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
+        
+        with col_pie:
+            st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
+
+    else:
+        st.write("No data available for the selected filters.")
 
     # Calculate Successful Task Percentage
     successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
@@ -217,19 +226,20 @@ def main():
 
     st.markdown("<br>", unsafe_allow_html=True)  # Add some vertical space
 
-    # Display filtered data
-    st.subheader(" ")
-    st.write(f"Total records after filtering: {len(merged_df)}")
-    st.dataframe(merged_df, height=400)
+    # Display filtered data inside an expandable section
+    with st.expander("View Data Table"):
+        st.subheader("Filtered Data Table")
+        st.write(f"Total records after filtering: {len(merged_df)}")
+        st.dataframe(merged_df, height=400)
 
-    # Download option for filtered data
-    csv = merged_df.to_csv(index=False)
-    st.download_button(
-        label="Download filtered data as CSV",
-        data=csv,
-        file_name="filtered_sales_orders_with_task_id.csv",
-        mime="text/csv",
-    )
+        # Download option for filtered data
+        csv = merged_df.to_csv(index=False)
+        st.download_button(
+            label="Download filtered data as CSV",
+            data=csv,
+            file_name="filtered_sales_orders_with_task_id.csv",
+            mime="text/csv",
+        )
 
     # Add link to NetSuite open order report
     st.markdown(
