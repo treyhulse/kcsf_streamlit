@@ -52,9 +52,9 @@ def main():
     if not df.empty:
         df_aggregated = aggregate_data(df)
 
-        # Add a slider to select the Ship Date (Admin) range
-        min_date = df_aggregated['Ship Date (Admin)'].min()
-        max_date = df_aggregated['Ship Date (Admin)'].max()
+        # Ensure min_date and max_date are in datetime format
+        min_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].min())
+        max_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].max())
 
         # Select the date range with a slider (limit to 15 days max)
         start_date, end_date = st.slider(
