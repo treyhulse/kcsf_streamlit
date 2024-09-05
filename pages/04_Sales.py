@@ -8,7 +8,7 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = '04_Sales.py'  # Adjust this based on the current page
+page_name = 'Sales'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
