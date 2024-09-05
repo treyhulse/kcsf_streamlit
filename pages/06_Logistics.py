@@ -94,6 +94,7 @@ def filter_weekdays(date_range):
     return [date for date in date_range if date.weekday() < 5]  # 0 = Monday, 4 = Friday
 
 # Main function
+# Main function
 def main():
     st.title("Shipping Calendar")
 
@@ -150,6 +151,10 @@ def main():
                         """,
                         unsafe_allow_html=True
                     )
+
+        # Add an expandable section for the DataFrame at the bottom
+        with st.expander("View Detailed Data"):
+            st.dataframe(filtered_df)
 
 if __name__ == "__main__":
     main()
