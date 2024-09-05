@@ -38,9 +38,9 @@ def load_shipping_data(batch_size=100):
     
     return df
 
-# Group data by 'Ship Date (Admin)' and 'Ship Via', sum the quantity
+# Group data by 'Ship Date (Admin)' and 'Ship Via', counting rows instead of summing quantities
 def aggregate_data(df):
-    return df.groupby(['Ship Date (Admin)', 'Ship Via']).sum().reset_index()
+    return df.groupby(['Ship Date (Admin)', 'Ship Via']).size().reset_index(name='order_count')
 
 # Custom date picker for "This Week", "Next Week", "This Month", and custom range
 def get_date_range():
@@ -99,7 +99,7 @@ def main():
                     day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
                     cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     for _, row in day_data.iterrows():
-                        cols[j].write(f"{row['Ship Via']}: {row['qty']} units")
+                        cols[j].write(f"{row['Ship Via']}: {row['order_count']} orders")
                 else:
                     cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     cols[j].write("No shipments")
