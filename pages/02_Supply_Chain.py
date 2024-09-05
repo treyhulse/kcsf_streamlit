@@ -33,6 +33,7 @@ def get_mongo_client():
     return client
 
 # Function to load items collection from MongoDB
+@st.cache_data
 def load_items_data():
     client = get_mongo_client()
     db = client['netsuite']
@@ -48,6 +49,7 @@ def load_items_data():
     return items_df
 
 # Function to load inventory collection from MongoDB
+@st.cache_data
 def load_inventory_data():
     client = get_mongo_client()
     db = client['netsuite']
