@@ -52,10 +52,10 @@ def get_date_range():
     today = datetime.today()
     if option == "This Week":
         start_date = today - timedelta(days=today.weekday())  # Start of the current week (Monday)
-        end_date = start_date + timedelta(days=6)  # End of the current week (Sunday)
+        end_date = start_date + timedelta(days=4)  # End of the current week (Friday)
     elif option == "Next Week":
         start_date = today - timedelta(days=today.weekday()) + timedelta(weeks=1)  # Start of next week (Monday)
-        end_date = start_date + timedelta(days=6)  # End of next week (Sunday)
+        end_date = start_date + timedelta(days=4)  # End of next week (Friday)
     elif option == "This Month":
         start_date = today.replace(day=1)  # First day of the current month
         next_month = today.replace(day=28) + timedelta(days=4)  # Move to the next month
@@ -66,6 +66,10 @@ def get_date_range():
         end_date = st.date_input("End Date", value=today + timedelta(days=7))
 
     return start_date, end_date
+
+# Skip weekends (Saturday and Sunday)
+def filter_weekdays(date_range):
+    return [date for date in date_range if date.weekday() < 5]  # 0 = Monday, 4 = Friday
 
 # Main function
 def main():
@@ -94,12 +98,14 @@ def main():
             (df_aggregated['Ship Date (Admin)'] <= pd.to_datetime(end_date))
         ]
 
-        # Create a list of dates to display (max 15 days)
+        # Create a list of weekdays to display (max 15 days)
         date_range = pd.date_range(start=start_date, end=end_date)
+        date_range = filter_weekdays(date_range)  # Skip weekends
+
         if len(date_range) > 15:
             date_range = date_range[:15]
 
-        # Create a 5-column layout for the calendar with cards for each day
+        # Create a 5-column layout for the calendar with enhanced cards for each day
         for i in range(0, len(date_range), 5):
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
@@ -107,19 +113,19 @@ def main():
                     st.markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
 
-                    # Add a card-style layout for each day
+                    # Add a card-style layout for each day with better visual appeal
+                    st.markdown(
+                        """
+                        <div style='border:1px solid #ddd; border-radius:15px; padding:15px; background-color:#fff; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;'>
+                        """, unsafe_allow_html=True)
+                    
+                    # Create a small table for the day's data
                     if not day_data.empty:
-                        st.markdown(
-                            """
-                            <div style='border:1px solid #ddd; border-radius:10px; padding:10px; background-color:#f9f9f9;'>
-                            """, unsafe_allow_html=True)
-                        
-                        # Create a small table for the day's data
                         st.table(day_data[['Ship Via', 'order_count']].set_index('Ship Via'))
-                        
-                        st.markdown("</div>", unsafe_allow_html=True)
                     else:
                         st.write("No shipments")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
