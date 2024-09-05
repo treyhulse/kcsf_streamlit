@@ -27,7 +27,7 @@ def load_shipping_data(batch_size=100):
 
     for doc in cursor:
         if 'Ship Date (Admin)' in doc:
-            doc['Ship Date (Admin)'] = pd.to_datetime(doc['Ship Date (Admin)'], errors='coerce')
+            doc['Ship Date (Admin)'] = pd.to_datetime(doc['Ship Date (Admin)'], errors='coerce').normalize()
         data.append(doc)
 
     df = pd.DataFrame(data)
@@ -49,7 +49,7 @@ def get_date_range():
         ["Custom Range", "This Week", "Next Week", "This Month"]
     )
 
-    today = datetime.today()
+    today = datetime.today().date()  # Work with date instead of datetime
     if option == "This Week":
         start_date = today - timedelta(days=today.weekday())  # Start of the current week (Monday)
         end_date = start_date + timedelta(days=4)  # End of the current week (Friday)
@@ -58,8 +58,8 @@ def get_date_range():
         end_date = start_date + timedelta(days=4)  # End of next week (Friday)
     elif option == "This Month":
         start_date = today.replace(day=1)  # First day of the current month
-        next_month = today.replace(day=28) + timedelta(days=4)  # Move to the next month
-        end_date = next_month.replace(day=1) - timedelta(days=1)  # Last day of the current month
+        next_month = (start_date + timedelta(days=32)).replace(day=1)  # First day of the next month
+        end_date = next_month - timedelta(days=1)  # Last day of the current month
     else:
         # Custom range with date input
         start_date = st.date_input("Start Date", value=today)
@@ -99,7 +99,7 @@ def main():
         ]
 
         # Create a list of weekdays to display (max 15 days)
-        date_range = pd.date_range(start=start_date, end=end_date)
+        date_range = pd.date_range(start=start_date, end=end_date).normalize()
         date_range = filter_weekdays(date_range)  # Skip weekends
 
         if len(date_range) > 15:
