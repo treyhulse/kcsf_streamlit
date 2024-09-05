@@ -1,5 +1,9 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.data_functions import process_netsuite_data_csv
+from datetime import date, timedelta
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -13,21 +17,6 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 st.write(f"You have access to this page.")
-
-
-################################################################################################
-
-## AUTHENTICATED
-
-################################################################################################
-
-import pandas as pd
-import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv
-from datetime import date, timedelta
-
-
-st.title("Shipping Report")
 
 # Sales Rep mapping
 sales_rep_mapping = {
@@ -74,7 +63,6 @@ terms_mapping = {
     18: "No Charge"
 }
 
-
 st.markdown(
     """
     <style>
@@ -108,6 +96,21 @@ def create_ship_date_chart(df):
         height=400,
         margin=dict(l=40, r=40, t=40, b=40)
     )
+    return fig
+
+def create_pie_chart(matched_orders, unmatched_orders):
+    pie_data = pd.DataFrame({
+        'Task Status': ['Tasked Orders', 'Untasked Orders'],
+        'Count': [matched_orders, unmatched_orders]
+    })
+    fig = px.pie(
+        pie_data,
+        names='Task Status',
+        values='Count',
+        title='Tasked vs Untasked Orders',
+        hole=0.4
+    )
+    fig.update_layout(margin=dict(l=40, r=40, t=40, b=40))
     return fig
 
 def get_date_range(preset):
@@ -188,7 +191,12 @@ def main():
 
     # Create and display the line chart for filtered data
     if not merged_df.empty:
-        st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
+        col_chart, col_pie = st.columns([2, 1])  # Allocate 2/3 space for chart and 1/3 for pie chart
+        with col_chart:
+            st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
+        
+        with col_pie:
+            st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
     else:
         st.write("No data available for the selected filters.")
 
