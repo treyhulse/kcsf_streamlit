@@ -7,7 +7,7 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 from datetime import date, timedelta
 
 # MongoDB connection setup
-def get_collection_data_with_progress(client, collection_name, progress_bar, batch_size=100):
+def get_collection_data_with_cumulative_progress(client, collection_name, progress_bar, progress_start, progress_end, batch_size=100):
     db = client['netsuite']
     collection = db[collection_name]
     
@@ -18,8 +18,8 @@ def get_collection_data_with_progress(client, collection_name, progress_bar, bat
         processed_doc = {key: value for key, value in doc.items()}
         data.append(processed_doc)
         
-        # Update progress bar
-        progress = (i + 1) / total_docs
+        # Update progress bar as a fraction of the total progress (between progress_start and progress_end)
+        progress = progress_start + ((i + 1) / total_docs) * (progress_end - progress_start)
         progress_bar.progress(progress)
     
     df = pd.DataFrame(data)
@@ -31,7 +31,7 @@ def get_collection_data_with_progress(client, collection_name, progress_bar, bat
     return df
 
 # MongoDB client setup
-client = MongoClient(st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority",)
+client = MongoClient(st.secrets["mongo_uri"])
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -100,9 +100,15 @@ def get_date_range(preset):
         return None, None
 
 def main():
-    # Fetch data from MongoDB collections
+    # Create a single progress bar for both collections
+    progress_bar = st.progress(0)
+
+    # Fetch data from MongoDB collections with cumulative progress
     with st.spinner("Fetching Open Sales Orders..."):
-        df_open_so = get_collection_data_with_progress(client, 'openSalesOrders', st.progress(0))
+        df_open_so = get_collection_data_with_cumulative_progress(client, 'openSalesOrders', progress_bar, 0.0, 0.5)
+
+    with st.spinner("Fetching RF Pick Data..."):
+        df_rf_pick = get_collection_data_with_cumulative_progress(client, 'rfPickTasks', progress_bar, 0.5, 1.0)
 
     # Sidebar filters for Sales Rep and Ship Via
     st.sidebar.subheader("Filter by Sales Rep")
