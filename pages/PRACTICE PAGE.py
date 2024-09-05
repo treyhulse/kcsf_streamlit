@@ -104,9 +104,6 @@ def main():
     with st.spinner("Fetching Open Sales Orders..."):
         df_open_so = get_collection_data_with_progress(client, 'openSalesOrders', st.progress(0))
 
-    with st.spinner("Fetching RF Pick Data..."):
-        df_rf_pick = get_collection_data_with_progress(client, 'rfPickTasks', st.progress(0))
-
     # Sidebar filters for Sales Rep and Ship Via
     st.sidebar.subheader("Filter by Sales Rep")
     sales_reps = ['All'] + sorted(df_open_so['Sales Rep'].unique())
