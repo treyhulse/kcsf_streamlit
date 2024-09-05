@@ -64,7 +64,8 @@ def aggregate_data(df):
 def get_date_range():
     option = st.selectbox(
         "Select Date Range",
-        ["Custom Range", "This Week", "Next Week", "This Month", "Next Month"]
+        ["Custom Range", "This Week", "Next Week", "This Month", "Next Month"],
+        index=3  # Set 'This Month' as the default selected option (index starts at 0)
     )
 
     today = datetime.today().date()  # Work with date instead of datetime
