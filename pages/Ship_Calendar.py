@@ -39,7 +39,7 @@ def load_shipping_data(batch_size=100):
     
     return df
 
-# Group data by ship_date and ship_via, sum the quantity
+# Group data by Ship Date (Admin) and Ship Via, sum the quantity
 def aggregate_data(df):
     return df.groupby(['Ship Date (Admin)', 'Ship Via']).sum().reset_index()
 
@@ -65,11 +65,11 @@ def main():
         for i in range(0, len(weekdays), 5):
             cols = st.columns(5)
             for j, date in enumerate(weekdays[i:i + 5]):
-                if date in df_aggregated['ship_date'].values:
-                    day_data = df_aggregated[df_aggregated['ship_date'] == date]
+                if date in df_aggregated['Ship Date (Admin)'].values:
+                    day_data = df_aggregated[df_aggregated['Ship Date (Admin)'] == date]
                     cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     for _, row in day_data.iterrows():
-                        cols[j].write(f"{row['ship_via']}: {row['qty']} units")
+                        cols[j].write(f"{row['Ship Via']}: {row['qty']} units")
                 else:
                     cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     cols[j].write("No shipments")
