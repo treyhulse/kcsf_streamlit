@@ -1,9 +1,37 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from pymongo import MongoClient
+import logging
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv
 from datetime import date, timedelta
+
+# MongoDB connection setup
+def get_collection_data_with_progress(client, collection_name, progress_bar, batch_size=100):
+    db = client['netsuite']
+    collection = db[collection_name]
+    
+    data = []
+    total_docs = collection.estimated_document_count()
+    
+    for i, doc in enumerate(collection.find().batch_size(batch_size)):
+        processed_doc = {key: value for key, value in doc.items()}
+        data.append(processed_doc)
+        
+        # Update progress bar
+        progress = (i + 1) / total_docs
+        progress_bar.progress(progress)
+    
+    df = pd.DataFrame(data)
+    
+    if '_id' in df.columns:
+        df.drop(columns=['_id'], inplace=True)
+    
+    logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
+    return df
+
+# MongoDB client setup
+client = MongoClient(st.secrets["mongo_uri"])
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -18,68 +46,8 @@ if not validate_page_access(user_email, page_name):
 
 st.write(f"You have access to this page.")
 
-# Sales Rep mapping
-sales_rep_mapping = {
-    7: "Shelley Gummig",
-    61802: "Kaitlyn Surry",
-    4125270: "Becky Dean",
-    4125868: "Roger Dixon",
-    4131659: "Lori McKiney",
-    47556: "Raymond Brown",
-    4169685: "Shellie Pritchett",
-    4123869: "Katelyn Kennedy",
-    47708: "Phil Vaughan",
-    4169200: "Dave Knudtson",
-    4168032: "Trey Hulse",
-    4152972: "Gary Bargen",
-    4159935: "Derrick Lewis",
-    66736: "Unspecified",
-    67473: 'Jon Joslin',
-}
-
-# Ship Via mapping
-ship_via_mapping = {
-    141: "Our Truck",
-    32356: "EPES - Truckload",
-    226: "Pickup 2",
-    36191: "Estes Standard",
-    36: "Fed Ex Ground",
-    3653: "Fed Ex Ground Home Delivery",
-    7038: "Other - See Shipping Info",
-    4: "UPS Ground",
-    227: "Dayton Freight"
-}
-
-# Terms mapping
-terms_mapping = {
-    2: "Net 30",
-    11: "Credit Card - Prepay",
-    10: "Prepay",
-    13: "Net 45",
-    3: "Net 60",
-    19: "Check",
-    27: "ACH",
-    37: "Account Credit",
-    18: "No Charge"
-}
-
-st.markdown(
-    """
-    <style>
-    .metric-box {
-        background-color: var(--primary-background-color);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Sidebar
+st.sidebar.title("Filters")
 
 def create_ship_date_chart(df):
     df['Ship Date'] = pd.to_datetime(df['Ship Date'])
@@ -132,21 +100,18 @@ def get_date_range(preset):
         return None, None
 
 def main():
+    # Fetch data from MongoDB collections
     with st.spinner("Fetching Open Sales Orders..."):
-        df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
+        df_open_so = get_collection_data_with_progress(client, 'openSalesOrders', st.progress(0))
+
     with st.spinner("Fetching RF Pick Data..."):
-        df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
+        df_rf_pick = get_collection_data_with_progress(client, 'rfPickTasks', st.progress(0))
 
-    # Map the 'Ship Via' and 'Terms' columns using the defined dictionaries
-    df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
-    df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
-
-    # Sidebar Sales Rep Filters
+    # Sidebar filters for Sales Rep and Ship Via
     st.sidebar.subheader("Filter by Sales Rep")
-    sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+    sales_reps = ['All'] + sorted(df_open_so['Sales Rep'].unique())
     selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", sales_reps, default=['All'])
 
-    # Sidebar Ship Via Filters
     st.sidebar.subheader("Filter by Ship Via")
     ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
     selected_ship_vias = st.sidebar.multiselect("Select Ship Via", ship_vias, default=['All'])
@@ -168,10 +133,8 @@ def main():
         st.sidebar.write(f"Selected range: {start_date} to {end_date}")
         selected_date_range = [start_date, end_date]
 
-    # Merge the dataframes
+    # Merge dataframes based on 'Order Number'
     merged_df = pd.merge(df_open_so, df_rf_pick[['Task ID', 'Order Number']].drop_duplicates(), on='Order Number', how='left')
-    merged_df['Sales Rep'] = merged_df['Sales Rep'].replace(sales_rep_mapping)
-    merged_df['Order Number'] = merged_df['Order Number'].astype(str)
 
     # Apply Sales Rep and Ship Via filters
     if 'All' not in selected_sales_reps:
@@ -196,13 +159,12 @@ def main():
 
     # Create and display the line chart for filtered data
     if not merged_df.empty:
-        col_chart, col_pie = st.columns([2, 1])  # Allocate 2/3 space for chart and 1/3 for pie chart
+        col_chart, col_pie = st.columns([2, 1])
         with col_chart:
             st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
         
         with col_pie:
             st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
-
     else:
         st.write("No data available for the selected filters.")
 
@@ -224,7 +186,7 @@ def main():
     with col4:
         st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
 
-    st.markdown("<br>", unsafe_allow_html=True)  # Add some vertical space
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # Display filtered data inside an expandable section
     with st.expander("View Data Table"):
@@ -240,15 +202,6 @@ def main():
             file_name="filtered_sales_orders_with_task_id.csv",
             mime="text/csv",
         )
-
-    # Add link to NetSuite open order report
-    st.markdown(
-        """
-        <br>
-        <a href="https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5065&saverun=T&whence=" target="_blank">Link to open order report in NetSuite</a>
-        """,
-        unsafe_allow_html=True
-    )
 
 if __name__ == "__main__":
     main()
