@@ -26,12 +26,6 @@ import pandas as pd
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
-st.set_page_config(
-    page_title="Shipping Calendar",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
 # MongoDB connection with increased timeout values
 def get_mongo_client():
     connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
