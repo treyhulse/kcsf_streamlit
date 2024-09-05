@@ -102,7 +102,7 @@ def main():
 
     if not df.empty:
         # Get unique 'Ship Via' values for filtering
-        all_ship_vias = df['Ship Via'].unique().tolist()
+        all_ship_vias = df['Ship Via'].unique().tolist() if 'Ship Via' in df.columns else []
         selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='Our Truck')
 
         # Apply 'Ship Via' filter (if 'All' is selected, include all)
@@ -116,7 +116,7 @@ def main():
         filtered_df = df[
             (df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) &
             (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))
-        ]
+        ] if 'Ship Date (Admin)' in df.columns else pd.DataFrame()
 
         # Display the filtered data frame
         st.write(f"Showing {len(filtered_df)} records after applying filters.")
@@ -139,7 +139,10 @@ def main():
                     if not day_data.empty:
                         order_summary = ""
                         for _, row in day_data.iterrows():
-                            order_summary += f"Order {row['tranid']} - {row['Ship Via']}: ${row['amount']}<br>"
+                            tranid = row.get('tranid', 'N/A')
+                            ship_via = row.get('Ship Via', 'N/A')
+                            amount = row.get('amount', 0.0)
+                            order_summary += f"Order {tranid} - {ship_via}: ${amount}<br>"
 
                     st.markdown(
                         f"""
