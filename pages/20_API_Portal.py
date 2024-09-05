@@ -1,5 +1,3 @@
-# 20_API_Portal.py
-
 import streamlit as st
 import pandas as pd
 from pymongo import MongoClient
@@ -123,23 +121,22 @@ def display_inventory():
 def main():
     st.title("API Portal - Inventory & Shopify Integration")
     
-    # Sidebar Navigation
-    st.sidebar.title("Navigation")
-    app_mode = st.sidebar.selectbox("Choose the page:", ["Home", "Test Shopify Connection", "View Inventory"])
+    # Tabs for navigation
+    tab1, tab2, tab3 = st.tabs(["Home", "Test Shopify Connection", "View Inventory"])
     
-    if app_mode == "Home":
+    with tab1:
         st.markdown("""
             ## Welcome to the API Portal
-            Use the sidebar to navigate between different functionalities:
+            Use the tabs to navigate between different functionalities:
             - **Test Shopify Connection**: Verify your Shopify API credentials.
             - **View Inventory**: View and manage your inventory data, and post products to Shopify.
         """)
-    elif app_mode == "Test Shopify Connection":
+        
+    with tab2:
         authenticate_shopify()
-    elif app_mode == "View Inventory":
+
+    with tab3:
         display_inventory()
-    else:
-        st.error("Unknown option selected!")
 
 if __name__ == "__main__":
     main()
