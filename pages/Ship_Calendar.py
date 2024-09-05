@@ -77,6 +77,14 @@ def main():
     if not df.empty:
         df_aggregated = aggregate_data(df)
 
+        # Get unique 'Ship Via' values for filtering
+        all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
+        selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='All')
+
+        # Apply 'Ship Via' filter (if 'All' is selected, include all)
+        if 'All' not in selected_ship_vias:
+            df_aggregated = df_aggregated[df_aggregated['Ship Via'].isin(selected_ship_vias)]
+
         # Get the date range using custom date picker
         start_date, end_date = get_date_range()
 
@@ -91,18 +99,27 @@ def main():
         if len(date_range) > 15:
             date_range = date_range[:15]
 
-        # Create a 5-column layout for the calendar
+        # Create a 5-column layout for the calendar with cards for each day
         for i in range(0, len(date_range), 5):
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
-                if date in filtered_df['Ship Date (Admin)'].values:
+                with cols[j]:
+                    st.markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
-                    cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
-                    for _, row in day_data.iterrows():
-                        cols[j].write(f"{row['Ship Via']}: {row['order_count']} orders")
-                else:
-                    cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
-                    cols[j].write("No shipments")
+
+                    # Add a card-style layout for each day
+                    if not day_data.empty:
+                        st.markdown(
+                            """
+                            <div style='border:1px solid #ddd; border-radius:10px; padding:10px; background-color:#f9f9f9;'>
+                            """, unsafe_allow_html=True)
+                        
+                        # Create a small table for the day's data
+                        st.table(day_data[['Ship Via', 'order_count']].set_index('Ship Via'))
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        st.write("No shipments")
 
 if __name__ == "__main__":
     main()
