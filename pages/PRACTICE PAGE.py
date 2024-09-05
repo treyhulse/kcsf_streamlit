@@ -226,19 +226,20 @@ def main():
 
     st.markdown("<br>", unsafe_allow_html=True)  # Add some vertical space
 
-    # Display filtered data
-    st.subheader(" ")
-    st.write(f"Total records after filtering: {len(merged_df)}")
-    st.dataframe(merged_df, height=400)
+    # Display filtered data inside an expandable section
+    with st.expander("View Data Table"):
+        st.subheader("Filtered Data Table")
+        st.write(f"Total records after filtering: {len(merged_df)}")
+        st.dataframe(merged_df, height=400)
 
-    # Download option for filtered data
-    csv = merged_df.to_csv(index=False)
-    st.download_button(
-        label="Download filtered data as CSV",
-        data=csv,
-        file_name="filtered_sales_orders_with_task_id.csv",
-        mime="text/csv",
-    )
+        # Download option for filtered data
+        csv = merged_df.to_csv(index=False)
+        st.download_button(
+            label="Download filtered data as CSV",
+            data=csv,
+            file_name="filtered_sales_orders_with_task_id.csv",
+            mime="text/csv",
+        )
 
     # Add link to NetSuite open order report
     st.markdown(
