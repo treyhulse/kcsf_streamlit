@@ -6,6 +6,9 @@ import logging
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from datetime import date, timedelta
 
+st.set_page_config(page_title="Shipping Report", 
+                layout="wide")
+
 # MongoDB connection setup
 def get_collection_data_with_cumulative_progress(client, collection_name, progress_bar, progress_start, progress_end, batch_size=100):
     db = client['netsuite']
