@@ -22,70 +22,68 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-
-import logging
-from pymongo import MongoClient
 import pandas as pd
+from pymongo import MongoClient
 
-# Configure logging
-logging.basicConfig(
-    filename="app.log", 
-    filemode="a", 
-    format="%(asctime)s - %(levelname)s - %(message)s", 
-    level=logging.DEBUG
-)
+# MongoDB connection with increased timeout values
+def get_mongo_client():
+    connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
+    client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
+    return client
 
-# Function to retrieve data with pagination from MongoDB
-def get_collection_data_with_progress(client, collection_name, progress_bar, batch_size=100):
+# Function to load items collection from MongoDB
+@st.cache_data
+def load_items_data():
+    client = get_mongo_client()
     db = client['netsuite']
-    collection = db[collection_name]
+    items_collection = db['items']
     
-    data = []
-    total_docs = collection.estimated_document_count()
+    items_data = list(items_collection.find({}))
+    items_df = pd.DataFrame(items_data)
     
-    for i, doc in enumerate(collection.find().batch_size(batch_size)):
-        processed_doc = {key: value for key, value in doc.items()}
-        data.append(processed_doc)
-        
-        # Update progress bar
-        progress = (i + 1) / total_docs
-        progress_bar.progress(progress)
+    # Drop the '_id' column if it exists
+    if '_id' in items_df.columns:
+        items_df.drop(columns=['_id'], inplace=True)
     
-    df = pd.DataFrame(data)
-    
-    if '_id' in df.columns:
-        df.drop(columns=['_id'], inplace=True)
-    
-    logging.info(f"Data fetched successfully from {collection_name} with shape: {df.shape}")
-    return df
+    return items_df
 
-# Main function
+# Function to load inventory collection from MongoDB
+@st.cache_data
+def load_inventory_data():
+    client = get_mongo_client()
+    db = client['netsuite']
+    inventory_collection = db['inventory']
+    
+    inventory_data = list(inventory_collection.find({}))
+    inventory_df = pd.DataFrame(inventory_data)
+    
+    # Drop the '_id' column if it exists
+    if '_id' in inventory_df.columns:
+        inventory_df.drop(columns=['_id'], inplace=True)
+    
+    return inventory_df
+
+# Function to merge the two dataframes on 'Internal ID'
+def merge_dataframes(items_df, inventory_df):
+    merged_df = pd.merge(items_df, inventory_df, on="Internal ID", how="inner")
+    return merged_df
+
+# Main function to render the Streamlit page
 def main():
-    st.title("Supply Chain Data Viewer")
-    
-    # Connect to MongoDB using the utility function
-    client = MongoClient(st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority", 
-                         ssl=True, serverSelectionTimeoutMS=30000, connectTimeoutMS=30000, socketTimeoutMS=30000)
+    st.title("Items and Inventory Merger")
 
-    # Select the collection to view
-    collection_name = st.selectbox("Choose a collection to load", ["items", "inventory"])
+    # Load data from MongoDB collections
+    items_df = load_items_data()
+    inventory_df = load_inventory_data()
 
-    # Display a progress bar
-    progress_bar = st.progress(0)
+    if not items_df.empty and not inventory_df.empty:
+        # Merge the dataframes on 'Internal ID'
+        merged_df = merge_dataframes(items_df, inventory_df)
 
-    # Load the selected collection into a DataFrame
-    with st.spinner(f"Loading {collection_name} data..."):
-        data = get_collection_data_with_progress(client, collection_name, progress_bar, batch_size=100)
-
-    # Check if DataFrame is empty
-    if data.empty:
-        st.warning(f"No data available in the {collection_name} collection.")
-    else:
-        st.write(f"{collection_name.capitalize()} DataFrame: {data.shape[0]} rows")
-        st.dataframe(data)
-
-    # Complete the progress bar
-    progress_bar.progress(100)
+        st.write(f"Merged DataFrame with {len(merged_df)} records:")
+        
+        # Display the merged dataframe
+        st.dataframe(merged_df)
 
 if __name__ == "__main__":
     main()
