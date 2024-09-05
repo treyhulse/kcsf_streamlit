@@ -1,4 +1,27 @@
 import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = 'API Portal'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+
+
+st.write(f"You have access to this page.")
+
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
 import pandas as pd
 from pymongo import MongoClient
 import utils.shopify_connection as shopify
@@ -36,7 +59,7 @@ def load_inventory_data():
     return inventory_df
 
 # Function to display and filter inventory data, allowing staging of products
-def display_inventory():
+def display_inventory(tab_key=""):
     st.header("Inventory Data with Filters")
     
     # Load inventory data
@@ -44,18 +67,18 @@ def display_inventory():
     
     if not inventory_df.empty:
         # Create search options for 'Internal ID'
-        internal_id_search = st.text_input("Search Internal ID")
+        internal_id_search = st.text_input(f"Search Internal ID {tab_key}", key=f"internal_id_search_{tab_key}")
         if internal_id_search:
             inventory_df = inventory_df[inventory_df['Internal ID'].str.contains(internal_id_search, case=False, na=False)]
     
         # Create search options for 'Item'
-        item_search = st.text_input("Search Item")
+        item_search = st.text_input(f"Search Item {tab_key}", key=f"item_search_{tab_key}")
         if item_search:
             inventory_df = inventory_df[inventory_df['Item'].str.contains(item_search, case=False, na=False)]
     
         # Multi-select for 'Warehouse'
         warehouses = inventory_df['Warehouse'].unique().tolist()
-        selected_warehouses = st.multiselect("Select Warehouse", warehouses, default=warehouses)
+        selected_warehouses = st.multiselect(f"Select Warehouse {tab_key}", warehouses, default=warehouses, key=f"warehouse_{tab_key}")
         if selected_warehouses:
             inventory_df = inventory_df[inventory_df['Warehouse'].isin(selected_warehouses)]
     
@@ -65,16 +88,16 @@ def display_inventory():
         
         # Staging section - Multi-select to stage products for Shopify
         st.subheader("Stage Products for Shopify")
-        staged_products = st.multiselect("Select Products to Stage", inventory_df['Item'].unique())
+        staged_products = st.multiselect(f"Select Products to Stage {tab_key}", inventory_df['Item'].unique(), key=f"staged_products_{tab_key}")
 
         if staged_products:
             # Show the products selected for staging
             st.write(f"Staged Products: {', '.join(staged_products)}")
             
             # Input for additional product details
-            description = st.text_area("Product Description (optional)", "Enter a description for the selected products")
+            description = st.text_area(f"Product Description (optional) {tab_key}", "Enter a description for the selected products", key=f"description_{tab_key}")
             
-            if st.button("Push to Shopify"):
+            if st.button(f"Push to Shopify {tab_key}", key=f"push_to_shopify_{tab_key}"):
                 # Loop through the staged products and post them to Shopify
                 for product in staged_products:
                     # Get product details from the selected inventory row
@@ -95,6 +118,7 @@ def display_inventory():
                         st.error(f"Failed to post {item_name} to Shopify.")
         else:
             st.warning("No products staged.")
+
 
 # Function to synchronize inventory and price between MongoDB and Shopify
 def sync_inventory_and_price():
@@ -146,13 +170,14 @@ def main():
         """)
         
     with tab2:
-        display_inventory()
+        display_inventory(tab_key="stage_products")
 
     with tab3:
-        display_inventory()
+        display_inventory(tab_key="view_inventory")
 
     with tab4:
         sync_inventory_and_price()
 
 if __name__ == "__main__":
     main()
+
