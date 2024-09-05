@@ -72,3 +72,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+import utils.shopify_connection as shopify
+
+def main1():
+    st.title("Shopify Integration")
+
+    if st.button("Test Shopify Connection"):
+        shop_info = shopify.test_shopify_connection()
+        if shop_info:
+            st.write(shop_info)
+
+if __name__ == "__main__":
+    main1()
