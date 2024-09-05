@@ -1,5 +1,28 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = '02_Supply_Chain.py'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+
+
+st.write(f"You have access to this page.")
+
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
+
 import logging
 from pymongo import MongoClient
 import pandas as pd
@@ -11,18 +34,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", 
     level=logging.DEBUG
 )
-
-# Authentication
-user_email = capture_user_email()
-if user_email is None:
-    st.error("Unable to retrieve user information.")
-    st.stop()
-
-page_name = '02_Supply_Chain.py'
-if not validate_page_access(user_email, page_name):
-    show_permission_violation()
-
-st.write(f"You have access to this page.")
 
 # Function to retrieve data with pagination from MongoDB
 def get_collection_data_with_progress(client, collection_name, progress_bar, batch_size=100):

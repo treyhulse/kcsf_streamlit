@@ -1,9 +1,31 @@
 import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = '06_Logistics.py'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+
+
+st.write(f"You have access to this page.")
+
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
 import pandas as pd
 import plotly.express as px
 from pymongo import MongoClient
 import logging
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from datetime import date, timedelta
 
 st.set_page_config(page_title="Shipping Report", 
@@ -35,19 +57,6 @@ def get_collection_data_with_cumulative_progress(client, collection_name, progre
 
 # MongoDB client setup
 client = MongoClient(st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority",)
-
-# Capture the user's email
-user_email = capture_user_email()
-if user_email is None:
-    st.error("Unable to retrieve user information.")
-    st.stop()
-
-# Validate access to this specific page
-page_name = '01_Shipping_Report.py'  # Adjust this based on the current page
-if not validate_page_access(user_email, page_name):
-    show_permission_violation()
-
-st.write(f"You have access to this page.")
 
 # Sidebar
 st.sidebar.title("Filters")
