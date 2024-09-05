@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import calendar
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 
@@ -39,7 +38,7 @@ def load_shipping_data(batch_size=100):
     
     return df
 
-# Group data by Ship Date (Admin) and Ship Via, sum the quantity
+# Group data by 'Ship Date (Admin)' and 'Ship Via', sum the quantity
 def aggregate_data(df):
     return df.groupby(['Ship Date (Admin)', 'Ship Via']).sum().reset_index()
 
@@ -53,20 +52,36 @@ def main():
     if not df.empty:
         df_aggregated = aggregate_data(df)
 
-        # Get current date and range of next 3-4 weeks
-        start_date = datetime.now()
-        end_date = start_date + timedelta(weeks=3)
+        # Add a slider to select the Ship Date (Admin) range
+        min_date = df_aggregated['Ship Date (Admin)'].min()
+        max_date = df_aggregated['Ship Date (Admin)'].max()
 
-        # Create a date range for the next 3-4 weeks (only weekdays)
-        weekdays = pd.date_range(start=start_date, end=end_date, freq='B')
+        # Select the date range with a slider (limit to 15 days max)
+        start_date, end_date = st.slider(
+            "Select Ship Date (Admin) Range:",
+            min_value=min_date,
+            max_value=max_date,
+            value=(min_date, min_date + timedelta(days=14)),
+            format="YYYY-MM-DD"
+        )
 
-        # Create a calendar-like layout with 5 columns (Monday to Friday)
-        week_number = 0
-        for i in range(0, len(weekdays), 5):
+        # Filter data to the selected date range
+        filtered_df = df_aggregated[
+            (df_aggregated['Ship Date (Admin)'] >= start_date) &
+            (df_aggregated['Ship Date (Admin)'] <= end_date)
+        ]
+
+        # Create a list of dates to display (max 15 days)
+        date_range = pd.date_range(start=start_date, end=end_date)
+        if len(date_range) > 15:
+            date_range = date_range[:15]
+
+        # Create a 5-column layout for the calendar
+        for i in range(0, len(date_range), 5):
             cols = st.columns(5)
-            for j, date in enumerate(weekdays[i:i + 5]):
-                if date in df_aggregated['Ship Date (Admin)'].values:
-                    day_data = df_aggregated[df_aggregated['Ship Date (Admin)'] == date]
+            for j, date in enumerate(date_range[i:i + 5]):
+                if date in filtered_df['Ship Date (Admin)'].values:
+                    day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
                     cols[j].markdown(f"### **{date.strftime('%Y-%m-%d')}**")
                     for _, row in day_data.iterrows():
                         cols[j].write(f"{row['Ship Via']}: {row['qty']} units")
