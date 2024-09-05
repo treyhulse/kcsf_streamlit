@@ -52,16 +52,21 @@ def main():
     if not df.empty:
         df_aggregated = aggregate_data(df)
 
-        # Ensure min_date and max_date are in datetime format
-        min_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].min())
-        max_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].max())
+        # Ensure min_date and max_date are in datetime format and handle NaT values
+        min_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].min(), errors='coerce')
+        max_date = pd.to_datetime(df_aggregated['Ship Date (Admin)'].max(), errors='coerce')
+
+        # Check if the min_date and max_date are valid datetime objects
+        if pd.isna(min_date) or pd.isna(max_date):
+            st.error("Invalid date range. Please check the data for missing or incorrect dates.")
+            return
 
         # Select the date range with a slider (limit to 15 days max)
         start_date, end_date = st.slider(
             "Select Ship Date (Admin) Range:",
-            min_value=min_date,
-            max_value=max_date,
-            value=(min_date, min_date + timedelta(days=14)),
+            min_value=min_date.to_pydatetime(),
+            max_value=max_date.to_pydatetime(),
+            value=(min_date.to_pydatetime(), min_date.to_pydatetime() + timedelta(days=14)),
             format="YYYY-MM-DD"
         )
 
