@@ -52,6 +52,20 @@ def main():
         if selected_warehouses:
             inventory_df = inventory_df[inventory_df['Warehouse'].isin(selected_warehouses)]
 
+        # Multi-select for 'Cart Flag Field'
+        if 'Cart Flag Field' in inventory_df.columns:
+            cart_flags = inventory_df['Cart Flag Field'].unique().tolist()
+            selected_cart_flags = st.multiselect("Select Cart Flag Field", cart_flags, default=cart_flags)
+            if selected_cart_flags:
+                inventory_df = inventory_df[inventory_df['Cart Flag Field'].isin(selected_cart_flags)]
+
+        # Multi-select for 'Amazon Flag Field'
+        if 'Amazon Flag Field' in inventory_df.columns:
+            amazon_flags = inventory_df['Amazon Flag Field'].unique().tolist()
+            selected_amazon_flags = st.multiselect("Select Amazon Flag Field", amazon_flags, default=amazon_flags)
+            if selected_amazon_flags:
+                inventory_df = inventory_df[inventory_df['Amazon Flag Field'].isin(selected_amazon_flags)]
+
         # Display filtered data
         st.write(f"Showing {len(inventory_df)} records after applying filters.")
         st.dataframe(inventory_df)
