@@ -97,29 +97,28 @@ def filter_weekdays(date_range):
 def main():
     st.title("Shipping Calendar")
 
-    # Load the original shipping data
+    # Load shipping data
     df = load_shipping_data()
 
     if not df.empty:
+        df_aggregated = aggregate_data(df)
+
         # Get unique 'Ship Via' values for filtering
-        all_ship_vias = df['Ship Via'].unique().tolist() if 'Ship Via' in df.columns else []
+        all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
         selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='Our Truck')
 
         # Apply 'Ship Via' filter (if 'All' is selected, include all)
         if 'All' not in selected_ship_vias:
-            df = df[df['Ship Via'].isin(selected_ship_vias)]
+            df_aggregated = df_aggregated[df_aggregated['Ship Via'].isin(selected_ship_vias)]
 
         # Get the date range using custom date picker
         start_date, end_date = get_date_range()
 
         # Filter data to the selected date range
-        filtered_df = df[
-            (df['Ship Date (Admin)'] >= pd.to_datetime(start_date)) &
-            (df['Ship Date (Admin)'] <= pd.to_datetime(end_date))
-        ] if 'Ship Date (Admin)' in df.columns else pd.DataFrame()
-
-        # Display the filtered data frame
-        st.write(f"Showing {len(filtered_df)} records after applying filters.")
+        filtered_df = df_aggregated[
+            (df_aggregated['Ship Date (Admin)'] >= pd.to_datetime(start_date)) &
+            (df_aggregated['Ship Date (Admin)'] <= pd.to_datetime(end_date))
+        ]
 
         # Create a list of weekdays to display (max 15 days)
         date_range = pd.date_range(start=start_date, end=end_date).normalize()
@@ -128,21 +127,18 @@ def main():
         if len(date_range) > 15:
             date_range = date_range[:15]
 
-        # Create a 5-column layout for the calendar with the original filtered data
+        # Create a 5-column layout for the calendar with improved cards for each day
         for i in range(0, len(date_range), 5):
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
                 with cols[j]:
                     day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
 
-                    # Generate the list of individual orders and their information
+                    # Generate the list of ship vias and their corresponding order counts
                     if not day_data.empty:
                         order_summary = ""
                         for _, row in day_data.iterrows():
-                            tranid = row.get('tranid', 'N/A')
-                            ship_via = row.get('Ship Via', 'N/A')
-                            amount = row.get('amount', 0.0)
-                            order_summary += f"Order {tranid} - {ship_via}: ${amount}<br>"
+                            order_summary += f"{row['Ship Via']}: {row['order_count']} orders<br>"
 
                     st.markdown(
                         f"""
@@ -154,10 +150,6 @@ def main():
                         """,
                         unsafe_allow_html=True
                     )
-
-        # Add an expandable section for the original filtered DataFrame at the bottom
-        with st.expander("View Detailed Data"):
-            st.dataframe(filtered_df)
 
 if __name__ == "__main__":
     main()
