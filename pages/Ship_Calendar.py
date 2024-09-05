@@ -105,27 +105,21 @@ def main():
         if len(date_range) > 15:
             date_range = date_range[:15]
 
-        # Create a 5-column layout for the calendar with enhanced cards for each day
+        # Create a 5-column layout for the calendar with improved cards for each day
         for i in range(0, len(date_range), 5):
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
                 with cols[j]:
-                    st.markdown(f"### **{date.strftime('%Y-%m-%d')}**")
-                    day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
-
-                    # Add a card-style layout for each day with better visual appeal
                     st.markdown(
-                        """
-                        <div style='border:1px solid #ddd; border-radius:15px; padding:15px; background-color:#fff; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); margin-bottom:10px;'>
-                        """, unsafe_allow_html=True)
-                    
-                    # Create a small table for the day's data
-                    if not day_data.empty:
-                        st.table(day_data[['Ship Via', 'order_count']].set_index('Ship Via'))
-                    else:
-                        st.write("No shipments")
-                    
-                    st.markdown("</div>", unsafe_allow_html=True)
+                        f"""
+                        <div style='border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
+                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: 150px;'>
+                            <h3 style='margin-bottom: 10px;'>{date.strftime('%Y-%m-%d')}</h3>
+                            <p style='font-size: 18px; color: #666;'>Total Orders: {filtered_df[filtered_df['Ship Date (Admin)'] == date]['order_count'].sum()}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
 if __name__ == "__main__":
     main()
