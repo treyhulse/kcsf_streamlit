@@ -1,6 +1,9 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
+# Set page layout to wide
+st.set_page_config(layout="wide")
+
 # Capture the user's email
 user_email = capture_user_email()
 if user_email is None:
@@ -12,9 +15,7 @@ page_name = '06_Logistics.py'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
-
 st.write(f"You have access to this page.")
-
 
 ################################################################################################
 
@@ -59,11 +60,11 @@ def load_shipping_data(batch_size=100):
 def aggregate_data(df):
     return df.groupby(['Ship Date (Admin)', 'Ship Via']).size().reset_index(name='order_count')
 
-# Custom date picker for "This Week", "Next Week", "This Month", and custom range
+# Custom date picker for "This Week", "Next Week", "This Month", "Next Month", and custom range
 def get_date_range():
     option = st.selectbox(
         "Select Date Range",
-        ["Custom Range", "This Week", "Next Week", "This Month"]
+        ["Custom Range", "This Week", "Next Week", "This Month", "Next Month"]
     )
 
     today = datetime.today().date()  # Work with date instead of datetime
@@ -77,6 +78,9 @@ def get_date_range():
         start_date = today.replace(day=1)  # First day of the current month
         next_month = (start_date + timedelta(days=32)).replace(day=1)  # First day of the next month
         end_date = next_month - timedelta(days=1)  # Last day of the current month
+    elif option == "Next Month":
+        start_date = (today.replace(day=1) + timedelta(days=32)).replace(day=1)  # First day of the next month
+        end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)  # Last day of the next month
     else:
         # Custom range with date input
         start_date = st.date_input("Start Date", value=today)
@@ -100,7 +104,7 @@ def main():
 
         # Get unique 'Ship Via' values for filtering
         all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
-        selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='All')
+        selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='Our Truck')
 
         # Apply 'Ship Via' filter (if 'All' is selected, include all)
         if 'All' not in selected_ship_vias:
