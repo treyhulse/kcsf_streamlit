@@ -35,18 +35,7 @@ def load_inventory_data():
     
     return inventory_df
 
-# Function to authenticate Shopify and ensure connection is valid
-def authenticate_shopify():
-    st.header("Shopify Connection")
-    if st.button("Test Shopify Connection"):
-        shop_info = shopify.test_shopify_connection()
-        if shop_info:
-            st.subheader("Shop Information")
-            st.json(shop_info)
-        else:
-            st.error("Shopify connection failed. Please check your credentials.")
-
-# Function to display and filter inventory data
+# Function to display and filter inventory data, allowing staging of products
 def display_inventory():
     st.header("Inventory Data with Filters")
     
@@ -70,73 +59,100 @@ def display_inventory():
         if selected_warehouses:
             inventory_df = inventory_df[inventory_df['Warehouse'].isin(selected_warehouses)]
     
-        # Multi-select for 'Cart Flag Field'
-        if 'Cart Flag Field' in inventory_df.columns:
-            cart_flags = inventory_df['Cart Flag Field'].unique().tolist()
-            selected_cart_flags = st.multiselect("Select Cart Flag Field", cart_flags, default=cart_flags)
-            if selected_cart_flags:
-                inventory_df = inventory_df[inventory_df['Cart Flag Field'].isin(selected_cart_flags)]
-    
-        # Multi-select for 'Amazon Flag Field'
-        if 'Amazon Flag Field' in inventory_df.columns:
-            amazon_flags = inventory_df['Amazon Flag Field'].unique().tolist()
-            selected_amazon_flags = st.multiselect("Select Amazon Flag Field", amazon_flags, default=amazon_flags)
-            if selected_amazon_flags:
-                inventory_df = inventory_df[inventory_df['Amazon Flag Field'].isin(selected_amazon_flags)]
-    
         # Display filtered data
         st.write(f"Showing {len(inventory_df)} records after applying filters.")
         st.dataframe(inventory_df)
         
-        # Allow users to select an item to post to Shopify
-        st.subheader("Post Product to Shopify")
-        selected_item = st.selectbox("Select Item to Post", inventory_df['Item'].unique())
-        
-        if selected_item:
-            selected_row = inventory_df[inventory_df['Item'] == selected_item].iloc[0]
-            item_name = selected_row['Item']
-            sku = selected_row['SKU'] if 'SKU' in selected_row else 'default-sku'
-            price = selected_row['Price'] if 'Price' in selected_row else '0.00'
+        # Staging section - Multi-select to stage products for Shopify
+        st.subheader("Stage Products for Shopify")
+        staged_products = st.multiselect("Select Products to Stage", inventory_df['Item'].unique())
+
+        if staged_products:
+            # Show the products selected for staging
+            st.write(f"Staged Products: {', '.join(staged_products)}")
             
-            # Input for additional product details (optional)
-            description = st.text_area("Product Description", "Enter product description here")
+            # Input for additional product details
+            description = st.text_area("Product Description (optional)", "Enter a description for the selected products")
             
-            # Button to post to Shopify
-            if st.button("Post to Shopify"):
-                # Prepare product data
-                product_data = shopify.prepare_product_data(item_name, description, price, sku)
-                
-                # Post product to Shopify
-                response = shopify.post_product_to_shopify(product_data)
-                
-                if response:
-                    st.success("Product successfully posted to Shopify!")
-                    st.json(response)
-                else:
-                    st.error("Failed to post product to Shopify.")
-    else:
-        st.warning("No inventory data available.")
+            if st.button("Push to Shopify"):
+                # Loop through the staged products and post them to Shopify
+                for product in staged_products:
+                    # Get product details from the selected inventory row
+                    selected_row = inventory_df[inventory_df['Item'] == product].iloc[0]
+                    item_name = selected_row['Item']
+                    sku = selected_row['SKU'] if 'SKU' in selected_row else 'default-sku'
+                    price = selected_row['Price'] if 'Price' in selected_row else '0.00'
+                    
+                    # Prepare product data
+                    product_data = shopify.prepare_product_data(item_name, description, price, sku)
+                    
+                    # Post product to Shopify
+                    response = shopify.post_product_to_shopify(product_data)
+                    
+                    if response:
+                        st.success(f"Successfully posted {item_name} to Shopify!")
+                    else:
+                        st.error(f"Failed to post {item_name} to Shopify.")
+        else:
+            st.warning("No products staged.")
+
+# Function to synchronize inventory and price between MongoDB and Shopify
+def sync_inventory_and_price():
+    st.header("Sync Inventory and Prices")
+    
+    # Load inventory data
+    inventory_df = load_inventory_data()
+    
+    # Display inventory data (reduced version)
+    st.write(f"Synchronizing {len(inventory_df)} products")
+    st.dataframe(inventory_df[['Item', 'Price', 'Quantity']])  # Display key fields
+    
+    if st.button("Sync Now"):
+        for _, row in inventory_df.iterrows():
+            # Assume product is already on Shopify, use SKU to find the product
+            sku = row['SKU']
+            price = row['Price']
+            quantity = row['Quantity']  # Add Quantity field to MongoDB if not already present
+            
+            # Update product price and inventory levels in Shopify using your update API logic
+            update_data = {
+                "variant": {
+                    "price": price,
+                    "inventory_quantity": quantity
+                }
+            }
+            
+            response = shopify.update_product_inventory_and_price(sku, update_data)
+            
+            if response:
+                st.success(f"Updated {row['Item']} successfully")
+            else:
+                st.error(f"Failed to update {row['Item']}")
 
 # Main function to render the Streamlit page
 def main():
-    st.title("API Portal - Inventory & Shopify Integration")
+    st.title("API Portal - Product Staging & Shopify Integration")
     
     # Tabs for navigation
-    tab1, tab2, tab3 = st.tabs(["Home", "Test Shopify Connection", "View Inventory"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Home", "Stage Products", "View Inventory", "Sync Inventory/Prices"])
     
     with tab1:
         st.markdown("""
             ## Welcome to the API Portal
             Use the tabs to navigate between different functionalities:
-            - **Test Shopify Connection**: Verify your Shopify API credentials.
-            - **View Inventory**: View and manage your inventory data, and post products to Shopify.
+            - **Stage Products**: Stage selected products for posting to Shopify.
+            - **View Inventory**: View and filter your inventory data.
+            - **Sync Inventory/Prices**: Keep inventory and price levels current with Shopify.
         """)
         
     with tab2:
-        authenticate_shopify()
+        display_inventory()
 
     with tab3:
         display_inventory()
+
+    with tab4:
+        sync_inventory_and_price()
 
 if __name__ == "__main__":
     main()
