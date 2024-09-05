@@ -189,6 +189,11 @@ def main():
     merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
     merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
+    # Calculate totals for tasked and untasked orders
+    total_orders = len(merged_df)
+    matched_orders = merged_df['Task ID'].notna().sum()
+    unmatched_orders = merged_df['Task ID'].isna().sum()
+
     # Create and display the line chart for filtered data
     if not merged_df.empty:
         col_chart, col_pie = st.columns([2, 1])  # Allocate 2/3 space for chart and 1/3 for pie chart
@@ -197,13 +202,9 @@ def main():
         
         with col_pie:
             st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
+
     else:
         st.write("No data available for the selected filters.")
-
-    # Matching Statistics for Metric Boxes
-    total_orders = len(merged_df)
-    matched_orders = merged_df['Task ID'].notna().sum()
-    unmatched_orders = merged_df['Task ID'].isna().sum()
 
     # Calculate Successful Task Percentage
     successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
