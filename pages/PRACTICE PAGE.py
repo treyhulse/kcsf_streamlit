@@ -31,7 +31,7 @@ def get_collection_data_with_progress(client, collection_name, progress_bar, bat
     return df
 
 # MongoDB client setup
-client = MongoClient(st.secrets["mongo_uri"])
+client = MongoClient(st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority",)
 
 # Capture the user's email
 user_email = capture_user_email()
