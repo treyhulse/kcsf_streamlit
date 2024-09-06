@@ -7,3 +7,5 @@ matplotlib
 openai
 pymongo
 streamlit-aggrid
+python-dotenv
+apscheduler
