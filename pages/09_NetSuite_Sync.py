@@ -1,3 +1,21 @@
+import logging
+import sys
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+logger.debug(f"Python version: {sys.version}")
+logger.debug(f"Python path: {sys.path}")
+
+try:
+    logger.debug("Attempting to import SyncManager")
+    from utils.sync_manager import SyncManager
+    logger.debug("Successfully imported SyncManager")
+except Exception as e:
+    logger.exception(f"Error importing SyncManager: {e}")
+
+# Rest of your 09_NetSuite_Sync.py code...
+
 import streamlit as st
 from utils.sync_manager import SyncManager
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
