@@ -133,8 +133,8 @@ def post_or_update_products():
                 st.write("Current Row:", row)
                 
                 # Check which column represents the SKU
-                sku = row['Item']  # Check and confirm 'Item' represents SKU, adjust if necessary
-                item_name = row['Item']
+                sku = row['Name']  # Check and confirm 'Name' represents SKU, adjust if necessary
+                item_name = row['Name']
                 price = row['Price']
                 description = f"Product of type {row['Type']}"
                 available_inventory = row['Available']
@@ -193,15 +193,15 @@ def match_items_between_platforms():
         st.write("Items DataFrame Columns:", items_df.columns)
         st.write("Shopify DataFrame Columns:", shopify_df.columns)
         
-        # Check if 'Item' exists in both DataFrames
-        if 'Item' in items_df.columns and 'Item' in shopify_df.columns:
-            # Merge based on 'Item'
-            merged_df = pd.merge(items_df, shopify_df, on='Item', suffixes=('_mongo', '_shopify'))
+        # Check if 'Name' exists in both DataFrames
+        if 'Name' in items_df.columns and 'Name' in shopify_df.columns:
+            # Merge based on 'Name'
+            merged_df = pd.merge(items_df, shopify_df, on='Name', suffixes=('_mongo', '_shopify'))
         elif 'SKU' in items_df.columns and 'SKU' in shopify_df.columns:
-            # If 'Item' doesn't exist, try merging on 'SKU'
+            # If 'Name' doesn't exist, try merging on 'SKU'
             merged_df = pd.merge(items_df, shopify_df, on='SKU', suffixes=('_mongo', '_shopify'))
         else:
-            st.error("'Item' or 'SKU' is missing from one of the DataFrames.")
+            st.error("'Name' or 'SKU' is missing from one of the DataFrames.")
             return
         
         # Display comparison of pricing and inventory
