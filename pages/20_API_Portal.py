@@ -71,7 +71,16 @@ def load_items_with_inventory():
         return pd.DataFrame()  # Return an empty DataFrame if the join can't be performed
 
     # Convert 'Available' column from Decimal128 to float
-    merged_df['Available'] = merged_df['Available'].apply(lambda x: float(x.to_decimal()) if isinstance(x, pd.api.extensions.ExtensionArray) else float(x))
+    def decimal128_to_float(value):
+        if isinstance(value, pd.api.extensions.ExtensionArray):
+            return float(value.to_decimal())
+        elif isinstance(value, Decimal128):  # Correctly check for Decimal128 type
+            return float(value.to_decimal())
+        else:
+            return float(value)
+    
+    # Apply the conversion function to the 'Available' column
+    merged_df['Available'] = merged_df['Available'].apply(decimal128_to_float)
 
     # Filter out rows where 'Available' is 0 or NaN
     merged_df = merged_df[merged_df['Available'] > 0]
@@ -81,6 +90,7 @@ def load_items_with_inventory():
         merged_df.drop(columns=['_id'], inplace=True)
     
     return merged_df
+
 
 
 
