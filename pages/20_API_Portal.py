@@ -127,7 +127,7 @@ def post_or_update_products():
         
         if st.button("Post/Update Filtered Products to Shopify"):
             for _, row in items_df.iterrows():
-                sku = row['SKU']
+                sku = row['Item']  # Use 'Item' for SKU
                 item_name = row['Item']
                 price = row['Price']
                 description = f"Product of type {row['Type']}"
@@ -154,6 +154,7 @@ def post_or_update_products():
                         st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
     else:
         st.warning("No products with available inventory.")
+
 
 
 # Function to retrieve synced products from Shopify
