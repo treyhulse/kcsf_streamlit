@@ -26,6 +26,8 @@ import pandas as pd
 from pymongo import MongoClient
 import utils.shopify_connection as shopify
 import logging
+from bson import Decimal128
+
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')

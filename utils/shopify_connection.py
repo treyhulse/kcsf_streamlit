@@ -1,6 +1,7 @@
 import requests
 import streamlit as st
 
+
 # Function to get the Shopify connection headers
 def get_shopify_headers(use_admin_key=False):
     if use_admin_key:
