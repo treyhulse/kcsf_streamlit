@@ -129,20 +129,30 @@ def post_or_update_products():
         
         if st.button("Post/Update Filtered Products to Shopify"):
             for _, row in items_df.iterrows():
-                # Debugging: Print the row to see what fields are available
-                st.write("Current Row:", row)
-                
-                # Check which column represents the SKU
-                sku = row['Name']  # Check and confirm 'Name' represents SKU, adjust if necessary
-                item_name = row['Name']
-                price = row['Base Price']
-                description = f"Product of type {row['Type']}"
-                available_inventory = row['Available']
+                sku = row['Name']  # Use 'Name' for SKU
+                item_name = row['Display Name']  # Product name
+                price = row['Base Price']  # Use 'Base Price' for price
+                description = row['Description']
+                available_inventory = row['inventory_Available']
+
+                # Debugging: Print the data being sent to Shopify
+                st.write(f"Preparing to post/update product: {sku}")
+                st.write({
+                    "title": item_name,
+                    "body_html": description,
+                    "vendor": "Your Vendor",
+                    "variants": [{
+                        "price": price,
+                        "sku": sku,
+                        "inventory_quantity": available_inventory
+                    }]
+                })
 
                 # Check if SKU exists on Shopify
                 if shopify.sku_exists_on_shopify(sku):
                     # Update the existing product
                     update_data = shopify.prepare_update_data(item_name, description, price, available_inventory)
+                    st.write(f"Updating product on Shopify: {update_data}")  # Debugging: Print update data
                     response = shopify.update_product_on_shopify(sku, update_data)
                     
                     if response:
@@ -152,6 +162,7 @@ def post_or_update_products():
                 else:
                     # Post new product
                     product_data = shopify.prepare_product_data(item_name, description, price, sku)
+                    st.write(f"Posting product to Shopify: {product_data}")  # Debugging: Print product data
                     response = shopify.post_product_to_shopify(product_data)
                     
                     if response:
@@ -160,6 +171,7 @@ def post_or_update_products():
                         st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
     else:
         st.warning("No products with available inventory.")
+
 
 
 
