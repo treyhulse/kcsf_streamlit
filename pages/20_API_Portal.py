@@ -43,7 +43,7 @@ def get_mongo_client():
     )
     return client
 
-# Function to load 'items' collection and join it with the 'Available' inventory data
+# Function to load 'items' collection and join it with the 'Available' inventory data using 'Internal ID'
 @st.cache_data
 def load_items_with_inventory():
     client = get_mongo_client()
@@ -58,10 +58,18 @@ def load_items_with_inventory():
     # Load 'inventory' collection
     inventory_data = list(inventory_collection.find({}))
     inventory_df = pd.DataFrame(inventory_data)
-
-    # Perform join on Item or 'Item' field
-    merged_df = pd.merge(items_df, inventory_df[['Item', 'Available']], on='Item')
     
+    # Debugging: Print the column names of both DataFrames
+    st.write("Items DataFrame Columns:", items_df.columns)
+    st.write("Inventory DataFrame Columns:", inventory_df.columns)
+
+    # Perform join on 'Internal ID'
+    if 'Internal ID' in items_df.columns and 'Internal ID' in inventory_df.columns:
+        merged_df = pd.merge(items_df, inventory_df[['Internal ID', 'Available']], on='Internal ID')
+    else:
+        st.error("'Internal ID' is missing from one of the DataFrames.")
+        return pd.DataFrame()  # Return an empty DataFrame if the join can't be performed
+
     # Filter out rows where 'Available' is 0 or NaN
     merged_df = merged_df[merged_df['Available'] > 0]
 
@@ -70,6 +78,7 @@ def load_items_with_inventory():
         merged_df.drop(columns=['_id'], inplace=True)
     
     return merged_df
+
 
 # Function to post or update items on Shopify
 def post_or_update_products():
