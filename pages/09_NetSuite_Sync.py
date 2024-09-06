@@ -1,46 +1,21 @@
-
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.sync_manager import SyncManager
+from datetime import datetime, timedelta
+import logging
 
-# Capture the user's email
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Authentication check
 user_email = capture_user_email()
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-# Validate access to this specific page
-page_name = 'API Portal'  # Adjust this based on the current page
+page_name = 'API Portal'
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
-
-
-st.write(f"You have access to this page.")
-
-
-################################################################################################
-
-## AUTHENTICATED
-
-################################################################################################
-
-import logging
-import sys
-from utils.sync_manager import SyncManager
-from datetime import datetime, timedelta
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-
-logger.debug(f"Python version: {sys.version}")
-logger.debug(f"Python path: {sys.path}")
-
-try:
-    logger.debug("Attempting to import SyncManager")
-    from utils.sync_manager import SyncManager
-    logger.debug("Successfully imported SyncManager")
-except Exception as e:
-    logger.exception(f"Error importing SyncManager: {e}")
-
 
 st.title("NetSuite Sync Management")
 
@@ -63,7 +38,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("Sync Inventory"):
         with st.spinner("Syncing inventory..."):
-            result = sync_manager.sync_inventory()
+            result = sync_manager.sync_data("inventory")
         if result:
             st.success("Inventory sync completed successfully!")
         else:
@@ -72,7 +47,7 @@ with col1:
 with col2:
     if st.button("Sync Sales"):
         with st.spinner("Syncing sales..."):
-            result = sync_manager.sync_sales()
+            result = sync_manager.sync_data("sales")
         if result:
             st.success("Sales sync completed successfully!")
         else:
@@ -81,7 +56,7 @@ with col2:
 with col3:
     if st.button("Sync Items"):
         with st.spinner("Syncing items..."):
-            result = sync_manager.sync_items()
+            result = sync_manager.sync_data("items")
         if result:
             st.success("Items sync completed successfully!")
         else:

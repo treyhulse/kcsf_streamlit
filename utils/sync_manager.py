@@ -11,51 +11,41 @@ class SyncManager:
         self.mongo_client = get_mongo_client()
         self.db = self.mongo_client['netsuite']
 
-    def sync_inventory(self):
+    def sync_data(self, data_type):
         try:
-            inventory_data = self.netsuite_client.fetch_inventory_data()
-            if inventory_data:
-                collection = self.db['inventory']
-                for item in inventory_data:
+            fetch_method = getattr(self.netsuite_client, f"fetch_{data_type}_data")
+            data = fetch_method()
+            if data:
+                collection = self.db[data_type]
+                for item in data:
                     collection.update_one(
                         {"Internal ID": item["Internal ID"]},
                         {"$set": item},
                         upsert=True
                     )
-                self.log_sync_event("inventory", "success", f"Synced {len(inventory_data)} inventory items")
-                logger.info(f"Synced {len(inventory_data)} inventory items")
+                self.log_sync_event(data_type, "success", f"Synced {len(data)} {data_type} items")
+                logger.info(f"Synced {len(data)} {data_type} items")
                 return True
             else:
-                self.log_sync_event("inventory", "failed", "Failed to fetch inventory data from NetSuite")
-                logger.error("Failed to fetch inventory data from NetSuite")
+                self.log_sync_event(data_type, "failed", f"Failed to fetch {data_type} data from NetSuite")
+                logger.error(f"Failed to fetch {data_type} data from NetSuite")
                 return False
         except Exception as e:
-            self.log_sync_event("inventory", "failed", f"Error during inventory sync: {str(e)}")
-            logger.exception("Error during inventory sync")
+            self.log_sync_event(data_type, "failed", f"Error during {data_type} sync: {str(e)}")
+            logger.exception(f"Error during {data_type} sync")
             return False
-
-    def sync_sales(self):
-        # Similar implementation to sync_inventory
-        pass
-
-    def sync_items(self):
-        # Similar implementation to sync_inventory
-        pass
 
     def perform_full_sync(self):
         try:
-            inventory_success = self.sync_inventory()
-            sales_success = self.sync_sales()
-            items_success = self.sync_items()
+            sync_results = {}
+            for data_type in ["inventory", "sales", "items"]:
+                sync_results[data_type] = self.sync_data(data_type)
             
-            if inventory_success and sales_success and items_success:
+            if all(sync_results.values()):
                 self.log_sync_event("full_sync", "success", "Full sync completed successfully")
                 return True
             else:
-                failed_syncs = []
-                if not inventory_success: failed_syncs.append("inventory")
-                if not sales_success: failed_syncs.append("sales")
-                if not items_success: failed_syncs.append("items")
+                failed_syncs = [data_type for data_type, result in sync_results.items() if not result]
                 self.log_sync_event("full_sync", "partial_success", f"Full sync completed with issues in: {', '.join(failed_syncs)}")
                 return False
         except Exception as e:
