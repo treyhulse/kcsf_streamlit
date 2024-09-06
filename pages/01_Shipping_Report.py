@@ -142,8 +142,8 @@ def main():
     with st.spinner("Fetching Open Sales Orders..."):
         df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
 
-    # Display the columns for debugging
-    st.write(df_open_so.columns)
+    # Print the first few rows of the DataFrame
+    st.write(df_open_so.head())  # Display the first 5 rows to check the data content
 
     # Check if 'Ship Via' exists before mapping
     if 'Ship Via' in df_open_so.columns:
@@ -153,6 +153,7 @@ def main():
     
     # Continue with the rest of your logic
     st.dataframe(df_open_so)
+
 
     with st.spinner("Fetching RF Pick Data..."):
         df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
