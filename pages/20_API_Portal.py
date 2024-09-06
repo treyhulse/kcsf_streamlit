@@ -133,27 +133,30 @@ def post_or_update_products():
                 item_name = row['Display Name']  # Product name
                 price = row['Base Price']  # Use 'Base Price' for price
                 description = row['Description']
-                available_inventory = row['Available']  # Use correct column name
+                available_inventory = row['Available']  # Will use Inventory API for this
+
+                # Prepare product data (excluding inventory_quantity)
+                product_data = {
+                    "product": {
+                        "title": item_name,
+                        "body_html": description,
+                        "vendor": "Your Vendor",
+                        "variants": [{
+                            "price": price,
+                            "sku": sku
+                        }]
+                    }
+                }
 
                 # Debugging: Print the data being sent to Shopify
                 st.write(f"Preparing to post/update product: {sku}")
-                st.write({
-                    "title": item_name,
-                    "body_html": description,
-                    "vendor": "Your Vendor",
-                    "variants": [{
-                        "price": price,
-                        "sku": sku,
-                        "inventory_quantity": available_inventory
-                    }]
-                })
+                st.write(product_data)
 
                 # Check if SKU exists on Shopify
                 if shopify.sku_exists_on_shopify(sku):
                     # Update the existing product
-                    update_data = shopify.prepare_update_data(item_name, description, price, available_inventory)
-                    st.write(f"Updating product on Shopify: {update_data}")  # Debugging: Print update data
-                    response = shopify.update_product_on_shopify(sku, update_data)
+                    st.write(f"Updating product on Shopify: {product_data}")
+                    response = shopify.update_product_on_shopify(sku, product_data)
                     
                     if response:
                         st.success(f"Updated {item_name} (SKU: {sku}) on Shopify.")
@@ -161,8 +164,7 @@ def post_or_update_products():
                         st.error(f"Failed to update {item_name} (SKU: {sku}) on Shopify.")
                 else:
                     # Post new product
-                    product_data = shopify.prepare_product_data(item_name, description, price, sku)
-                    st.write(f"Posting product to Shopify: {product_data}")  # Debugging: Print product data
+                    st.write(f"Posting product to Shopify: {product_data}")
                     response = shopify.post_product_to_shopify(product_data)
                     
                     if response:
