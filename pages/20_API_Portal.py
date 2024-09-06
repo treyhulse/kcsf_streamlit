@@ -70,6 +70,9 @@ def load_items_with_inventory():
         st.error("'Internal ID' is missing from one of the DataFrames.")
         return pd.DataFrame()  # Return an empty DataFrame if the join can't be performed
 
+    # Convert 'Available' column from Decimal128 to float
+    merged_df['Available'] = merged_df['Available'].apply(lambda x: float(x.to_decimal()) if isinstance(x, pd.api.extensions.ExtensionArray) else float(x))
+
     # Filter out rows where 'Available' is 0 or NaN
     merged_df = merged_df[merged_df['Available'] > 0]
 
@@ -78,6 +81,7 @@ def load_items_with_inventory():
         merged_df.drop(columns=['_id'], inplace=True)
     
     return merged_df
+
 
 
 # Function to post or update items on Shopify
