@@ -8,8 +8,6 @@ from utils.data_functions import process_netsuite_data, replace_ids_with_display
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from utils.config import API_URLS, SALES_REP_MAPPING, SHIP_VIA_MAPPING, TERMS_MAPPING
 
-# Rest of the code remains the same...
-
 # Set page config
 st.set_page_config(page_title="Shipping Report", layout="wide")
 
@@ -20,16 +18,32 @@ def load_data() -> pd.DataFrame:
         if df.empty:
             st.error("No data was retrieved from NetSuite. Please check your API connection and try again.")
             return pd.DataFrame()
+        
+        # Check for expected columns
+        expected_columns = ['Sales Rep', 'Ship Via', 'Terms', 'Ship Date']
+        missing_columns = [col for col in expected_columns if col not in df.columns]
+        if missing_columns:
+            st.warning(f"The following expected columns are missing from the data: {', '.join(missing_columns)}")
+        
         df = replace_ids_with_display_values(df, SALES_REP_MAPPING, 'Sales Rep')
         df = replace_ids_with_display_values(df, SHIP_VIA_MAPPING, 'Ship Via')
         df = replace_ids_with_display_values(df, TERMS_MAPPING, 'Terms')
-        df['Ship Date'] = pd.to_datetime(df['Ship Date'])
+        
+        if 'Ship Date' in df.columns:
+            df['Ship Date'] = pd.to_datetime(df['Ship Date'], errors='coerce')
+        else:
+            st.warning("'Ship Date' column is missing. Some functionality may be limited.")
+        
         return df
     except Exception as e:
         st.error(f"An error occurred while loading data: {str(e)}")
         return pd.DataFrame()
 
 def create_ship_date_chart(df: pd.DataFrame):
+    if 'Ship Date' not in df.columns:
+        st.warning("Cannot create ship date chart: 'Ship Date' column is missing.")
+        return None
+    
     ship_date_counts = df['Ship Date'].value_counts().sort_index()
     fig = px.line(
         x=ship_date_counts.index,
@@ -97,64 +111,82 @@ def main():
     with st.spinner("Loading data..."):
         df = load_data()
 
+    if df.empty:
+        st.warning("No data available. Please check the data source and try again.")
+        return
+
     # Sidebar filters
     st.sidebar.title("Filters")
 
     # Date filter
     st.sidebar.subheader("Filter by Ship Date")
-    date_preset = st.sidebar.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
+    if 'Ship Date' in df.columns:
+        date_preset = st.sidebar.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
 
-    if date_preset == "Custom":
-        min_date = df['Ship Date'].min().date()
-        max_date = df['Ship Date'].max().date()
-        selected_date_range = st.sidebar.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        if date_preset == "Custom":
+            min_date = df['Ship Date'].min().date()
+            max_date = df['Ship Date'].max().date()
+            selected_date_range = st.sidebar.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        else:
+            start_date, end_date = get_date_range(date_preset)
+            st.sidebar.write(f"Selected range: {start_date} to {end_date}")
+            selected_date_range = [start_date, end_date]
     else:
-        start_date, end_date = get_date_range(date_preset)
-        st.sidebar.write(f"Selected range: {start_date} to {end_date}")
-        selected_date_range = [start_date, end_date]
+        st.sidebar.warning("Ship Date filter not available due to missing data.")
 
     # Sales Rep filter
-    st.sidebar.subheader("Filter by Sales Rep")
-    sales_reps = ['All'] + sorted(df['Sales Rep'].unique())
-    selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", sales_reps, default=['All'])
+    if 'Sales Rep' in df.columns:
+        st.sidebar.subheader("Filter by Sales Rep")
+        sales_reps = ['All'] + sorted(df['Sales Rep'].unique())
+        selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", sales_reps, default=['All'])
+    else:
+        st.sidebar.warning("Sales Rep filter not available due to missing data.")
 
     # Ship Via filter
-    st.sidebar.subheader("Filter by Ship Via")
-    ship_vias = ['All'] + sorted(df['Ship Via'].unique())
-    selected_ship_vias = st.sidebar.multiselect("Select Ship Via", ship_vias, default=['All'])
+    if 'Ship Via' in df.columns:
+        st.sidebar.subheader("Filter by Ship Via")
+        ship_vias = ['All'] + sorted(df['Ship Via'].unique())
+        selected_ship_vias = st.sidebar.multiselect("Select Ship Via", ship_vias, default=['All'])
+    else:
+        st.sidebar.warning("Ship Via filter not available due to missing data.")
 
     # Task ID filters
-    filter_with_task_id = st.sidebar.checkbox("Show rows with Task ID", value=True)
-    filter_without_task_id = st.sidebar.checkbox("Show rows without Task ID", value=True)
+    if 'Task ID' in df.columns:
+        filter_with_task_id = st.sidebar.checkbox("Show rows with Task ID", value=True)
+        filter_without_task_id = st.sidebar.checkbox("Show rows without Task ID", value=True)
+    else:
+        st.sidebar.warning("Task ID filter not available due to missing data.")
 
     # Apply filters
     filtered_df = df.copy()
 
     # Date filter
-    filtered_df = filtered_df[(filtered_df['Ship Date'].dt.date >= selected_date_range[0]) & 
-                              (filtered_df['Ship Date'].dt.date <= selected_date_range[1])]
+    if 'Ship Date' in filtered_df.columns:
+        filtered_df = filtered_df[(filtered_df['Ship Date'].dt.date >= selected_date_range[0]) & 
+                                  (filtered_df['Ship Date'].dt.date <= selected_date_range[1])]
 
     # Sales Rep filter
-    if 'All' not in selected_sales_reps:
+    if 'Sales Rep' in filtered_df.columns and 'All' not in selected_sales_reps:
         filtered_df = filtered_df[filtered_df['Sales Rep'].isin(selected_sales_reps)]
 
     # Ship Via filter
-    if 'All' not in selected_ship_vias:
+    if 'Ship Via' in filtered_df.columns and 'All' not in selected_ship_vias:
         filtered_df = filtered_df[filtered_df['Ship Via'].isin(selected_ship_vias)]
 
     # Task ID filter
-    if filter_with_task_id and not filter_without_task_id:
-        filtered_df = filtered_df[filtered_df['Task ID'].notna()]
-    elif filter_without_task_id and not filter_with_task_id:
-        filtered_df = filtered_df[filtered_df['Task ID'].isna()]
+    if 'Task ID' in filtered_df.columns:
+        if filter_with_task_id and not filter_without_task_id:
+            filtered_df = filtered_df[filtered_df['Task ID'].notna()]
+        elif filter_without_task_id and not filter_with_task_id:
+            filtered_df = filtered_df[filtered_df['Task ID'].isna()]
 
     # Display metrics
     st.subheader("Key Metrics")
     col1, col2, col3, col4 = st.columns(4)
 
     total_orders = len(filtered_df)
-    matched_orders = filtered_df['Task ID'].notna().sum()
-    unmatched_orders = filtered_df['Task ID'].isna().sum()
+    matched_orders = filtered_df['Task ID'].notna().sum() if 'Task ID' in filtered_df.columns else 0
+    unmatched_orders = filtered_df['Task ID'].isna().sum() if 'Task ID' in filtered_df.columns else 0
     successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
 
     col1.metric("Total Open Orders", total_orders)
@@ -167,7 +199,9 @@ def main():
     col_chart, col_pie = st.columns([2, 1])
 
     with col_chart:
-        st.plotly_chart(create_ship_date_chart(filtered_df), use_container_width=True)
+        ship_date_chart = create_ship_date_chart(filtered_df)
+        if ship_date_chart:
+            st.plotly_chart(ship_date_chart, use_container_width=True)
     
     with col_pie:
         st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
