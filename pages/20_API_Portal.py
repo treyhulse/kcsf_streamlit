@@ -135,7 +135,7 @@ def post_or_update_products():
                 # Check which column represents the SKU
                 sku = row['Name']  # Check and confirm 'Name' represents SKU, adjust if necessary
                 item_name = row['Name']
-                price = row['Price']
+                price = row['Base Price']
                 description = f"Product of type {row['Type']}"
                 available_inventory = row['Available']
 
