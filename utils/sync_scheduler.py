@@ -1,24 +1,24 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from sync_manager import SyncManager
+from utils.netsuite_connection_manager import NetSuiteConnectionManager
 import logging
 
 logger = logging.getLogger(__name__)
 
 def setup_sync_scheduler():
     scheduler = BackgroundScheduler()
-    sync_manager = SyncManager()
+    connection_manager = NetSuiteConnectionManager()
 
-    # Schedule full sync daily at 1 AM
-    scheduler.add_job(sync_manager.perform_full_sync, 'cron', hour=1)
+    def sync_all_connections():
+        connections = connection_manager.get_connections()
+        for conn in connections:
+            success, message = connection_manager.incremental_update(conn['name'])
+            if success:
+                logger.info(f"Successfully updated connection {conn['name']}: {message}")
+            else:
+                logger.error(f"Failed to update connection {conn['name']}: {message}")
 
-    # Schedule inventory sync every 4 hours
-    scheduler.add_job(sync_manager.sync_inventory, 'interval', hours=4)
-
-    # Schedule sales sync every 2 hours
-    scheduler.add_job(sync_manager.sync_sales, 'interval', hours=2)
-
-    # Schedule items sync every 6 hours
-    scheduler.add_job(sync_manager.sync_items, 'interval', hours=6)
+    # Schedule sync for all connections daily at 1 AM
+    scheduler.add_job(sync_all_connections, 'cron', hour=1)
 
     scheduler.start()
     logger.info("Sync scheduler started")
