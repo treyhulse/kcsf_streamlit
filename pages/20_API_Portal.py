@@ -133,17 +133,23 @@ def post_or_update_products():
                 item_name = row['Display Name']  # Product name
                 price = row['Base Price']  # Use 'Base Price' for price
                 description = row['Description']
-                available_inventory = row['Available']  # Will use Inventory API for this
 
-                # Prepare product data (excluding inventory_quantity)
+                # Prepare product data for Shopify API
                 product_data = {
                     "product": {
                         "title": item_name,
-                        "body_html": description,
+                        "body_html": f"<strong>{description}</strong>",
                         "vendor": "Your Vendor",
+                        "product_type": row['Type'],
+                        "status": "draft",  # You can set this to "active" if ready for publishing
                         "variants": [{
-                            "price": price,
-                            "sku": sku
+                            "price": str(price),  # Convert price to string format
+                            "sku": sku,
+                            "inventory_policy": "deny",
+                            "inventory_management": None,  # If you are using third-party inventory services
+                            "taxable": True,
+                            "requires_shipping": True,
+                            "inventory_quantity": 0  # We'll update inventory separately
                         }]
                     }
                 }
@@ -173,6 +179,7 @@ def post_or_update_products():
                         st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
     else:
         st.warning("No products with available inventory.")
+
 
 
 
