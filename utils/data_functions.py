@@ -6,7 +6,7 @@ import logging
 from typing import Dict, Any
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import get_netsuite_config, API_URLS
+from utils.config import get_netsuite_config, API_URLS
 
 # Rest of the code remains the same...
 
