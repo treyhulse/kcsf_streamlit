@@ -15,12 +15,19 @@ st.set_page_config(page_title="Shipping Report", layout="wide")
 
 @st.cache_data(ttl=3600)
 def load_data() -> pd.DataFrame:
-    df = process_netsuite_data(API_URLS["open_so"])
-    df = replace_ids_with_display_values(df, SALES_REP_MAPPING, 'Sales Rep')
-    df = replace_ids_with_display_values(df, SHIP_VIA_MAPPING, 'Ship Via')
-    df = replace_ids_with_display_values(df, TERMS_MAPPING, 'Terms')
-    df['Ship Date'] = pd.to_datetime(df['Ship Date'])
-    return df
+    try:
+        df = process_netsuite_data(API_URLS["open_so"])
+        if df.empty:
+            st.error("No data was retrieved from NetSuite. Please check your API connection and try again.")
+            return pd.DataFrame()
+        df = replace_ids_with_display_values(df, SALES_REP_MAPPING, 'Sales Rep')
+        df = replace_ids_with_display_values(df, SHIP_VIA_MAPPING, 'Ship Via')
+        df = replace_ids_with_display_values(df, TERMS_MAPPING, 'Terms')
+        df['Ship Date'] = pd.to_datetime(df['Ship Date'])
+        return df
+    except Exception as e:
+        st.error(f"An error occurred while loading data: {str(e)}")
+        return pd.DataFrame()
 
 def create_ship_date_chart(df: pd.DataFrame):
     ship_date_counts = df['Ship Date'].value_counts().sort_index()
