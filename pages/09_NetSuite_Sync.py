@@ -1,5 +1,32 @@
+
+import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = 'API Portal'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+
+
+st.write(f"You have access to this page.")
+
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
 import logging
 import sys
+from utils.sync_manager import SyncManager
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -14,20 +41,6 @@ try:
 except Exception as e:
     logger.exception(f"Error importing SyncManager: {e}")
 
-# Rest of your 09_NetSuite_Sync.py code...
-
-import streamlit as st
-from utils.sync_manager import SyncManager
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-
-# Authentication check
-user_email = capture_user_email()
-if user_email is None:
-    st.error("Unable to retrieve user information.")
-    st.stop()
-
-if not validate_page_access(user_email, 'Netsuite Sync'):
-    show_permission_violation()
 
 st.title("NetSuite Sync Management")
 
@@ -37,8 +50,11 @@ st.header("Sync Options")
 
 if st.button("Perform Full Sync"):
     with st.spinner("Performing full sync..."):
-        sync_manager.perform_full_sync()
-    st.success("Full sync completed!")
+        result = sync_manager.perform_full_sync()
+    if result:
+        st.success("Full sync completed successfully!")
+    else:
+        st.error("Full sync encountered some issues. Check the logs for details.")
 
 st.header("Individual Sync Options")
 
@@ -47,26 +63,70 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("Sync Inventory"):
         with st.spinner("Syncing inventory..."):
-            sync_manager.sync_inventory()
-        st.success("Inventory sync completed!")
+            result = sync_manager.sync_inventory()
+        if result:
+            st.success("Inventory sync completed successfully!")
+        else:
+            st.error("Inventory sync encountered some issues. Check the logs for details.")
 
 with col2:
     if st.button("Sync Sales"):
         with st.spinner("Syncing sales..."):
-            sync_manager.sync_sales()
-        st.success("Sales sync completed!")
+            result = sync_manager.sync_sales()
+        if result:
+            st.success("Sales sync completed successfully!")
+        else:
+            st.error("Sales sync encountered some issues. Check the logs for details.")
 
 with col3:
     if st.button("Sync Items"):
         with st.spinner("Syncing items..."):
-            sync_manager.sync_items()
-        st.success("Items sync completed!")
+            result = sync_manager.sync_items()
+        if result:
+            st.success("Items sync completed successfully!")
+        else:
+            st.error("Items sync encountered some issues. Check the logs for details.")
 
 st.header("Sync Logs")
 
-# Display recent sync logs
-sync_logs = sync_manager.db['sync_logs'].find().sort("timestamp", -1).limit(10)
-for log in sync_logs:
-    st.write(f"{log['timestamp']}: {log['sync_type']} - {log['status']}")
+# Display recent sync logs with more details
+st.subheader("Recent Sync Logs")
+sync_logs = sync_manager.get_recent_sync_logs(10)  # Get last 10 logs
+if sync_logs:
+    for log in sync_logs:
+        status_color = "green" if log['status'] == "success" else "red"
+        st.markdown(f"**{log['timestamp']}**: {log['sync_type']} - "
+                    f"<span style='color:{status_color}'>{log['status']}</span>", unsafe_allow_html=True)
+        if 'details' in log:
+            st.text(f"Details: {log['details']}")
+else:
+    st.info("No sync logs found.")
 
-# Add more UI elements for sync status, scheduling, etc.
+# Display sync statistics
+st.subheader("Sync Statistics")
+stats = sync_manager.get_sync_statistics()
+if stats:
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Syncs", stats['total_syncs'])
+    col2.metric("Successful Syncs", stats['successful_syncs'])
+    col3.metric("Failed Syncs", stats['failed_syncs'])
+    
+    st.markdown(f"**Last Successful Sync:** {stats['last_successful_sync']}")
+    st.markdown(f"**Last Failed Sync:** {stats['last_failed_sync']}")
+else:
+    st.info("No sync statistics available yet.")
+
+# Add a section to view sync details for a specific date range
+st.header("View Sync Details")
+col1, col2 = st.columns(2)
+with col1:
+    start_date = st.date_input("Start Date", datetime.now() - timedelta(days=7))
+with col2:
+    end_date = st.date_input("End Date", datetime.now())
+
+if st.button("View Sync Details"):
+    details = sync_manager.get_sync_details(start_date, end_date)
+    if details:
+        st.dataframe(details)
+    else:
+        st.info("No sync details found for the selected date range.")
