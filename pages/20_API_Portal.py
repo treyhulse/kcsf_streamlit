@@ -129,7 +129,7 @@ def sync_inventory_and_price():
     
     # Display inventory data (reduced version)
     st.write(f"Synchronizing {len(inventory_df)} products")
-    st.dataframe(inventory_df[['Item', 'Price', 'Quantity']])  # Display key fields
+    st.dataframe(inventory_df[['Item', 'Base Price', 'Available']])  # Display key fields
     
     if st.button("Sync Now"):
         for _, row in inventory_df.iterrows():
