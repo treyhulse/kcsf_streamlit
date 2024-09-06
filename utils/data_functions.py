@@ -23,6 +23,7 @@ def get_authentication():
 
 # For Shipping Report: CSV Data Handling
 def fetch_all_data_csv(url, max_retries=3):
+    """Fetch all data from a NetSuite RESTlet endpoint that returns CSV data."""
     all_data = []
     page = 1
     auth = get_authentication()
@@ -30,30 +31,32 @@ def fetch_all_data_csv(url, max_retries=3):
     while True:
         for attempt in range(max_retries):
             try:
+                logger.info(f"Fetching page {page} from {url}")
                 response = requests.get(f"{url}&page={page}", auth=auth)
                 response.raise_for_status()
 
-                # Print the raw response data
-                st.write(response.text)  # Print raw CSV response
-
-                # Convert the CSV response to a DataFrame
+                # Assume the response is CSV
                 df = pd.read_csv(StringIO(response.text))
 
                 if df.empty:
+                    logger.info("Received empty dataframe. Assuming end of data.")
                     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
 
                 all_data.append(df)
+                logger.info(f"Successfully fetched {len(df)} records from page {page}")
 
-                if len(df) < 1000:
+                if len(df) < 1000:  # Assuming 1000 is the max page size
+                    logger.info("Received less than 1000 records. Assuming last page.")
                     return pd.concat(all_data, ignore_index=True)
 
                 page += 1
-                break
+                break  # Success, move to next page
             except Exception as e:
+                logger.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")
                 if attempt == max_retries - 1:
                     st.error(f"Failed to fetch data after {max_retries} attempts.")
                     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
-
+                time.sleep(2 ** attempt)  # Exponential backoff
 
 # For Sales Dashboard: JSON Data Handling
 def fetch_all_data_json(url, max_retries=3):

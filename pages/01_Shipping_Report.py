@@ -12,6 +12,7 @@ page_name = 'Shipping Report'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
+
 st.write(f"You have access to this page.")
 
 ################################################################################################
@@ -21,10 +22,8 @@ st.write(f"You have access to this page.")
 ################################################################################################
 import pandas as pd
 import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv, fetch_all_data_csv
+from utils.data_functions import process_netsuite_data_csv
 from datetime import date, timedelta
-import requests
-from io import StringIO
 
 
 # Sales Rep mapping
@@ -141,45 +140,123 @@ def get_date_range(preset):
         return None, None
 
 def main():
-    # Step 1: Fetch the data from the RESTlet
     with st.spinner("Fetching Open Sales Orders..."):
-        csv_data = fetch_all_data_csv(st.secrets["url_open_so"])  # Fetch the CSV data from the RESTlet
+        df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
+    with st.spinner("Fetching RF Pick Data..."):
+        df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
 
-    # Step 2: Convert the CSV data into a DataFrame
-    df_open_so = pd.read_csv(StringIO(csv_data))
+    # Map the 'Ship Via' and 'Terms' columns using the defined dictionaries
+    df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+    df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
-    # Step 3: Display the DataFrame
-    st.write(df_open_so)
+    # Sidebar Sales Rep Filters
+    st.sidebar.subheader("Filter by Sales Rep")
+    sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+    selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", sales_reps, default=['All'])
 
-    # Continue with filtering, analysis, and visualization
-    # For example, applying filters to "Ship Via" column
+    # Sidebar Ship Via Filters
     st.sidebar.subheader("Filter by Ship Via")
     ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
     selected_ship_vias = st.sidebar.multiselect("Select Ship Via", ship_vias, default=['All'])
 
-    # Filter the DataFrame based on the selected Ship Via
-    if 'All' not in selected_ship_vias:
-        df_open_so = df_open_so[df_open_so['Ship Via'].isin(selected_ship_vias)]
+    # Task ID Filters
+    filter_with_task_id = st.sidebar.checkbox("Show rows with Task ID", value=True)
+    filter_without_task_id = st.sidebar.checkbox("Show rows without Task ID", value=True)
 
-    # Display the filtered data
-    st.dataframe(df_open_so)
+    # Ship Date Filter
+    st.sidebar.subheader("Filter by Ship Date")
+    date_preset = st.sidebar.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
 
-    # Example: Create a visualization (Ship Date Line Chart)
-    st.subheader("Ship Date Line Chart")
-    df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date'])
-    ship_date_counts = df_open_so['Ship Date'].value_counts().sort_index()
-    st.line_chart(ship_date_counts)
-
-# Utility function to fetch all data from RESTlet as CSV
-def fetch_all_data_csv(url):
-    """Fetch all data from the RESTlet as CSV."""
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.content.decode('utf-8')  # Return the CSV as a string
+    if date_preset == "Custom":
+        min_date = pd.to_datetime(df_open_so['Ship Date']).min()
+        max_date = pd.to_datetime(df_open_so['Ship Date']).max()
+        selected_date_range = st.sidebar.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
     else:
-        st.error(f"Failed to fetch data: {response.status_code}")
-        return ""
+        start_date, end_date = get_date_range(date_preset)
+        st.sidebar.write(f"Selected range: {start_date} to {end_date}")
+        selected_date_range = [start_date, end_date]
 
-# Run the main function
+    # Merge the dataframes
+    merged_df = pd.merge(df_open_so, df_rf_pick[['Task ID', 'Order Number']].drop_duplicates(), on='Order Number', how='left')
+    merged_df['Sales Rep'] = merged_df['Sales Rep'].replace(sales_rep_mapping)
+    merged_df['Order Number'] = merged_df['Order Number'].astype(str)
+
+    # Apply Sales Rep and Ship Via filters
+    if 'All' not in selected_sales_reps:
+        merged_df = merged_df[merged_df['Sales Rep'].isin(selected_sales_reps)]
+    if 'All' not in selected_ship_vias:
+        merged_df = merged_df[merged_df['Ship Via'].isin(selected_ship_vias)]
+
+    # Apply Task ID filters
+    if filter_with_task_id and not filter_without_task_id:
+        merged_df = merged_df[merged_df['Task ID'].notna()]
+    elif filter_without_task_id and not filter_with_task_id:
+        merged_df = merged_df[merged_df['Task ID'].isna()]
+
+    # Apply Ship Date filter
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+    merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
+
+    # Calculate totals for tasked and untasked orders
+    total_orders = len(merged_df)
+    matched_orders = merged_df['Task ID'].notna().sum()
+    unmatched_orders = merged_df['Task ID'].isna().sum()
+
+    # Create and display the line chart for filtered data
+    if not merged_df.empty:
+        col_chart, col_pie = st.columns([2, 1])  # Allocate 2/3 space for chart and 1/3 for pie chart
+        with col_chart:
+            st.plotly_chart(create_ship_date_chart(merged_df), use_container_width=True)
+        
+        with col_pie:
+            st.plotly_chart(create_pie_chart(matched_orders, unmatched_orders), use_container_width=True)
+
+    else:
+        st.write("No data available for the selected filters.")
+
+    # Calculate Successful Task Percentage
+    successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
+
+    # Display metric boxes in one row
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Total Open Orders", total_orders)
+
+    with col2:
+        st.metric("Tasked Orders", matched_orders)
+
+    with col3:
+        st.metric("Untasked Orders", unmatched_orders)
+
+    with col4:
+        st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
+
+    st.markdown("<br>", unsafe_allow_html=True)  # Add some vertical space
+
+    # Display filtered data inside an expandable section
+    with st.expander("View Data Table"):
+        st.subheader("Filtered Data Table")
+        st.write(f"Total records after filtering: {len(merged_df)}")
+        st.dataframe(merged_df, height=400)
+
+        # Download option for filtered data
+        csv = merged_df.to_csv(index=False)
+        st.download_button(
+            label="Download filtered data as CSV",
+            data=csv,
+            file_name="filtered_sales_orders_with_task_id.csv",
+            mime="text/csv",
+        )
+
+    # Add link to NetSuite open order report
+    st.markdown(
+        """
+        <br>
+        <a href="https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5065&saverun=T&whence=" target="_blank">Link to open order report in NetSuite</a>
+        """,
+        unsafe_allow_html=True
+    )
+
 if __name__ == "__main__":
     main()
