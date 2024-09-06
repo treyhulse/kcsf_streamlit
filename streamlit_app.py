@@ -1,4 +1,5 @@
 import streamlit as st
+from utils.sync_scheduler import setup_sync_scheduler
 
 st.set_page_config(
     page_title="NetSuite Data Analytics",
@@ -6,6 +7,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Start the sync scheduler
+scheduler = setup_sync_scheduler()
 
 st.write("# Welcome to NetSuite Data Analytics! 👋")
 
@@ -20,14 +24,16 @@ st.markdown(
     
     ### Available Reports:
     - Shipping Report
-    - Sales Dashboard (still working on this!)
-    - Supply Chain Insights (still working on this!)
-    - Financial Insights (still working on this!)
-    - Operations Insights (still working on this!)
-    - Logistics Insights (still working on this!)
-    - AI Insights (still working on this!)
+    - Sales Dashboard
+    - Supply Chain Insights
+    - Financial Insights
+    - Operations Insights
+    - Logistics Insights
+    - AI Insights
+    - NetSuite Sync Management
 
-    
     More reports coming soon!
     """
 )
+
+# The rest of your existing streamlit_app.py code...

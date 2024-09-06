@@ -1,5 +1,5 @@
 import streamlit as st
-from sync_manager import SyncManager
+from utils.sync_manager import SyncManager
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
 # Authentication check
