@@ -1,4 +1,4 @@
-from netsuite_client import NetSuiteClient
+from utils.netsuite_client import NetSuiteClient
 from utils.mongo_connection import get_mongo_client
 import logging
 from datetime import datetime
