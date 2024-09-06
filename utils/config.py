@@ -1,7 +1,6 @@
 import streamlit as st
 from typing import Dict
 
-# NetSuite API configuration
 def get_netsuite_config() -> Dict[str, str]:
     return {
         "consumer_key": st.secrets["consumer_key"],
@@ -11,7 +10,6 @@ def get_netsuite_config() -> Dict[str, str]:
         "realm": st.secrets["realm"]
     }
 
-# API URLs
 API_URLS = {
     "open_so": st.secrets["url_open_so"]
 }
