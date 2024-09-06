@@ -1,6 +1,6 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv
+from utils.data_functions import process_netsuite_data_json, process_netsuite_data_csv
 import pandas as pd
 from datetime import datetime, timedelta
 
@@ -26,10 +26,29 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+# Sales Rep mapping
+sales_rep_mapping = {
+    7: "Shelley Gummig",
+    61802: "Kaitlyn Surry",
+    4125270: "Becky Dean",
+    4125868: "Roger Dixon",
+    4131659: "Lori McKiney",
+    47556: "Raymond Brown",
+    4169685: "Shellie Pritchett",
+    4123869: "Katelyn Kennedy",
+    47708: "Phil Vaughan",
+    4169200: "Dave Knudtson",
+    4168032: "Trey Hulse",
+    4152972: "Gary Bargen",
+    4159935: "Derrick Lewis",
+    66736: "Unspecified",
+    67473: 'Jon Joslin',
+}
+
 # Cache the data loaded from NetSuite to improve speed
 @st.cache_data
 def load_shipping_data():
-    df = process_netsuite_data_csv(st.secrets["url_open_so"])
+    df = process_netsuite_data_json(st.secrets["url_open_so"], sales_rep_mapping)
     
     # Check for 'Ship Date' or 'Ship Date (Admin)' column
     possible_ship_date_columns = ['Ship Date', 'Ship Date (Admin)', 'shipdate', 'ship_date']
@@ -135,13 +154,13 @@ def main():
                             order_summary += f"{row['Ship Via']}: {row['order_count']} orders<br>"
 
                     st.markdown(
-                        f"""
-                        <div style='border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
-                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: auto;'>
-                            <h3 style='margin-bottom: 10px;'>{date.strftime('%Y-%m-%d')}</h3>
-                            <p style='font-size: 18px; color: #666;'>{order_summary if not day_data.empty else "No shipments"}</p>
+                        f'''
+                        <div style="border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
+                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: auto;">
+                            <h3 style="margin-bottom: 10px;">{date.strftime('%Y-%m-%d')}</h3>
+                            <p style="font-size: 18px; color: #666;">{order_summary if not day_data.empty else "No shipments"}</p>
                         </div>
-                        """,
+                        ''',
                         unsafe_allow_html=True
                     )
 
