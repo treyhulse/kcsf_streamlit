@@ -133,7 +133,7 @@ def post_or_update_products():
                 item_name = row['Display Name']  # Product name
                 price = row['Base Price']  # Use 'Base Price' for price
                 description = row['Description']
-                available_inventory = row['inventory_Available']  # Use correct column name
+                available_inventory = row['Available']  # Use correct column name
 
                 # Debugging: Print the data being sent to Shopify
                 st.write(f"Preparing to post/update product: {sku}")
