@@ -32,12 +32,20 @@ def load_shipping_data():
     df = process_netsuite_data_csv(st.secrets["url_open_so"])
     
     # Check for 'Ship Date' or 'Ship Date (Admin)' column
-    ship_date_column = 'Ship Date' if 'Ship Date' in df.columns else 'Ship Date (Admin)'
+    possible_ship_date_columns = ['Ship Date', 'Ship Date (Admin)', 'shipdate', 'ship_date']
+    ship_date_column = next((col for col in possible_ship_date_columns if col in df.columns), None)
     
-    if ship_date_column in df.columns:
+    if ship_date_column:
         df[ship_date_column] = pd.to_datetime(df[ship_date_column], errors='coerce').normalize()
     else:
-        st.error("Ship Date column not found in the data. Please check the column names.")
+        st.error("Ship Date column not found in the data. Available columns are:")
+        st.write(df.columns.tolist())
+        st.stop()
+    
+    # Ensure 'Ship Via' column exists
+    if 'Ship Via' not in df.columns:
+        st.error("'Ship Via' column not found in the data. Available columns are:")
+        st.write(df.columns.tolist())
         st.stop()
     
     return df, ship_date_column
