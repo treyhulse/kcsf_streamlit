@@ -94,13 +94,15 @@ def load_items_with_inventory():
     
     return merged_df
 
-
 # Function to post or update products on Shopify
 def post_or_update_products():
     st.header("Post or Update Products to Shopify")
     
     # Load the joined items with inventory
     items_df = load_items_with_inventory()
+    
+    # Debugging: Print the column names to check what fields are available
+    st.write("Items DataFrame Columns:", items_df.columns)
     
     if not items_df.empty:
         # Filter the data
@@ -127,7 +129,11 @@ def post_or_update_products():
         
         if st.button("Post/Update Filtered Products to Shopify"):
             for _, row in items_df.iterrows():
-                sku = row['Item']  # Use 'Item' for SKU
+                # Debugging: Print the row to see what fields are available
+                st.write("Current Row:", row)
+                
+                # Check which column represents the SKU
+                sku = row['Item']  # Check and confirm 'Item' represents SKU, adjust if necessary
                 item_name = row['Item']
                 price = row['Price']
                 description = f"Product of type {row['Type']}"
