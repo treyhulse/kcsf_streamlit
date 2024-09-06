@@ -1,5 +1,4 @@
 import streamlit as st
-from utils.sync_scheduler import setup_sync_scheduler
 
 st.set_page_config(
     page_title="NetSuite Data Analytics",
@@ -7,9 +6,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# Start the sync scheduler
-scheduler = setup_sync_scheduler()
 
 st.write("# Welcome to NetSuite Data Analytics! 👋")
 
