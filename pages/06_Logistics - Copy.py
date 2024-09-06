@@ -50,6 +50,10 @@ sales_rep_mapping = {
 def load_shipping_data():
     df = process_netsuite_data_json(st.secrets["url_open_so"], sales_rep_mapping)
     
+    # Show the first few rows of the dataframe to debug
+    st.write("Data fetched from NetSuite:")
+    st.write(df)
+    
     # List the possible columns that could represent the 'Ship Date'
     possible_ship_date_columns = ['Ship Date (Admin)', 'Date', 'Ship Date', 'shipdate', 'ship_date']
     
@@ -60,7 +64,7 @@ def load_shipping_data():
         df[ship_date_column] = pd.to_datetime(df[ship_date_column], errors='coerce').normalize()
     else:
         st.error("Ship Date column not found in the data. Available columns are:")
-        st.write(df.columns.tolist())
+        st.write(df.columns.tolist())  # Output all column names for debugging
         st.stop()
     
     # Ensure 'Ship Via' column exists
@@ -70,6 +74,7 @@ def load_shipping_data():
         st.stop()
     
     return df, ship_date_column
+
 
 
 # Group data by 'Ship Date' and 'Ship Via', counting rows instead of summing quantities
