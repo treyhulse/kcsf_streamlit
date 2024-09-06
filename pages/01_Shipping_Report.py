@@ -5,16 +5,17 @@ from requests_oauthlib import OAuth1
 import logging
 from typing import Dict, Any
 
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def get_netsuite_auth():
     return OAuth1(
-        st.secrets["netsuite"]["consumer_key"],
-        st.secrets["netsuite"]["consumer_secret"],
-        st.secrets["netsuite"]["token_key"],
-        st.secrets["netsuite"]["token_secret"],
-        realm=st.secrets["netsuite"]["realm"],
+        st.secrets["consumer_key"],
+        st.secrets["consumer_secret"],
+        st.secrets["token_key"],
+        st.secrets["token_secret"],
+        realm=st.secrets["realm"],
         signature_method='HMAC-SHA256'
     )
 
@@ -52,7 +53,7 @@ def process_netsuite_data(url: str) -> pd.DataFrame:
     return df
 
 def main():
-    st.title("NetSuite Data Display")
+    st.title("NetSuite Open Sales Orders")
 
     try:
         with st.spinner("Fetching data from NetSuite..."):
