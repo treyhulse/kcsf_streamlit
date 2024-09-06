@@ -142,17 +142,18 @@ def main():
     with st.spinner("Fetching Open Sales Orders..."):
         df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
 
-    # Print the first few rows of the DataFrame
-    st.write(df_open_so.head())  # Display the first 5 rows to check the data content
-
-    # Check if 'Ship Via' exists before mapping
+    # Display the DataFrame before any processing
+    st.write(df_open_so.head())  # This will show the first few rows of the DataFrame
+    
+    # Check if 'Ship Via' exists
     if 'Ship Via' in df_open_so.columns:
-        df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+        st.write("Ship Via column found")  # This will confirm if the column is present
     else:
         st.warning("The 'Ship Via' column is missing from the data.")
     
     # Continue with the rest of your logic
     st.dataframe(df_open_so)
+
 
 
     with st.spinner("Fetching RF Pick Data..."):
