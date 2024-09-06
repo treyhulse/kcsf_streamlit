@@ -26,7 +26,7 @@ if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-if not validate_page_access(user_email, 'NetSuite_Sync.py'):
+if not validate_page_access(user_email, 'Netsuite Sync'):
     show_permission_violation()
 
 st.title("NetSuite Sync Management")
