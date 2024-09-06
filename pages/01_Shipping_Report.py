@@ -141,7 +141,8 @@ def get_date_range(preset):
 def main():
     with st.spinner("Fetching Open Sales Orders..."):
         df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
-    st.write(df_rf_pick.columns)  # This will print the columns to the app UI
+    
+    st.write(df_open_so.columns)  # This will print the columns to the app UI
 
     with st.spinner("Fetching RF Pick Data..."):
         df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
