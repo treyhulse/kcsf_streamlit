@@ -30,13 +30,21 @@ st.write(f"You have access to this page.")
 @st.cache_data
 def load_shipping_data():
     df = process_netsuite_data_csv(st.secrets["url_open_so"])
-    if 'Ship Date' in df.columns:
-        df['Ship Date'] = pd.to_datetime(df['Ship Date'], errors='coerce').normalize()
-    return df
+    
+    # Check for 'Ship Date' or 'Ship Date (Admin)' column
+    ship_date_column = 'Ship Date' if 'Ship Date' in df.columns else 'Ship Date (Admin)'
+    
+    if ship_date_column in df.columns:
+        df[ship_date_column] = pd.to_datetime(df[ship_date_column], errors='coerce').normalize()
+    else:
+        st.error("Ship Date column not found in the data. Please check the column names.")
+        st.stop()
+    
+    return df, ship_date_column
 
 # Group data by 'Ship Date' and 'Ship Via', counting rows instead of summing quantities
-def aggregate_data(df):
-    return df.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='order_count')
+def aggregate_data(df, ship_date_column):
+    return df.groupby([ship_date_column, 'Ship Via']).size().reset_index(name='order_count')
 
 # Custom date picker for "This Week", "Next Week", "This Month", "Next Month", and custom range
 def get_date_range():
@@ -76,10 +84,10 @@ def main():
 
     # Load shipping data
     with st.spinner("Fetching Open Sales Orders..."):
-        df = load_shipping_data()
+        df, ship_date_column = load_shipping_data()
 
     if not df.empty:
-        df_aggregated = aggregate_data(df)
+        df_aggregated = aggregate_data(df, ship_date_column)
 
         # Get unique 'Ship Via' values for filtering
         all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
@@ -94,8 +102,8 @@ def main():
 
         # Filter data to the selected date range
         filtered_df = df_aggregated[
-            (df_aggregated['Ship Date'] >= pd.to_datetime(start_date)) &
-            (df_aggregated['Ship Date'] <= pd.to_datetime(end_date))
+            (df_aggregated[ship_date_column] >= pd.to_datetime(start_date)) &
+            (df_aggregated[ship_date_column] <= pd.to_datetime(end_date))
         ]
 
         # Create a list of weekdays to display (max 15 days)
@@ -110,7 +118,7 @@ def main():
             cols = st.columns(5)
             for j, date in enumerate(date_range[i:i + 5]):
                 with cols[j]:
-                    day_data = filtered_df[filtered_df['Ship Date'] == date]
+                    day_data = filtered_df[filtered_df[ship_date_column] == date]
 
                     # Generate the list of ship vias and their corresponding order counts
                     if not day_data.empty:
