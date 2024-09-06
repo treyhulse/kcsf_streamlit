@@ -59,8 +59,8 @@ def load_items_with_inventory():
     inventory_data = list(inventory_collection.find({}))
     inventory_df = pd.DataFrame(inventory_data)
 
-    # Perform join on SKU or 'Item' field
-    merged_df = pd.merge(items_df, inventory_df[['SKU', 'Available']], on='SKU')
+    # Perform join on Item or 'Item' field
+    merged_df = pd.merge(items_df, inventory_df[['Item', 'Available']], on='Item')
     
     # Filter out rows where 'Available' is 0 or NaN
     merged_df = merged_df[merged_df['Available'] > 0]
@@ -103,7 +103,7 @@ def post_or_update_products():
         
         if st.button("Post/Update Filtered Products to Shopify"):
             for _, row in items_df.iterrows():
-                sku = row['SKU']
+                sku = row['Item']
                 item_name = row['Item']
                 price = row['Price']
                 description = f"Product of type {row['Type']}"
@@ -161,16 +161,16 @@ def match_items_between_platforms():
         shopify_df = pd.DataFrame(shopify_products)
         
         # Join items_df with shopify_df based on SKU
-        merged_df = pd.merge(items_df, shopify_df, on='SKU', suffixes=('_mongo', '_shopify'))
+        merged_df = pd.merge(items_df, shopify_df, on='Item', suffixes=('_mongo', '_shopify'))
         
         # Display comparison of pricing and inventory
         st.write("Matched Products Between MongoDB and Shopify:")
-        st.dataframe(merged_df[['SKU', 'Price_mongo', 'Price_shopify', 'Available_mongo', 'Available_shopify']])
+        st.dataframe(merged_df[['Item', 'Price_mongo', 'Price_shopify', 'Available_mongo', 'Available_shopify']])
         
         if st.button("Sync Inventory and Pricing"):
             for _, row in merged_df.iterrows():
                 # Update Shopify product with MongoDB data
-                sku = row['SKU']
+                sku = row['Item']
                 new_price = row['Price_mongo']
                 new_inventory = row['Available_mongo']
                 
