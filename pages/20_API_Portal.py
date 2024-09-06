@@ -145,11 +145,10 @@ def post_or_update_products():
                         "variants": [{
                             "price": str(price),  # Convert price to string format
                             "sku": sku,
-                            "inventory_policy": "deny",
-                            "inventory_management": None,  # If you are using third-party inventory services
+                            "inventory_policy": "deny",  # Inventory policy, either 'deny' or 'continue'
                             "taxable": True,
                             "requires_shipping": True,
-                            "inventory_quantity": 0  # We'll update inventory separately
+                            "inventory_quantity": 0  # Inventory to be updated separately
                         }]
                     }
                 }
@@ -179,7 +178,6 @@ def post_or_update_products():
                         st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
     else:
         st.warning("No products with available inventory.")
-
 
 
 
