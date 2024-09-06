@@ -57,7 +57,7 @@ if page == "Manage Connections":
         with st.expander(conn['name']):
             st.write(f"Saved Search ID: {conn['saved_search_id']}")
             st.write(f"RESTlet URL: {conn['restlet_url']}")
-            st.write(f"Last Sync: {conn['last_sync']}")
+            st.write(f"Last Sync: {conn.get('last_sync', 'Never')}")
             st.write(f"Sync Schedule: {conn['sync_schedule']}")
             
             col1, col2, col3 = st.columns(3)
@@ -151,7 +151,7 @@ elif page == "Sync Status":
     st.subheader("Last Sync Times")
     connections = connection_manager.get_connections()
     for conn in connections:
-        last_sync = conn['last_sync'] if conn['last_sync'] else "Never"
+        last_sync = conn.get('last_sync', "Never")
         st.write(f"{conn['name']}: {last_sync}")
 
     # Option to sync all connections

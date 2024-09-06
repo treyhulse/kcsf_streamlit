@@ -40,7 +40,12 @@ class NetSuiteConnectionManager:
         )
 
     def get_connections(self):
-        return list(self.connections_collection.find())
+        connections = list(self.connections_collection.find())
+        # Ensure each connection has a 'last_sync' field
+        for conn in connections:
+            if 'last_sync' not in conn:
+                conn['last_sync'] = None
+        return connections
 
     def delete_connection(self, name):
         self.connections_collection.delete_one({"name": name})
