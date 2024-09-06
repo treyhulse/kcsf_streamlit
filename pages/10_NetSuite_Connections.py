@@ -37,7 +37,7 @@ if page == "Manage Connections":
         with st.form("new_connection"):
             name = st.text_input("Connection Name")
             saved_search_id = st.text_input("Saved Search ID")
-            restlet_url = st.text_input("RESTlet URL")
+            restlet_url = st.text_input("RESTlet URL", value="/app/site/hosting/restlet.nl?script=customscript_general_purpose_restlet&deploy=1")
             sync_schedule = st.selectbox(
                 "Sync Schedule",
                 ["Manual", "Hourly", "Daily", "Weekly"]
@@ -169,9 +169,9 @@ elif page == "Sync Status":
                 else:
                     st.error(f"{result['name']}: {result['message']}")
 
-    # Sync history (assuming we've added a sync_history method to our manager)
+    # Sync history
     st.subheader("Sync History")
-    history = connection_manager.get_sync_history()  # You'll need to implement this method
+    history = connection_manager.get_sync_history()
     if history:
         history_df = pd.DataFrame(history)
         st.dataframe(history_df)

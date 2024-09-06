@@ -20,143 +20,131 @@ project_root/
 │   ├── 06_Logistics.py
 │   ├── 07_AI_Insights.py
 │   ├── 08_Showcase.py
-│   ├── 20_API_Portal.py
+│   ├── 09_NetSuite_Sync.py
+│   ├── 10_NetSuite_Connections.py  # New comprehensive connections management page
 │   ├── Dashboard_Setup.py
 │   ├── Dashboard_View.py
-│   ├── PRACTICE PAGE.py
 │   ├── Role_Permissions.py
-│   └── NetSuite_Sync.py  # New page for NetSuite sync management
 │
 ├── utils/
+│   ├── __init__.py
 │   ├── auth.py
 │   ├── data_functions.py
 │   ├── mongo_connection.py
+│   ├── netsuite_client.py
+│   ├── sync_manager.py
+│   ├── sync_scheduler.py
+│   ├── netsuite_connection_manager.py  # Updated to handle general-purpose RESTlet
 │   ├── shopify_connection.py
-│   ├── netsuite_client.py  # New: NetSuite API client
-│   └── sync_manager.py     # New: Sync process manager
+│
+├── netsuite_scripts/
+│   └── general_purpose_restlet.js  # New general-purpose RESTlet script
 │
 ├── venv/
 │   └── (virtual environment files)
 │
 ├── .gitignore
-├── API_Portal.txt
-├── auth_header.txt
-├── LICENSE
-├── Logistics.txt
-├── project_breakdown.txt
 ├── README.md
 ├── requirements.txt
-├── sales_dashboard.txt
 └── streamlit_app.py
 ```
 
 ## 2. New and Modified Components
 
-### 2.1 pages/NetSuite_Sync.py
-- New file to manage NetSuite synchronization
-- Implements UI for triggering and monitoring sync processes
-- Displays sync status and results
+### 2.1 pages/10_NetSuite_Connections.py
+- New comprehensive page for managing NetSuite connections
+- Implements UI for creating, viewing, updating, and deleting connections
+- Provides data visualization and download capabilities
+- Includes sync status overview and management
 
 Tasks:
-- [ ] Create NetSuite_Sync.py file
-- [ ] Implement UI for sync management
-- [ ] Add sync triggering functionality
-- [ ] Display sync status and results
+- [x] Create 10_NetSuite_Connections.py file
+- [x] Implement connection management UI
+- [x] Add data visualization features
+- [x] Implement sync status overview
+- [ ] Test and refine user interface
 
-### 2.2 utils/netsuite_client.py
-- New file to handle NetSuite API interactions
-- Implements authentication and data retrieval methods
-
-Tasks:
-- [ ] Create netsuite_client.py file
-- [ ] Implement NetSuite authentication
-- [ ] Create methods for fetching data from required NetSuite modules
-- [ ] Add error handling and logging
-
-### 2.3 utils/sync_manager.py
-- New file to manage the synchronization process
-- Coordinates data fetching, transformation, and MongoDB updates
+### 2.2 utils/netsuite_connection_manager.py
+- Updated to work with the general-purpose RESTlet
+- Manages connections, including saved search IDs
+- Handles data fetching and synchronization
 
 Tasks:
-- [ ] Create sync_manager.py file
-- [ ] Implement main sync logic
-- [ ] Add support for incremental and full syncs
+- [x] Update to use general-purpose RESTlet URL
+- [x] Modify connection storage to include saved search IDs
+- [x] Implement methods for connection CRUD operations
+- [x] Add methods for data fetching and sync management
 - [ ] Implement error handling and logging
 
-### 2.4 utils/mongo_connection.py (existing file)
-- Update to include new methods for NetSuite data operations
+### 2.3 netsuite_scripts/general_purpose_restlet.js
+- New general-purpose RESTlet script for NetSuite
+- Handles multiple saved searches based on input parameters
 
 Tasks:
-- [ ] Add methods for upserting NetSuite data
-- [ ] Implement any necessary schema changes
-- [ ] Update existing queries to utilize new data if applicable
+- [x] Create general_purpose_restlet.js
+- [x] Implement dynamic saved search loading
+- [x] Add support for additional filters
+- [x] Implement error handling and logging
+- [ ] Test with various saved searches
 
-### 2.5 utils/data_functions.py (existing file)
-- Update to include data transformation functions for NetSuite data
-
-Tasks:
-- [ ] Add functions to transform NetSuite data to match MongoDB schema
-- [ ] Implement data validation and cleaning for NetSuite data
-
-### 2.6 .streamlit/secrets.toml
-- Update to include NetSuite API credentials
+### 2.4 .streamlit/secrets.toml
+- Update to include general-purpose RESTlet URL
 
 Tasks:
-- [ ] Add NetSuite API credentials (ensure this file is not version controlled)
+- [ ] Add general-purpose RESTlet URL to secrets
 
-### 2.7 requirements.txt
-- Update to include new dependencies
+### 2.5 requirements.txt
+- Update to include any new dependencies
 
 Tasks:
-- [ ] Add NetSuite SDK or API library
-- [ ] Update any other new dependencies
+- [ ] Review and update dependencies
 
 ## 3. Implementation Steps
 
-1. Environment Setup
-   - [ ] Update virtual environment with new dependencies
-   - [ ] Update requirements.txt
+1. NetSuite Setup
+   - [x] Create and deploy general-purpose RESTlet in NetSuite
+   - [ ] Set up necessary saved searches in NetSuite
+   - [ ] Test RESTlet with various saved searches
 
-2. NetSuite Integration
-   - [ ] Implement NetSuite client in utils/netsuite_client.py
-   - [ ] Test API connectivity and data retrieval
+2. Connection Manager Update
+   - [x] Modify netsuite_connection_manager.py to work with general-purpose RESTlet
+   - [ ] Implement new methods for connection management
+   - [ ] Test connection manager with NetSuite
 
-3. Sync Process
-   - [ ] Develop sync manager in utils/sync_manager.py
-   - [ ] Implement data transformation in utils/data_functions.py
-   - [ ] Test sync process with sample data
+3. Streamlit Integration
+   - [x] Develop 10_NetSuite_Connections.py
+   - [ ] Integrate connection manager into Streamlit app
+   - [ ] Implement data visualization and download features
+   - [ ] Add sync status management
 
-4. MongoDB Integration
-   - [ ] Update utils/mongo_connection.py with new methods
-   - [ ] Test data insertion and retrieval for NetSuite data
+4. Data Synchronization
+   - [ ] Implement bulk data upload functionality
+   - [ ] Develop incremental update process
+   - [ ] Test synchronization with various data types
 
-5. Streamlit Integration
-   - [ ] Create pages/NetSuite_Sync.py
-   - [ ] Implement UI for sync management
-   - [ ] Integrate sync process into the Streamlit app
-
-6. Testing and Optimization
+5. Testing and Optimization
    - [ ] Conduct thorough testing of new components
-   - [ ] Optimize performance
+   - [ ] Optimize performance, especially for large datasets
    - [ ] Ensure error handling and logging are comprehensive
 
-7. Documentation Update
+6. Documentation Update
    - [ ] Update README.md with new functionality
    - [ ] Add inline documentation to new components
+   - [ ] Create user guide for NetSuite Connections management
 
 ## 4. Considerations
 
-- Ensure the NetSuite sync process doesn't interfere with existing app functionality
-- Implement proper error handling to maintain app stability
-- Consider the impact on existing data models and adjust as necessary
-- Implement appropriate access controls for the NetSuite sync functionality
+- Ensure the general-purpose RESTlet is secure and handles authentication properly
+- Implement appropriate access controls for the NetSuite Connections page
+- Consider rate limiting and optimization for large saved searches
 - Ensure all sensitive information (API keys, credentials) is stored securely
 
 ## 5. Future Enhancements
 
 - Implement automated scheduling for NetSuite syncs
-- Develop more advanced data visualization for NetSuite data
-- Integrate NetSuite data into existing reports and dashboards
+- Develop more advanced data analysis tools within the Streamlit app
+- Create a dashboard for monitoring sync status and data health
 - Implement bi-directional sync if required
+- Add support for custom scripts or formulas in saved searches
 
-Remember to update this plan as you progress and make decisions about the implementation. This structure allows you to integrate the NetSuite-MongoDB sync functionality while maintaining your existing app structure.
+Remember to update this plan as you progress and make decisions about the implementation. This structure allows you to integrate the NetSuite Connections functionality while maintaining your existing app structure and providing a clear roadmap for development.
