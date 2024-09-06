@@ -22,10 +22,11 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-from bson import Decimal128
-import streamlit as st
 import pandas as pd
+from pymongo import MongoClient
 import utils.shopify_connection as shopify
+from bson import Decimal128
+
 
 # MongoDB connection with increased timeout values
 def get_mongo_client():
@@ -93,6 +94,83 @@ def load_items_with_inventory():
     
     return merged_df
 
+
+# Function to post or update products on Shopify
+def post_or_update_products():
+    st.header("Post or Update Products to Shopify")
+    
+    # Load the joined items with inventory
+    items_df = load_items_with_inventory()
+    
+    if not items_df.empty:
+        # Filter the data
+        types = items_df['Type'].unique().tolist()
+        selected_types = st.multiselect("Select Product Types", types, default=types)
+        if selected_types:
+            items_df = items_df[items_df['Type'].isin(selected_types)]
+
+        if 'Cart Flag Field' in items_df.columns:
+            cart_flags = items_df['Cart Flag Field'].unique().tolist()
+            selected_cart_flags = st.multiselect("Select Cart Flag Field", cart_flags, default=cart_flags)
+            if selected_cart_flags:
+                items_df = items_df[items_df['Cart Flag Field'].isin(selected_cart_flags)]
+
+        if 'Amazon Flag Field' in items_df.columns:
+            amazon_flags = items_df['Amazon Flag Field'].unique().tolist()
+            selected_amazon_flags = st.multiselect("Select Amazon Flag Field", amazon_flags, default=amazon_flags)
+            if selected_amazon_flags:
+                items_df = items_df[items_df['Amazon Flag Field'].isin(selected_amazon_flags)]
+
+        # Display filtered data
+        st.write(f"Showing {len(items_df)} records after applying filters.")
+        st.dataframe(items_df)
+        
+        if st.button("Post/Update Filtered Products to Shopify"):
+            for _, row in items_df.iterrows():
+                sku = row['SKU']
+                item_name = row['Item']
+                price = row['Price']
+                description = f"Product of type {row['Type']}"
+                available_inventory = row['Available']
+
+                # Check if SKU exists on Shopify
+                if shopify.sku_exists_on_shopify(sku):
+                    # Update the existing product
+                    update_data = shopify.prepare_update_data(item_name, description, price, available_inventory)
+                    response = shopify.update_product_on_shopify(sku, update_data)
+                    
+                    if response:
+                        st.success(f"Updated {item_name} (SKU: {sku}) on Shopify.")
+                    else:
+                        st.error(f"Failed to update {item_name} (SKU: {sku}) on Shopify.")
+                else:
+                    # Post new product
+                    product_data = shopify.prepare_product_data(item_name, description, price, sku)
+                    response = shopify.post_product_to_shopify(product_data)
+                    
+                    if response:
+                        st.success(f"Posted {item_name} (SKU: {sku}) to Shopify.")
+                    else:
+                        st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
+    else:
+        st.warning("No products with available inventory.")
+
+
+# Function to retrieve synced products from Shopify
+def retrieve_synced_products():
+    st.header("Synced Products from Shopify")
+    
+    # Fetch products from Shopify
+    products = shopify.get_synced_products_from_shopify()
+    
+    if products:
+        products_df = pd.DataFrame(products)
+        st.write(f"Showing {len(products_df)} synced products from Shopify.")
+        st.dataframe(products_df)
+    else:
+        st.warning("No synced products found.")
+
+
 # Function to match items between MongoDB and Shopify platforms
 def match_items_between_platforms():
     st.header("Match Items for Pricing and Inventory Management")
@@ -141,13 +219,10 @@ def match_items_between_platforms():
                 
                 if response:
                     st.success(f"Synced SKU {sku} with new price and inventory.")
-                    logger.info(f"Synced SKU {sku} with new price and inventory.")
                 else:
                     st.error(f"Failed to sync SKU {sku}.")
-                    logger.error(f"Failed to sync SKU {sku}.")
     else:
         st.warning("No matching products found or no data available.")
-        logger.warning("No matching products found between MongoDB and Shopify.")
 
 # Main function to render the Streamlit page
 def main():
