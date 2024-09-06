@@ -57,24 +57,39 @@ def load_items_with_inventory():
     
     # Load 'inventory' collection
     inventory_data = list(inventory_collection.find({}))
-    inventory_df = pd.DataFrame(inventory_data)
     
+    # Debugging: Print the raw inventory data
+    st.write("Raw Inventory Data:", inventory_data)
+    
+    # Check if inventory data is empty
+    if len(inventory_data) == 0:
+        st.error("Inventory data is empty. Please check your MongoDB 'inventory' collection.")
+        return pd.DataFrame()  # Return an empty DataFrame if no inventory data
+
+    # Convert inventory data to DataFrame
+    inventory_df = pd.DataFrame(inventory_data)
+
     # Debugging: Print the column names of both DataFrames
     st.write("Items DataFrame Columns:", items_df.columns)
     st.write("Inventory DataFrame Columns:", inventory_df.columns)
 
-    # Perform join on 'Internal ID'
+    # Ensure 'Internal ID' is present in both DataFrames and is a string
     if 'Internal ID' in items_df.columns and 'Internal ID' in inventory_df.columns:
+        # Convert 'Internal ID' to string in both DataFrames
+        items_df['Internal ID'] = items_df['Internal ID'].astype(str)
+        inventory_df['Internal ID'] = inventory_df['Internal ID'].astype(str)
+        
+        # Perform the merge
         merged_df = pd.merge(items_df, inventory_df[['Internal ID', 'Available']], on='Internal ID')
     else:
         st.error("'Internal ID' is missing from one of the DataFrames.")
         return pd.DataFrame()  # Return an empty DataFrame if the join can't be performed
 
-    # Convert 'Available' column from Decimal128 to float
+    # Convert 'Available' column from Decimal128 to float if applicable
     def decimal128_to_float(value):
         if isinstance(value, pd.api.extensions.ExtensionArray):
             return float(value.to_decimal())
-        elif isinstance(value, Decimal128):  # Correctly check for Decimal128 type
+        elif isinstance(value, Decimal128):
             return float(value.to_decimal())
         else:
             return float(value)
@@ -90,7 +105,6 @@ def load_items_with_inventory():
         merged_df.drop(columns=['_id'], inplace=True)
     
     return merged_df
-
 
 
 
