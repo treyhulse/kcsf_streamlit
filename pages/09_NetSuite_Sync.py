@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from utils.sync_manager import SyncManager
+from utils.netsuite_client import NetSuiteClient
 from datetime import datetime, timedelta
 import logging
 
@@ -20,6 +21,17 @@ if not validate_page_access(user_email, page_name):
 st.title("NetSuite Sync Management")
 
 sync_manager = SyncManager()
+netsuite_client = NetSuiteClient()
+
+st.header("API Connection Test")
+
+if st.button("Test NetSuite API Connection"):
+    with st.spinner("Testing connection..."):
+        connection_successful = netsuite_client.test_connection()
+    if connection_successful:
+        st.success("Successfully connected to NetSuite API!")
+    else:
+        st.error("Failed to connect to NetSuite API. Check the logs for more details.")
 
 st.header("Sync Options")
 
@@ -30,6 +42,7 @@ if st.button("Perform Full Sync"):
         st.success("Full sync completed successfully!")
     else:
         st.error("Full sync encountered some issues. Check the logs for details.")
+        st.error(sync_manager.get_recent_sync_logs(1)[0]['details'])
 
 st.header("Individual Sync Options")
 
@@ -43,6 +56,7 @@ with col1:
             st.success("Inventory sync completed successfully!")
         else:
             st.error("Inventory sync encountered some issues. Check the logs for details.")
+            st.error(sync_manager.get_recent_sync_logs(1)[0]['details'])
 
 with col2:
     if st.button("Sync Sales"):
@@ -52,6 +66,7 @@ with col2:
             st.success("Sales sync completed successfully!")
         else:
             st.error("Sales sync encountered some issues. Check the logs for details.")
+            st.error(sync_manager.get_recent_sync_logs(1)[0]['details'])
 
 with col3:
     if st.button("Sync Items"):
@@ -61,6 +76,9 @@ with col3:
             st.success("Items sync completed successfully!")
         else:
             st.error("Items sync encountered some issues. Check the logs for details.")
+            st.error(sync_manager.get_recent_sync_logs(1)[0]['details'])
+
+# ... (rest of the code remains the same)
 
 st.header("Sync Logs")
 
