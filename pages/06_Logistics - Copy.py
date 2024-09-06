@@ -50,8 +50,10 @@ sales_rep_mapping = {
 def load_shipping_data():
     df = process_netsuite_data_json(st.secrets["url_open_so"], sales_rep_mapping)
     
-    # Check for 'Ship Date' or 'Ship Date (Admin)' column
-    possible_ship_date_columns = ['Ship Date', 'Ship Date (Admin)', 'shipdate', 'ship_date']
+    # List the possible columns that could represent the 'Ship Date'
+    possible_ship_date_columns = ['Ship Date (Admin)', 'Date', 'Ship Date', 'shipdate', 'ship_date']
+    
+    # Find the first column that exists in the data
     ship_date_column = next((col for col in possible_ship_date_columns if col in df.columns), None)
     
     if ship_date_column:
@@ -68,6 +70,7 @@ def load_shipping_data():
         st.stop()
     
     return df, ship_date_column
+
 
 # Group data by 'Ship Date' and 'Ship Via', counting rows instead of summing quantities
 def aggregate_data(df, ship_date_column):
