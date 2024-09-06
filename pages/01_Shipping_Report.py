@@ -12,7 +12,6 @@ page_name = 'Shipping Report'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
-
 st.write(f"You have access to this page.")
 
 ################################################################################################
