@@ -129,9 +129,7 @@ def main():
 
                     if not orders_today.empty:
                         total_orders = len(orders_today)
-                        # Display total orders in green before the expander
-                        st.markdown(f"<span style='color:green;font-weight:bold;'>Total Orders: {total_orders}</span>", unsafe_allow_html=True)
-                        with st.expander(f"{date_str} - View Orders"):
+                        with st.expander(f"{date_str} - Total Orders: {total_orders}"):
                             st.dataframe(orders_today)  # Display the DataFrame for that day
                     else:
                         with st.expander(f"{date_str} - No shipments"):
