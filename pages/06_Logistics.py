@@ -1,7 +1,6 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-# Set page layout to wide
 st.set_page_config(layout="wide")
 
 # Capture the user's email
@@ -15,6 +14,7 @@ page_name = 'Logistics'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
+
 st.write(f"You have access to this page.")
 
 ################################################################################################
@@ -24,132 +24,124 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import pandas as pd
-from pymongo import MongoClient
-from datetime import datetime, timedelta
+import plotly.express as px
+from utils.data_functions import process_netsuite_data_csv
+from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
+from datetime import date, timedelta
+import streamlit as st
+import time
 
-# MongoDB connection with increased timeout values
-def get_mongo_client():
-    connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
-    client = MongoClient(connection_string, ssl=True, serverSelectionTimeoutMS=60000, connectTimeoutMS=60000, socketTimeoutMS=60000)
-    return client
+# Function to apply mapping, but keep unmapped IDs as raw values
+def apply_mapping(column, mapping_dict):
+    return column.apply(lambda x: mapping_dict.get(x, x))
 
-# Cache the data loaded from MongoDB to improve speed
-@st.cache_data
-def load_shipping_data(batch_size=100):
-    client = get_mongo_client()
-    db = client['netsuite']
-    collection = db['sales']  # Assuming 'sales' collection has shipping data
+# Function to format currency
+def format_currency(value):
+    return "${:,.2f}".format(value) if pd.notna(value) else value
 
-    data = []
-    cursor = collection.find({}).batch_size(batch_size)
-
-    for doc in cursor:
-        if 'Ship Date (Admin)' in doc:
-            doc['Ship Date (Admin)'] = pd.to_datetime(doc['Ship Date (Admin)'], errors='coerce').normalize()
-        data.append(doc)
-
-    df = pd.DataFrame(data)
-    
-    # Drop the '_id' column if it exists
-    if '_id' in df.columns:
-        df.drop(columns=['_id'], inplace=True)
-    
-    return df
-
-# Group data by 'Ship Date (Admin)' and 'Ship Via', counting rows instead of summing quantities
-def aggregate_data(df):
-    return df.groupby(['Ship Date (Admin)', 'Ship Via']).size().reset_index(name='order_count')
-
-# Custom date picker for "This Week", "Next Week", "This Month", "Next Month", and custom range
-def get_date_range():
-    option = st.selectbox(
-        "Select Date Range",
-        ["Custom Range", "This Week", "Next Week", "This Month", "Next Month"],
-        index=3  # Set 'This Month' as the default selected option (index starts at 0)
-    )
-
-    today = datetime.today().date()  # Work with date instead of datetime
-    if option == "This Week":
-        start_date = today - timedelta(days=today.weekday())  # Start of the current week (Monday)
-        end_date = start_date + timedelta(days=4)  # End of the current week (Friday)
-    elif option == "Next Week":
-        start_date = today - timedelta(days=today.weekday()) + timedelta(weeks=1)  # Start of next week (Monday)
-        end_date = start_date + timedelta(days=4)  # End of next week (Friday)
-    elif option == "This Month":
-        start_date = today.replace(day=1)  # First day of the current month
-        next_month = (start_date + timedelta(days=32)).replace(day=1)  # First day of the next month
-        end_date = next_month - timedelta(days=1)  # Last day of the current month
-    elif option == "Next Month":
-        start_date = (today.replace(day=1) + timedelta(days=32)).replace(day=1)  # First day of the next month
-        end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)  # Last day of the next month
+# Function to filter by date range
+def get_date_range(preset):
+    today = date.today()
+    if preset == "Today":
+        return today, today
+    elif preset == "This Week":
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=4)
+        return start_of_week, end_of_week
+    elif preset == "Last Week":
+        start_of_last_week = today - timedelta(days=today.weekday() + 7)
+        end_of_last_week = start_of_last_week + timedelta(days=4)
+        return start_of_last_week, end_of_last_week
+    elif preset == "Next Week":
+        start_of_next_week = today + timedelta(days=(7 - today.weekday()))
+        end_of_next_week = start_of_next_week + timedelta(days=4)
+        return start_of_next_week, end_of_next_week
+    elif preset == "This Month":
+        start_of_month = today.replace(day=1)
+        end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        return start_of_month, end_of_month
+    elif preset == "Next Month":
+        start_of_next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
+        end_of_next_month = (start_of_next_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        return start_of_next_month, end_of_next_month
     else:
-        # Custom range with date input
-        start_date = st.date_input("Start Date", value=today)
-        end_date = st.date_input("End Date", value=today + timedelta(days=7))
-
-    return start_date, end_date
-
-# Skip weekends (Saturday and Sunday)
-def filter_weekdays(date_range):
-    return [date for date in date_range if date.weekday() < 5]  # 0 = Monday, 4 = Friday
+        return None, None
 
 # Main function
 def main():
-    st.title("Shipping Calendar")
+    st.header("Shipping Calendar")
 
-    # Load shipping data
-    df = load_shipping_data()
+    # Progress Bar
+    progress = st.progress(0)
+    with st.spinner("Initializing..."):
+        time.sleep(0.5)  # Small delay to simulate startup
 
-    if not df.empty:
-        df_aggregated = aggregate_data(df)
+    # Fetching data with progress
+    for i in range(1, 6):
+        time.sleep(0.3)  # Simulating data fetching process
+        progress.progress(i * 20)  # Updating progress
 
-        # Get unique 'Ship Via' values for filtering
-        all_ship_vias = df_aggregated['Ship Via'].unique().tolist()
-        selected_ship_vias = st.multiselect("Select Ship Via", options=['All'] + all_ship_vias, default='Our Truck')
+    df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
-        # Apply 'Ship Via' filter (if 'All' is selected, include all)
-        if 'All' not in selected_ship_vias:
-            df_aggregated = df_aggregated[df_aggregated['Ship Via'].isin(selected_ship_vias)]
+    # Apply necessary transformations
+    df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
+    df['Order Number'] = df['Order Number'].astype(str)
+    df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
 
-        # Get the date range using custom date picker
-        start_date, end_date = get_date_range()
+    # Map relevant columns
+    df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
+    df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+    df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
-        # Filter data to the selected date range
-        filtered_df = df_aggregated[
-            (df_aggregated['Ship Date (Admin)'] >= pd.to_datetime(start_date)) &
-            (df_aggregated['Ship Date (Admin)'] <= pd.to_datetime(end_date))
-        ]
+    # Filter Sidebar for Ship Via and Date Range
+    st.sidebar.subheader("Select Ship Via")
+    ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+    selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=['All'])
 
-        # Create a list of weekdays to display (max 15 days)
-        date_range = pd.date_range(start=start_date, end=end_date).normalize()
-        date_range = filter_weekdays(date_range)  # Skip weekends
+    if 'All' in selected_ship_vias:
+        selected_ship_vias = df['Ship Via'].unique().tolist()  # Select all if "All" is selected
 
-        if len(date_range) > 15:
-            date_range = date_range[:15]
+    st.sidebar.subheader("Select Date Range")
+    date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
+    start_date, end_date = get_date_range(date_preset)
 
-        # Create a 5-column layout for the calendar with improved cards for each day
-        for i in range(0, len(date_range), 5):
-            cols = st.columns(5)
-            for j, date in enumerate(date_range[i:i + 5]):
-                with cols[j]:
-                    day_data = filtered_df[filtered_df['Ship Date (Admin)'] == date]
+    # Apply filters
+    df_filtered = df[
+        (df['Ship Via'].isin(selected_ship_vias)) &
+        (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
+        (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
+    ]
 
-                    # Generate the list of ship vias and their corresponding order counts
-                    if not day_data.empty:
-                        order_summary = ""
-                        for _, row in day_data.iterrows():
-                            order_summary += f"{row['Ship Via']}: {row['order_count']} orders<br>"
+    # Group by Ship Date and Ship Via
+    grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
 
-                    st.markdown(
-                        f"""
-                        <div style='border: 2px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f9f9f9;
-                                    box-shadow: 2px 2px 10px rgba(0,0,0,0.1); text-align: center; height: auto;'>
-                            <h3 style='margin-bottom: 10px;'>{date.strftime('%Y-%m-%d')}</h3>
-                            <p style='font-size: 18px; color: #666;'>{order_summary if day_data.empty == False else "No shipments"}</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+    # Create 5 vertical columns (Monday through Friday)
+    cols = st.columns(5)
+
+    # Mapping days of the week to columns
+    weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')  # Only business days
+
+    # Initialize the columns for Monday to Friday
+    for i, day_name in enumerate(weekdays):
+        with cols[i]:
+            st.subheader(day_name)
+
+            # Iterate over each date within the respective weekday
+            for date_str in days:
+                date_obj = pd.to_datetime(date_str)
+                
+                # Ensure only the correct weekday is shown in each column
+                if date_obj.weekday() == i:
+                    orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
+
+                    if not orders_today.empty:
+                        total_orders = len(orders_today)
+                        with st.expander(f"{date_str} - Total Orders: {total_orders}"):
+                            st.dataframe(orders_today)  # Display the DataFrame for that day
+                    else:
+                        with st.expander(f"{date_str}"):
+                            st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
