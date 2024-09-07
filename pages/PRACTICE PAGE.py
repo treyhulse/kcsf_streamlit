@@ -47,6 +47,10 @@ def get_date_range(preset):
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=4)
         return start_of_week, end_of_week
+    elif preset == "Next Week":
+        start_of_next_week = today + timedelta(days=(7 - today.weekday()))
+        end_of_next_week = start_of_next_week + timedelta(days=4)
+        return start_of_next_week, end_of_next_week
     elif preset == "This Month":
         start_of_month = today.replace(day=1)
         end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
@@ -71,11 +75,14 @@ def main():
 
     # Filter Sidebar for Ship Via and Date Range
     st.sidebar.subheader("Select Ship Via")
-    ship_vias = df['Ship Via'].unique().tolist()
-    selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=ship_vias)
+    ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+    selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=['All'])
+
+    if 'All' in selected_ship_vias:
+        selected_ship_vias = df['Ship Via'].unique().tolist()  # Select all if "All" is selected
 
     st.sidebar.subheader("Select Date Range")
-    date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "This Month"])
+    date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "This Month"])
     start_date, end_date = get_date_range(date_preset)
 
     # Apply filters
@@ -88,24 +95,32 @@ def main():
     # Group by Ship Date and Ship Via
     grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
 
-    # Create a layout with 5 expandable columns (Monday through Friday)
+    # Create 5 vertical columns (Monday through Friday)
+    st.header("Shipping Calendar")
+    cols = st.columns(5)
+
+    # Mapping days of the week to columns
     weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
     days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')  # Only business days
 
-    st.header("Shipping Calendar")
+    # Initialize the columns for Monday to Friday
+    for i, day in enumerate(weekdays):
+        with cols[i]:
+            st.subheader(day)
 
-    # Create 5 columns for Monday to Friday
-    for day in days:
-        # Get the orders for this specific day
-        orders_today = grouped[grouped['Ship Date'] == day]
+            # Get the orders for the corresponding day in the date range
+            day_data = grouped[pd.to_datetime(grouped['Ship Date']).dt.weekday == i]
 
-        if not orders_today.empty:
-            with st.expander(f"{day} - Total Orders: {orders_today['Total Orders'].sum()}"):
-                for _, row in orders_today.iterrows():
-                    st.write(f"Ship Via: {row['Ship Via']}, Total Orders: {row['Total Orders']}")
-        else:
-            with st.expander(f"{day} - No shipments"):
-                st.write("No orders for this day.")
+            for date_str in days:
+                orders_today = day_data[day_data['Ship Date'] == date_str]
+
+                if not orders_today.empty:
+                    with st.expander(f"{date_str} - Total Orders: {orders_today['Total Orders'].sum()}"):
+                        for _, row in orders_today.iterrows():
+                            st.write(f"Ship Via: {row['Ship Via']}, Total Orders: {row['Total Orders']}")
+                else:
+                    with st.expander(f"{date_str} - No shipments"):
+                        st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
