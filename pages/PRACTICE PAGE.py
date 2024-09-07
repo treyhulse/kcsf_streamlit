@@ -64,22 +64,22 @@ def main():
     with st.spinner("Fetching Shipping Data..."):
         df = process_netsuite_data_json(st.secrets["url_open_so"], sales_rep_mapping)
     
-    # Convert 'Ship Date' to datetime format
-    df['Ship Date'] = pd.to_datetime(df['Ship Date'])
+    # Convert 'shipdate' to datetime format
+    df['shipdate'] = pd.to_datetime(df['shipdate'])
 
     # Filter for weekdays (Monday to Friday)
-    df = df[df['Ship Date'].dt.weekday < 5]
+    df = df[df['shipdate'].dt.weekday < 5]
 
     # Map 'Ship Via' column using the ship_via_mapping
     df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna('Unknown')
 
     # Aggregate total orders by 'Ship Via' and display the count of orders by day
-    aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
+    aggregated_orders = df.groupby(['Ship Via', df['shipdate'].dt.date]).size().reset_index(name='Total Orders')
 
     # Create a chart to visualize the orders by 'Ship Via' over time
     fig = px.line(
         aggregated_orders,
-        x='Ship Date',
+        x='shipdate',
         y='Total Orders',
         color='Ship Via',
         title='Total Orders by Ship Via (Weekdays Only)'
