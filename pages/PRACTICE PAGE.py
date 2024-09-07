@@ -69,19 +69,29 @@ def get_date_range(preset):
 
 # Sidebar filters (Global)
 st.sidebar.subheader("Select Ship Via")
-ship_vias = ['All'] + process_netsuite_data_csv(st.secrets["url_open_so"])['Ship Via'].unique().tolist()
+df_data = process_netsuite_data_csv(st.secrets["url_open_so"])  # Fetch data once
+
+ship_vias = ['All'] + df_data['Ship Via'].unique().tolist()
 selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=['All'])
 
 if 'All' in selected_ship_vias:
-    selected_ship_vias = process_netsuite_data_csv(st.secrets["url_open_so"])['Ship Via'].unique().tolist()
+    selected_ship_vias = df_data['Ship Via'].unique().tolist()
 
 st.sidebar.subheader("Filter by Sales Rep")
-sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in process_netsuite_data_csv(st.secrets["url_open_so"])['Sales Rep'].unique()])
+sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_data['Sales Rep'].unique()])
 selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", sales_reps, default=['All'])
 
 st.sidebar.subheader("Select Date Range")
 date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
 start_date, end_date = get_date_range(date_preset)
+
+# Apply global filters to the data
+df_filtered = df_data[
+    (df_data['Ship Via'].isin(selected_ship_vias)) &
+    (df_data['Sales Rep'].isin(selected_sales_reps)) &
+    (pd.to_datetime(df_data['Ship Date']) >= pd.to_datetime(start_date)) &
+    (pd.to_datetime(df_data['Ship Date']) <= pd.to_datetime(end_date))
+]
 
 # Main function
 def main():
@@ -92,23 +102,13 @@ def main():
     with tab1:
         st.header("Open Sales Orders Analysis")
         
-        # Fetch Data
-        with st.spinner("Fetching Open Sales Orders..."):
-            df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
+        # Fetch RF Pick Data
         with st.spinner("Fetching RF Pick Data..."):
             df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
 
         # Apply mapping
-        df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
-        df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
-
-        # Apply global filters
-        df_filtered = df_open_so[
-            (df_open_so['Ship Via'].isin(selected_ship_vias)) &
-            (df_open_so['Sales Rep'].isin(selected_sales_reps)) &
-            (pd.to_datetime(df_open_so['Ship Date']) >= pd.to_datetime(start_date)) &
-            (pd.to_datetime(df_open_so['Ship Date']) <= pd.to_datetime(end_date))
-        ]
+        df_filtered['Ship Via'] = df_filtered['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+        df_filtered['Terms'] = df_filtered['Terms'].map(terms_mapping).fillna('Unknown')
 
         # Task ID Filters (specific to this tab)
         filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
@@ -176,20 +176,10 @@ def main():
             time.sleep(0.3)
             progress.progress(i * 20)
 
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
-
-        # Apply necessary transformations
-        df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
-        df['Order Number'] = df['Order Number'].astype(str)
-        df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
-
         # Apply global filters
-        df_filtered = df[
-            (df['Ship Via'].isin(selected_ship_vias)) &
-            (df['Sales Rep'].isin(selected_sales_reps)) &
-            (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
-            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
-        ]
+        df_filtered['Ship Date'] = pd.to_datetime(df_filtered['Ship Date']).dt.strftime('%m/%d/%Y')
+        df_filtered['Order Number'] = df_filtered['Order Number'].astype(str)
+        df_filtered['Amount Remaining'] = df_filtered['Amount Remaining'].apply(format_currency)
 
         # Group by Ship Date and Ship Via
         grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
