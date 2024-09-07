@@ -86,8 +86,8 @@ def main():
         df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
         df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
-        # Display filters in three columns
-        col1, col2, col3 = st.columns(3)
+        # Display filters in four columns (added Task ID as the fourth column)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.subheader("Filter by Sales Rep")
@@ -102,7 +102,7 @@ def main():
         with col3:
             st.subheader("Filter by Ship Date")
             date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
-
+            
             if date_preset == "Custom":
                 min_date = pd.to_datetime(df_open_so['Ship Date']).min()
                 max_date = pd.to_datetime(df_open_so['Ship Date']).max()
@@ -111,6 +111,11 @@ def main():
                 start_date, end_date = get_date_range(date_preset)
                 st.write(f"Selected range: {start_date} to {end_date}")
                 selected_date_range = [start_date, end_date]
+
+        with col4:
+            st.subheader("Filter by Task ID")
+            filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
+            filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
 
         # Normalize 'Ship Date' column to MM/DD/YYYY
         df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
@@ -130,6 +135,12 @@ def main():
         merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
         merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
+        # Apply Task ID filters
+        if filter_with_task_id and not filter_without_task_id:
+            merged_df = merged_df[merged_df['Task ID'].notna()]
+        elif filter_without_task_id and not filter_with_task_id:
+            merged_df = merged_df[merged_df['Task ID'].isna()]
+
         # Display charts
         if not merged_df.empty:
             col_chart, col_pie = st.columns([2, 1])
@@ -146,17 +157,6 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.write("No data available for the selected filters.")
-
-        # Task ID Filters - Positioned below data visualizations
-        st.subheader("Filter by Task ID")
-        filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
-        filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
-
-        # Apply Task ID filters
-        if filter_with_task_id and not filter_without_task_id:
-            merged_df = merged_df[merged_df['Task ID'].notna()]
-        elif filter_without_task_id and not filter_with_task_id:
-            merged_df = merged_df[merged_df['Task ID'].isna()]
 
         # Display metrics and data
         total_orders = len(merged_df)
