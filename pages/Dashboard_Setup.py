@@ -26,10 +26,6 @@ st.write(f"You have access to this page.")
 from pymongo import MongoClient
 from datetime import datetime
 
-st.set_page_config(
-    layout="wide",
-)
-
 
 # MongoDB connection
 def get_mongo_client():
