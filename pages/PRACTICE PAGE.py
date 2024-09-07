@@ -86,31 +86,31 @@ def main():
         df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
         df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
-        # Filters within the tab
-        st.subheader("Filter by Sales Rep")
-        sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
-        selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
+        # Display filters in three columns
+        col1, col2, col3 = st.columns(3)
 
-        st.subheader("Filter by Ship Via")
-        ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
-        selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
+        with col1:
+            st.subheader("Filter by Sales Rep")
+            sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+            selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
 
-        # Task ID Filters
-        filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
-        filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
+        with col2:
+            st.subheader("Filter by Ship Via")
+            ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
+            selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
 
-        # Ship Date Filter
-        st.subheader("Filter by Ship Date")
-        date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
+        with col3:
+            st.subheader("Filter by Ship Date")
+            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
 
-        if date_preset == "Custom":
-            min_date = pd.to_datetime(df_open_so['Ship Date']).min()
-            max_date = pd.to_datetime(df_open_so['Ship Date']).max()
-            selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
-        else:
-            start_date, end_date = get_date_range(date_preset)
-            st.write(f"Selected range: {start_date} to {end_date}")
-            selected_date_range = [start_date, end_date]
+            if date_preset == "Custom":
+                min_date = pd.to_datetime(df_open_so['Ship Date']).min()
+                max_date = pd.to_datetime(df_open_so['Ship Date']).max()
+                selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+            else:
+                start_date, end_date = get_date_range(date_preset)
+                st.write(f"Selected range: {start_date} to {end_date}")
+                selected_date_range = [start_date, end_date]
 
         # Normalize 'Ship Date' column to MM/DD/YYYY
         df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
@@ -125,10 +125,6 @@ def main():
             merged_df = merged_df[merged_df['Sales Rep'].isin(selected_sales_reps)]
         if 'All' not in selected_ship_vias:
             merged_df = merged_df[merged_df['Ship Via'].isin(selected_ship_vias)]
-        if filter_with_task_id and not filter_without_task_id:
-            merged_df = merged_df[merged_df['Task ID'].notna()]
-        elif filter_without_task_id and not filter_with_task_id:
-            merged_df = merged_df[merged_df['Task ID'].isna()]
 
         # Apply Ship Date filter
         merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
@@ -150,6 +146,17 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.write("No data available for the selected filters.")
+
+        # Task ID Filters - Positioned below data visualizations
+        st.subheader("Filter by Task ID")
+        filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
+        filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
+
+        # Apply Task ID filters
+        if filter_with_task_id and not filter_without_task_id:
+            merged_df = merged_df[merged_df['Task ID'].notna()]
+        elif filter_without_task_id and not filter_with_task_id:
+            merged_df = merged_df[merged_df['Task ID'].isna()]
 
         # Display metrics and data
         total_orders = len(merged_df)
@@ -198,17 +205,21 @@ def main():
         df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
         df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
-        # Filters within the tab
-        st.subheader("Select Ship Via")
-        ship_vias = ['All'] + df['Ship Via'].unique().tolist()
-        selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
+        # Display Ship Via and Date Range filters in two columns
+        col1, col2 = st.columns(2)
 
-        if 'All' in selected_ship_vias:
-            selected_ship_vias = df['Ship Via'].unique().tolist()
+        with col1:
+            st.subheader("Select Ship Via")
+            ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+            selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
 
-        st.subheader("Select Date Range")
-        date_preset = st.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
-        start_date, end_date = get_date_range(date_preset)
+            if 'All' in selected_ship_vias:
+                selected_ship_vias = df['Ship Via'].unique().tolist()
+
+        with col2:
+            st.subheader("Select Date Range")
+            date_preset = st.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
+            start_date, end_date = get_date_range(date_preset)
 
         # Apply filters
         df_filtered = df[
