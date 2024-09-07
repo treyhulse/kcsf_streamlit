@@ -48,6 +48,10 @@ def get_date_range(preset):
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=4)
         return start_of_week, end_of_week
+    elif preset == "Last Week":
+        start_of_last_week = today - timedelta(days=today.weekday() + 7)
+        end_of_last_week = start_of_last_week + timedelta(days=4)
+        return start_of_last_week, end_of_last_week
     elif preset == "Next Week":
         start_of_next_week = today + timedelta(days=(7 - today.weekday()))
         end_of_next_week = start_of_next_week + timedelta(days=4)
@@ -56,6 +60,10 @@ def get_date_range(preset):
         start_of_month = today.replace(day=1)
         end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
         return start_of_month, end_of_month
+    elif preset == "Next Month":
+        start_of_next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
+        end_of_next_month = (start_of_next_month.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        return start_of_next_month, end_of_next_month
     else:
         return None, None
 
@@ -94,7 +102,7 @@ def main():
         selected_ship_vias = df['Ship Via'].unique().tolist()  # Select all if "All" is selected
 
     st.sidebar.subheader("Select Date Range")
-    date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "This Month"])
+    date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
     start_date, end_date = get_date_range(date_preset)
 
     # Apply filters
