@@ -27,10 +27,7 @@ from pymongo import MongoClient
 from datetime import datetime
 
 st.set_page_config(
-    page_title="Dashboard and Chart Management",
-    page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
 
