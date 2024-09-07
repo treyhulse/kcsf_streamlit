@@ -29,6 +29,7 @@ from utils.data_functions import process_netsuite_data_csv
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 from datetime import date, timedelta
 import streamlit as st
+import time
 
 # Function to apply mapping, but keep unmapped IDs as raw values
 def apply_mapping(column, mapping_dict):
@@ -60,20 +61,19 @@ def get_date_range(preset):
 
 # Main function
 def main():
-    # Adding custom CSS for green text in expanders
-    st.markdown(
-        """
-        <style>
-        .green-text {
-            color: green;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.header("Shipping Calendar")
 
-    with st.spinner("Fetching Shipping Data..."):
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
+    # Progress Bar
+    progress = st.progress(0)
+    with st.spinner("Initializing..."):
+        time.sleep(0.5)  # Small delay to simulate startup
+
+    # Fetching data with progress
+    for i in range(1, 6):
+        time.sleep(0.3)  # Simulating data fetching process
+        progress.progress(i * 20)  # Updating progress
+
+    df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
     # Apply necessary transformations
     df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
@@ -108,7 +108,6 @@ def main():
     grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
 
     # Create 5 vertical columns (Monday through Friday)
-    st.header("Shipping Calendar")
     cols = st.columns(5)
 
     # Mapping days of the week to columns
@@ -130,7 +129,8 @@ def main():
 
                     if not orders_today.empty:
                         total_orders = len(orders_today)
-                        with st.expander(f"{date_str} - Total Orders: " + f"<span class='green-text'>{total_orders}</span>", expanded=False):
+                        with st.expander(f"{date_str} - Total Orders:"):
+                            st.markdown(f"<span class='green-text'>{total_orders}</span>", unsafe_allow_html=True)  # Green text fix
                             st.dataframe(orders_today)  # Display the DataFrame for that day
                     else:
                         with st.expander(f"{date_str} - No shipments"):
