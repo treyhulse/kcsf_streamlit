@@ -70,76 +70,7 @@ def get_date_range(preset):
 # Main function
 def main():
     # Define tabs
-    tab1, tab2 = st.tabs(["Shipping Calendar", "Open Sales Orders Analysis"])
-
-    # Tab 1: Shipping Calendar
-    with tab2:
-        st.header("Shipping Calendar")
-        progress = st.progress(0)
-
-        with st.spinner("Initializing..."):
-            time.sleep(0.5)
-
-        for i in range(1, 6):
-            time.sleep(0.3)
-            progress.progress(i * 20)
-
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
-
-        # Apply necessary transformations
-        df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
-        df['Order Number'] = df['Order Number'].astype(str)
-        df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
-
-        # Map relevant columns
-        df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
-        df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
-        df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
-
-        # Sidebar Filters
-        st.sidebar.subheader("Select Ship Via")
-        ship_vias = ['All'] + df['Ship Via'].unique().tolist()
-        selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=['All'])
-
-        if 'All' in selected_ship_vias:
-            selected_ship_vias = df['Ship Via'].unique().tolist()
-
-        st.sidebar.subheader("Select Date Range")
-        date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
-        start_date, end_date = get_date_range(date_preset)
-
-        # Apply filters
-        df_filtered = df[
-            (df['Ship Via'].isin(selected_ship_vias)) &
-            (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
-            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
-        ]
-
-        # Group by Ship Date and Ship Via
-        grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
-
-        # Create 5 vertical columns (Monday through Friday)
-        cols = st.columns(5)
-        weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-        days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')
-
-        # Display by weekday
-        for i, day_name in enumerate(weekdays):
-            with cols[i]:
-                st.subheader(day_name)
-
-                for date_str in days:
-                    date_obj = pd.to_datetime(date_str)
-                    if date_obj.weekday() == i:
-                        orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
-
-                        if not orders_today.empty:
-                            total_orders = len(orders_today)
-                            with st.expander(f"{date_str} - Total Orders: {total_orders}"):
-                                st.dataframe(orders_today)
-                        else:
-                            with st.expander(f"{date_str} - No shipments"):
-                                st.write("No orders for this day.")
+    tab1, tab2 = st.tabs(["Open Sales Orders Analysis", "Shipping Calendar"])
 
     # Tab 2: Open Sales Orders Analysis
     with tab1:
@@ -239,6 +170,75 @@ def main():
             st.dataframe(merged_df, height=400)
             csv = merged_df.to_csv(index=False)
             st.download_button(label="Download filtered data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
+
+    # Tab 2: Shipping Calendar
+    with tab2:
+        st.header("Shipping Calendar")
+        progress = st.progress(0)
+
+        with st.spinner("Initializing..."):
+            time.sleep(0.5)
+
+        for i in range(1, 6):
+            time.sleep(0.3)
+            progress.progress(i * 20)
+
+        df = process_netsuite_data_csv(st.secrets["url_open_so"])
+
+        # Apply necessary transformations
+        df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
+        df['Order Number'] = df['Order Number'].astype(str)
+        df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
+
+        # Map relevant columns
+        df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
+        df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+        df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
+
+        # Sidebar Filters
+        st.sidebar.subheader("Select Ship Via")
+        ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+        selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=['All'])
+
+        if 'All' in selected_ship_vias:
+            selected_ship_vias = df['Ship Via'].unique().tolist()
+
+        st.sidebar.subheader("Select Date Range")
+        date_preset = st.sidebar.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
+        start_date, end_date = get_date_range(date_preset)
+
+        # Apply filters
+        df_filtered = df[
+            (df['Ship Via'].isin(selected_ship_vias)) &
+            (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
+            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
+        ]
+
+        # Group by Ship Date and Ship Via
+        grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
+
+        # Create 5 vertical columns (Monday through Friday)
+        cols = st.columns(5)
+        weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')
+
+        # Display by weekday
+        for i, day_name in enumerate(weekdays):
+            with cols[i]:
+                st.subheader(day_name)
+
+                for date_str in days:
+                    date_obj = pd.to_datetime(date_str)
+                    if date_obj.weekday() == i:
+                        orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
+
+                        if not orders_today.empty:
+                            total_orders = len(orders_today)
+                            with st.expander(f"{date_str} - Total Orders: {total_orders}"):
+                                st.dataframe(orders_today)
+                        else:
+                            with st.expander(f"{date_str} - No shipments"):
+                                st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
