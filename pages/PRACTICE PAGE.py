@@ -75,7 +75,40 @@ def main():
     # Tab 1: Open Sales Orders Analysis
     with tab1:
         st.header("Open Sales Orders Analysis")
-        
+
+        # Place filters in an expandable box
+        with st.expander("Filters"):
+            # Display filters in four columns (added Task ID as the fourth column)
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.subheader("Filter by Sales Rep")
+                sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+                selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
+
+            with col2:
+                st.subheader("Filter by Ship Via")
+                ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
+                selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
+
+            with col3:
+                st.subheader("Filter by Ship Date")
+                date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
+
+                if date_preset == "Custom":
+                    min_date = pd.to_datetime(df_open_so['Ship Date']).min()
+                    max_date = pd.to_datetime(df_open_so['Ship Date']).max()
+                    selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+                else:
+                    start_date, end_date = get_date_range(date_preset)
+                    st.write(f"Selected range: {start_date} to {end_date}")
+                    selected_date_range = [start_date, end_date]
+
+            with col4:
+                st.subheader("Filter by Task ID")
+                filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
+                filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
+
         # Fetch Data
         with st.spinner("Fetching Open Sales Orders..."):
             df_open_so = process_netsuite_data_csv(st.secrets["url_open_so"])
@@ -85,37 +118,6 @@ def main():
         # Apply mapping
         df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
         df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
-
-        # Display filters in four columns (added Task ID as the fourth column)
-        col1, col2, col3, col4 = st.columns(4)
-
-        with col1:
-            st.subheader("Filter by Sales Rep")
-            sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
-            selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
-
-        with col2:
-            st.subheader("Filter by Ship Via")
-            ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
-            selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
-
-        with col3:
-            st.subheader("Filter by Ship Date")
-            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
-            
-            if date_preset == "Custom":
-                min_date = pd.to_datetime(df_open_so['Ship Date']).min()
-                max_date = pd.to_datetime(df_open_so['Ship Date']).max()
-                selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
-            else:
-                start_date, end_date = get_date_range(date_preset)
-                st.write(f"Selected range: {start_date} to {end_date}")
-                selected_date_range = [start_date, end_date]
-
-        with col4:
-            st.subheader("Filter by Task ID")
-            filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
-            filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
 
         # Normalize 'Ship Date' column to MM/DD/YYYY
         df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
@@ -193,33 +195,35 @@ def main():
             time.sleep(0.3)
             progress.progress(i * 20)
 
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
+        # Place filters in an expandable box
+        with st.expander("Filters"):
+            df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
-        # Normalize 'Ship Date' to MM/DD/YYYY format
-        df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
-        df['Order Number'] = df['Order Number'].astype(str)
-        df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
+            # Normalize 'Ship Date' to MM/DD/YYYY format
+            df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
+            df['Order Number'] = df['Order Number'].astype(str)
+            df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
 
-        # Map relevant columns
-        df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
-        df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
-        df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
+            # Map relevant columns
+            df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
+            df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+            df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
-        # Display Ship Via and Date Range filters in two columns
-        col1, col2 = st.columns(2)
+            # Display Ship Via and Date Range filters in two columns
+            col1, col2 = st.columns(2)
 
-        with col1:
-            st.subheader("Select Ship Via")
-            ship_vias = ['All'] + df['Ship Via'].unique().tolist()
-            selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
+            with col1:
+                st.subheader("Select Ship Via")
+                ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+                selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
 
-            if 'All' in selected_ship_vias:
-                selected_ship_vias = df['Ship Via'].unique().tolist()
+                if 'All' in selected_ship_vias:
+                    selected_ship_vias = df['Ship Via'].unique().tolist()
 
-        with col2:
-            st.subheader("Select Date Range")
-            date_preset = st.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
-            start_date, end_date = get_date_range(date_preset)
+            with col2:
+                st.subheader("Select Date Range")
+                date_preset = st.selectbox("Select Date Range", ["This Week", "Next Week", "Last Week", "This Month", "Next Month"])
+                start_date, end_date = get_date_range(date_preset)
 
         # Apply filters
         df_filtered = df[
