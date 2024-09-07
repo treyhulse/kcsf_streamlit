@@ -140,7 +140,7 @@ def main():
                         with st.expander(f"{date_str} - Total Orders: {total_orders}"):
                             st.dataframe(orders_today)  # Display the DataFrame for that day
                     else:
-                        with st.expander(f"{date_str} - No shipments"):
+                        with st.expander(f"{date_str} - NO SHIPMENTS"):
                             st.write("No orders for this day.")
 
 if __name__ == "__main__":
