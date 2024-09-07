@@ -24,40 +24,13 @@ st.write(f"You have access to this page.")
 ################################################################################################
 import pandas as pd
 import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv  # CSV fetcher
+from utils.data_functions import process_netsuite_data_csv
+from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping  # Import mappings
 from datetime import date, timedelta
 
-# Sales Rep mapping (unchanged)
-sales_rep_mapping = {
-    7: "Shelley Gummig",
-    61802: "Kaitlyn Surry",
-    4125270: "Becky Dean",
-    4125868: "Roger Dixon",
-    4131659: "Lori McKiney",
-    47556: "Raymond Brown",
-    4169685: "Shellie Pritchett",
-    4123869: "Katelyn Kennedy",
-    47708: "Phil Vaughan",
-    4169200: "Dave Knudtson",
-    4168032: "Trey Hulse",
-    4152972: "Gary Bargen",
-    4159935: "Derrick Lewis",
-    66736: "Unspecified",
-    67473: 'Jon Joslin',
-}
-
-# Ship Via mapping (unchanged)
-ship_via_mapping = {
-    141: "Our Truck",
-    32356: "EPES - Truckload",
-    226: "Pickup 2",
-    36191: "Estes Standard",
-    36: "Fed Ex Ground",
-    3653: "Fed Ex Ground Home Delivery",
-    7038: "Other - See Shipping Info",
-    4: "UPS Ground",
-    227: "Dayton Freight"
-}
+# Function to apply mapping, but keep unmapped IDs as raw values
+def apply_mapping(column, mapping_dict):
+    return column.apply(lambda x: mapping_dict.get(x, x))  # If no mapping, return raw value
 
 # Fetch data using the CSV-based RESTlet
 def main():
@@ -70,8 +43,9 @@ def main():
     # Filter for weekdays (Monday to Friday)
     df = df[df['Ship Date'].dt.weekday < 5]
 
-    # Map 'Ship Via' column using the ship_via_mapping
-    df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+    # Apply mappings to 'Ship Via' and 'Sales Rep' columns
+    df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
+    df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
 
     # Aggregate total orders by 'Ship Via' and display the count of orders by day
     aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
