@@ -29,7 +29,23 @@ ship_via_mapping = {
     3653: "Fed Ex Ground Home Delivery",
     7038: "Other - See Shipping Info",
     4: "UPS Ground",
-    227: "Dayton Freight"
+    227: "Dayton Freight",
+    41956: "Our Truck - Small",
+    8282: "US Mail",
+    3662: "UPS 2nd Day Air",
+    3: "FedEx Standard Overnight",
+    16836: "FedEx Freight® Economy",
+    26053: "WEB - Method Not Available - Quote Freight Offline",
+    36204: "Cross Country Freight",
+    11734: "To Be Determined",
+    41957: "Our Truck - Large",
+    148: "Pickup 1",
+    26092: "WEB - Your Method",
+    140: "SAIA",
+    145: "*LTL Best Way",
+    37315: "Forward Air"
+
+
 
 }
 
