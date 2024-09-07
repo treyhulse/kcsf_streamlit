@@ -86,32 +86,6 @@ def main():
         df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
         df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
-        # Display filters in three columns
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            st.subheader("Filter by Sales Rep")
-            sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
-            selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
-
-        with col2:
-            st.subheader("Filter by Ship Via")
-            ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
-            selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
-
-        with col3:
-            st.subheader("Filter by Ship Date")
-            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
-
-            if date_preset == "Custom":
-                min_date = pd.to_datetime(df_open_so['Ship Date']).min()
-                max_date = pd.to_datetime(df_open_so['Ship Date']).max()
-                selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
-            else:
-                start_date, end_date = get_date_range(date_preset)
-                st.write(f"Selected range: {start_date} to {end_date}")
-                selected_date_range = [start_date, end_date]
-
         # Normalize 'Ship Date' column to MM/DD/YYYY
         df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
 
@@ -120,15 +94,12 @@ def main():
         merged_df['Sales Rep'] = merged_df['Sales Rep'].replace(sales_rep_mapping)
         merged_df['Order Number'] = merged_df['Order Number'].astype(str)
 
-        # Apply filters
-        if 'All' not in selected_sales_reps:
-            merged_df = merged_df[merged_df['Sales Rep'].isin(selected_sales_reps)]
-        if 'All' not in selected_ship_vias:
-            merged_df = merged_df[merged_df['Ship Via'].isin(selected_ship_vias)]
-
-        # Apply Ship Date filter
-        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
-        merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
+        # Display data table and download option
+        with st.expander("View Data Table"):
+            st.write(f"Total records after filtering: {len(merged_df)}")
+            st.dataframe(merged_df, height=400)
+            csv = merged_df.to_csv(index=False)
+            st.download_button(label="Download filtered data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
 
         # Display charts
         if not merged_df.empty:
@@ -147,10 +118,48 @@ def main():
         else:
             st.write("No data available for the selected filters.")
 
-        # Task ID Filters - Positioned below data visualizations
-        st.subheader("Filter by Task ID")
-        filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
-        filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
+        # Filters positioned below the data visualizations
+        st.subheader("Apply Filters")
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            st.subheader("Sales Rep")
+            sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+            selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
+
+        with col2:
+            st.subheader("Ship Via")
+            ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
+            selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
+
+        with col3:
+            st.subheader("Ship Date")
+            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"], index=1)
+
+            if date_preset == "Custom":
+                min_date = pd.to_datetime(df_open_so['Ship Date']).min()
+                max_date = pd.to_datetime(df_open_so['Ship Date']).max()
+                selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+            else:
+                start_date, end_date = get_date_range(date_preset)
+                st.write(f"Selected range: {start_date} to {end_date}")
+                selected_date_range = [start_date, end_date]
+
+        with col4:
+            st.subheader("Task ID Filters")
+            filter_with_task_id = st.checkbox("Show rows with Task ID", value=True)
+            filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
+
+        # Apply filters
+        if 'All' not in selected_sales_reps:
+            merged_df = merged_df[merged_df['Sales Rep'].isin(selected_sales_reps)]
+        if 'All' not in selected_ship_vias:
+            merged_df = merged_df[merged_df['Ship Via'].isin(selected_ship_vias)]
+
+        # Apply Ship Date filter
+        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
+        merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
         # Apply Task ID filters
         if filter_with_task_id and not filter_without_task_id:
@@ -173,13 +182,6 @@ def main():
             st.metric("Untasked Orders", unmatched_orders)
         with col4:
             st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
-
-        # Data table and download option
-        with st.expander("View Data Table"):
-            st.write(f"Total records after filtering: {len(merged_df)}")
-            st.dataframe(merged_df, height=400)
-            csv = merged_df.to_csv(index=False)
-            st.download_button(label="Download filtered data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
 
     # Tab 2: Shipping Calendar
     with tab2:
