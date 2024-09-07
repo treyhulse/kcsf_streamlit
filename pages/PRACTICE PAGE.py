@@ -24,7 +24,7 @@ st.write(f"You have access to this page.")
 ################################################################################################
 import pandas as pd
 import plotly.express as px
-from utils.data_functions import process_netsuite_data_csv  # Use CSV fetcher
+from utils.data_functions import process_netsuite_data_csv  # CSV fetcher
 from datetime import date, timedelta
 
 # Sales Rep mapping (unchanged)
@@ -62,17 +62,43 @@ ship_via_mapping = {
 # Fetch data using the CSV-based RESTlet
 def main():
     with st.spinner("Fetching Shipping Data..."):
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])  # Using the CSV fetcher now
+        df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
-    # Display the DataFrame structure for debugging
-    st.write("Columns in the DataFrame:")
-    st.write(df.columns)  # This will print the DataFrame's column headers
-    
-    st.write("First 5 rows of the DataFrame:")
-    st.write(df.head())  # This will display the first 5 rows of the DataFrame for inspection
+    # Convert 'Ship Date' to datetime format
+    df['Ship Date'] = pd.to_datetime(df['Ship Date'])
 
-    # Ensure you don't run any further processing until you've confirmed the column names.
-    st.stop()  # Stop the execution to inspect the columns and data before proceeding
+    # Filter for weekdays (Monday to Friday)
+    df = df[df['Ship Date'].dt.weekday < 5]
+
+    # Map 'Ship Via' column using the ship_via_mapping
+    df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+
+    # Aggregate total orders by 'Ship Via' and display the count of orders by day
+    aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
+
+    # Create a chart to visualize the orders by 'Ship Via' over time
+    fig = px.line(
+        aggregated_orders,
+        x='Ship Date',
+        y='Total Orders',
+        color='Ship Via',
+        title='Total Orders by Ship Via (Weekdays Only)'
+    )
+
+    # Display the chart and table in Streamlit
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Display aggregated data in a table
+    st.write(aggregated_orders)
+
+    # Option to download the filtered data
+    csv = aggregated_orders.to_csv(index=False)
+    st.download_button(
+        label="Download aggregated data as CSV",
+        data=csv,
+        file_name="aggregated_orders_by_ship_via.csv",
+        mime="text/csv",
+    )
 
 if __name__ == "__main__":
     main()
