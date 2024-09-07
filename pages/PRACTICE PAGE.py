@@ -60,6 +60,18 @@ def get_date_range(preset):
 
 # Main function
 def main():
+    # Adding custom CSS for green text in expanders
+    st.markdown(
+        """
+        <style>
+        .green-text {
+            color: green;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     with st.spinner("Fetching Shipping Data..."):
         df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
@@ -114,12 +126,12 @@ def main():
                 
                 # Ensure only the correct weekday is shown in each column
                 if date_obj.weekday() == i:
-                    orders_today = grouped[grouped['Ship Date'] == date_str]
+                    orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
 
                     if not orders_today.empty:
-                        with st.expander(f"{date_str} - Total Orders: {orders_today['Total Orders'].sum()}"):
-                            for _, row in orders_today.iterrows():
-                                st.write(f"Ship Via: {row['Ship Via']}, Total Orders: {row['Total Orders']}")
+                        total_orders = len(orders_today)
+                        with st.expander(f"{date_str} - Total Orders: " + f"<span class='green-text'>{total_orders}</span>", expanded=False):
+                            st.dataframe(orders_today)  # Display the DataFrame for that day
                     else:
                         with st.expander(f"{date_str} - No shipments"):
                             st.write("No orders for this day.")
