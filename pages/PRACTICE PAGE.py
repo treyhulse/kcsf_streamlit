@@ -33,10 +33,24 @@ from datetime import date, timedelta
 def apply_mapping(column, mapping_dict):
     return column.apply(lambda x: mapping_dict.get(x, x))  # If no mapping, return raw value
 
+# Function to format currency
+def format_currency(value):
+    return "${:,.2f}".format(value) if pd.notna(value) else value
+
 # Fetch data using the CSV-based RESTlet
 def main():
     with st.spinner("Fetching Shipping Data..."):
         df = process_netsuite_data_csv(st.secrets["url_open_so"])
+
+    # Remove 'Name' column
+    if 'Name' in df.columns:
+        df = df.drop(columns=['Name'])
+
+    # Convert 'Order Number' to string
+    df['Order Number'] = df['Order Number'].astype(str)
+
+    # Convert 'Amount Remaining' to currency format
+    df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
 
     # Convert 'Ship Date' to datetime format
     df['Ship Date'] = pd.to_datetime(df['Ship Date'])
@@ -49,15 +63,10 @@ def main():
     df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
     df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
-    # If you have mappings for 'Credit Status' or 'Payment Status', add them to mappings.py
-    # Example (assuming you have these mappings):
-    # df['Credit Status'] = apply_mapping(df['Credit Status'], credit_status_mapping)
-    # df['Payment Status'] = apply_mapping(df['Payment Status'], payment_status_mapping)
-
-    # Aggregation of total orders by 'Ship Via' and 'Ship Date'
+    # Aggregate total orders by 'Ship Via' and display the count of orders by day
     aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
 
-    # Plot the results in a line chart
+    # Create a chart to visualize the orders by 'Ship Via' over time
     fig = px.line(
         aggregated_orders,
         x='Ship Date',
@@ -66,11 +75,13 @@ def main():
         title='Total Orders by Ship Via (Weekdays Only)'
     )
 
-    # Display the chart and the DataFrame
+    # Display the chart and table in Streamlit
     st.plotly_chart(fig, use_container_width=True)
+
+    # Display aggregated data in a table
     st.write(aggregated_orders)
 
-    # Allow users to download the data
+    # Option to download the filtered data
     csv = aggregated_orders.to_csv(index=False)
     st.download_button(
         label="Download aggregated data as CSV",
@@ -79,8 +90,8 @@ def main():
         mime="text/csv",
     )
 
-    # Display the full DataFrame for debugging
-    st.write("Full DataFrame:")
+    # Display the modified DataFrame for debugging
+    st.write("Modified DataFrame:")
     st.write(df)
 
 if __name__ == "__main__":
