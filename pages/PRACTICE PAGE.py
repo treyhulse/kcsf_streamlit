@@ -24,7 +24,7 @@ st.write(f"You have access to this page.")
 ################################################################################################
 import pandas as pd
 import plotly.express as px
-from utils.data_functions import process_netsuite_data_json
+from utils.data_functions import process_netsuite_data_csv  # Use CSV fetcher
 from datetime import date, timedelta
 
 # Sales Rep mapping (unchanged)
@@ -59,10 +59,10 @@ ship_via_mapping = {
     227: "Dayton Freight"
 }
 
-# Fetch data using the NetSuite RESTlet (replacing CSV fetching with JSON)
+# Fetch data using the CSV-based RESTlet
 def main():
     with st.spinner("Fetching Shipping Data..."):
-        df = process_netsuite_data_json(st.secrets["url_open_so"], sales_rep_mapping)
+        df = process_netsuite_data_csv(st.secrets["url_open_so"])  # Using the CSV fetcher now
 
     # Display the DataFrame structure for debugging
     st.write("Columns in the DataFrame:")
