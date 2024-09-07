@@ -52,11 +52,11 @@ def main():
     # Convert 'Amount Remaining' to currency format
     df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
 
-    # Convert 'Ship Date' to datetime format
-    df['Ship Date'] = pd.to_datetime(df['Ship Date'])
+    # Convert 'Ship Date' to datetime format and then format to MM/DD/YYYY
+    df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
 
     # Filter for weekdays (Monday to Friday)
-    df = df[df['Ship Date'].dt.weekday < 5]
+    df = df[pd.to_datetime(df['Ship Date']).dt.weekday < 5]
 
     # Apply mappings to relevant columns
     df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
@@ -64,7 +64,7 @@ def main():
     df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
     # Aggregate total orders by 'Ship Via' and display the count of orders by day
-    aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
+    aggregated_orders = df.groupby(['Ship Via', df['Ship Date']]).size().reset_index(name='Total Orders')
 
     # Create a chart to visualize the orders by 'Ship Via' over time
     fig = px.line(
