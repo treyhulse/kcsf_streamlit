@@ -73,7 +73,7 @@ def main():
     tab1, tab2 = st.tabs(["Shipping Calendar", "Open Sales Orders Analysis"])
 
     # Tab 1: Shipping Calendar
-    with tab1:
+    with tab2:
         st.header("Shipping Calendar")
         progress = st.progress(0)
 
@@ -142,7 +142,7 @@ def main():
                                 st.write("No orders for this day.")
 
     # Tab 2: Open Sales Orders Analysis
-    with tab2:
+    with tab1:
         st.header("Open Sales Orders Analysis")
         
         # Fetch Data
