@@ -134,7 +134,45 @@ def main():
         merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
         merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
-        # Display charts and data as before...
+        # Display charts
+        if not merged_df.empty:
+            col_chart, col_pie = st.columns([2, 1])
+            with col_chart:
+                df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date'])
+                ship_date_counts = df_open_so['Ship Date'].value_counts().sort_index()
+                fig = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+                st.plotly_chart(fig, use_container_width=True)
+            with col_pie:
+                matched_orders = merged_df['Task ID'].notna().sum()
+                unmatched_orders = merged_df['Task ID'].isna().sum()
+                pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
+                fig = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.write("No data available for the selected filters.")
+
+        # Display metrics and data
+        total_orders = len(merged_df)
+        matched_orders = merged_df['Task ID'].notna().sum()
+        unmatched_orders = merged_df['Task ID'].isna().sum()
+        successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Open Orders", total_orders)
+        with col2:
+            st.metric("Tasked Orders", matched_orders)
+        with col3:
+            st.metric("Untasked Orders", unmatched_orders)
+        with col4:
+            st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
+
+        # Data table and download option
+        with st.expander("View Data Table"):
+            st.write(f"Total records after filtering: {len(merged_df)}")
+            st.dataframe(merged_df, height=400)
+            csv = merged_df.to_csv(index=False)
+            st.download_button(label="Download filtered data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
 
     # Tab 2: Shipping Calendar
     with tab2:
@@ -179,7 +217,31 @@ def main():
             (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
         ]
 
-        # Display grouped data by weekdays...
+        # Group by Ship Date and Ship Via
+        grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
+
+        # Create 5 vertical columns (Monday through Friday)
+        cols = st.columns(5)
+        weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')
+
+        # Display by weekday
+        for i, day_name in enumerate(weekdays):
+            with cols[i]:
+                st.subheader(day_name)
+
+                for date_str in days:
+                    date_obj = pd.to_datetime(date_str)
+                    if date_obj.weekday() == i:
+                        orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
+
+                        if not orders_today.empty:
+                            total_orders = len(orders_today)
+                            with st.expander(f"{date_str} - Total Orders: {total_orders}"):
+                                st.dataframe(orders_today)
+                        else:
+                            with st.expander(f"{date_str} - No shipments"):
+                                st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
