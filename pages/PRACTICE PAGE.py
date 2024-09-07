@@ -22,6 +22,7 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
 import pandas as pd
 import plotly.express as px
 from utils.data_functions import process_netsuite_data_csv
@@ -43,14 +44,20 @@ def main():
     # Filter for weekdays (Monday to Friday)
     df = df[df['Ship Date'].dt.weekday < 5]
 
-    # Apply mappings to 'Ship Via' and 'Sales Rep' columns
+    # Apply mappings to relevant columns
     df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
     df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+    df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
-    # Aggregate total orders by 'Ship Via' and display the count of orders by day
+    # If you have mappings for 'Credit Status' or 'Payment Status', add them to mappings.py
+    # Example (assuming you have these mappings):
+    # df['Credit Status'] = apply_mapping(df['Credit Status'], credit_status_mapping)
+    # df['Payment Status'] = apply_mapping(df['Payment Status'], payment_status_mapping)
+
+    # Aggregation of total orders by 'Ship Via' and 'Ship Date'
     aggregated_orders = df.groupby(['Ship Via', df['Ship Date'].dt.date]).size().reset_index(name='Total Orders')
 
-    # Create a chart to visualize the orders by 'Ship Via' over time
+    # Plot the results in a line chart
     fig = px.line(
         aggregated_orders,
         x='Ship Date',
@@ -59,13 +66,11 @@ def main():
         title='Total Orders by Ship Via (Weekdays Only)'
     )
 
-    # Display the chart and table in Streamlit
+    # Display the chart and the DataFrame
     st.plotly_chart(fig, use_container_width=True)
-
-    # Display aggregated data in a table
     st.write(aggregated_orders)
 
-    # Option to download the filtered data
+    # Allow users to download the data
     csv = aggregated_orders.to_csv(index=False)
     st.download_button(
         label="Download aggregated data as CSV",
@@ -73,6 +78,10 @@ def main():
         file_name="aggregated_orders_by_ship_via.csv",
         mime="text/csv",
     )
+
+    # Display the full DataFrame for debugging
+    st.write("Full DataFrame:")
+    st.write(df)
 
 if __name__ == "__main__":
     main()

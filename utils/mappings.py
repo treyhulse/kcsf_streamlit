@@ -15,7 +15,7 @@ sales_rep_mapping = {
     4168032: "Trey Hulse",
     4152972: "Gary Bargen",
     4159935: "Derrick Lewis",
-    66736: "Unspecified",
+    66736: "",
     67473: "Jon Joslin",
 }
 
@@ -30,6 +30,7 @@ ship_via_mapping = {
     7038: "Other - See Shipping Info",
     4: "UPS Ground",
     227: "Dayton Freight"
+
 }
 
 # Terms mapping
