@@ -104,23 +104,25 @@ def main():
     days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')  # Only business days
 
     # Initialize the columns for Monday to Friday
-    for i, day in enumerate(weekdays):
+    for i, day_name in enumerate(weekdays):
         with cols[i]:
-            st.subheader(day)
+            st.subheader(day_name)
 
-            # Get the orders for the corresponding day in the date range
-            day_data = grouped[pd.to_datetime(grouped['Ship Date']).dt.weekday == i]
-
+            # Iterate over each date within the respective weekday
             for date_str in days:
-                orders_today = day_data[day_data['Ship Date'] == date_str]
+                date_obj = pd.to_datetime(date_str)
+                
+                # Ensure only the correct weekday is shown in each column
+                if date_obj.weekday() == i:
+                    orders_today = grouped[grouped['Ship Date'] == date_str]
 
-                if not orders_today.empty:
-                    with st.expander(f"{date_str} - Total Orders: {orders_today['Total Orders'].sum()}"):
-                        for _, row in orders_today.iterrows():
-                            st.write(f"Ship Via: {row['Ship Via']}, Total Orders: {row['Total Orders']}")
-                else:
-                    with st.expander(f"{date_str} - No shipments"):
-                        st.write("No orders for this day.")
+                    if not orders_today.empty:
+                        with st.expander(f"{date_str} - Total Orders: {orders_today['Total Orders'].sum()}"):
+                            for _, row in orders_today.iterrows():
+                                st.write(f"Ship Via: {row['Ship Via']}, Total Orders: {row['Total Orders']}")
+                    else:
+                        with st.expander(f"{date_str} - No shipments"):
+                            st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
