@@ -3,6 +3,7 @@ import streamlit as st
 import logging
 from utils.apis import get_netsuite_products_via_restlet, get_shopify_products, post_product_to_shopify, update_inventory_and_price
 
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 

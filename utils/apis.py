@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
     try:
-        netsuite_url = st.secrets['shopifyitems_url']  # Updated with the new key name
+        netsuite_url = st.secrets['shopifyitems_url']  # Use the new key for NetSuite RESTlet
         headers = {
             "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
                              f"oauth_token={st.secrets['token_key']}, "
@@ -23,7 +23,7 @@ def get_netsuite_products_via_restlet():
         response = requests.get(netsuite_url, headers=headers)
         if response.status_code == 200:
             logging.info("NetSuite products retrieved successfully.")
-            return response.json()
+            return response.json()  # Returns JSON response containing products
         else:
             logging.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
             st.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
@@ -87,3 +87,28 @@ def update_product_on_shopify(product_id, update_data):
         logging.error(f"An error occurred while updating the product on Shopify: {str(e)}")
         st.error(f"An error occurred while updating the product on Shopify: {str(e)}")
         return None, None
+
+# Update inventory and price in Shopify
+def update_inventory_and_price(product_id, inventory, price):
+    try:
+        update_data = {
+            "product": {
+                "variants": [
+                    {
+                        "inventory_quantity": inventory,
+                        "price": price
+                    }
+                ]
+            }
+        }
+        status_code, response = update_product_on_shopify(product_id, update_data)
+        if status_code == 200:
+            logging.info(f"Inventory and price updated for product {product_id}.")
+            return response
+        else:
+            logging.error(f"Failed to update inventory and price for product {product_id}.")
+            return None
+    except Exception as e:
+        logging.error(f"An error occurred while updating inventory and price: {str(e)}")
+        st.error(f"An error occurred while updating inventory and price: {str(e)}")
+        return None
