@@ -1,13 +1,32 @@
 # 10_Product_Sync.py
 import streamlit as st
 import logging
-from utils.apis import get_netsuite_products_via_restlet, get_shopify_products, post_product_to_shopify, update_inventory_and_price
-
+from utils.apis import fetch_all_data_csv, fetch_all_data_json, get_netsuite_products_via_restlet, get_shopify_products, post_product_to_shopify, update_inventory_and_price
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 
+# Page header
 st.title("NetSuite & Shopify Product Sync")
+
+# Fetch data from the RESTlet URL defined in Streamlit secrets
+url = st.secrets['url']  # The RESTlet URL is stored in Streamlit secrets under the key 'url'
+
+# Display a spinner while data is being fetched
+with st.spinner("Fetching data from NetSuite..."):
+    # Fetch data from the RESTlet (assumed to return JSON)
+    data = fetch_all_data_json(url)  # Use fetch_all_data_csv if the RESTlet returns CSV
+
+# Check if data was fetched successfully
+if not data.empty:
+    st.write("Successfully fetched NetSuite data.")
+    st.dataframe(data)  # Display the fetched data in a table format
+else:
+    st.error("No data available or failed to fetch.")
+
+
+
+
 
 tabs = st.tabs(["View NetSuite Products", "View Shopify Products", "Post Products", "Update Inventory & Price"])
 

@@ -2,31 +2,31 @@
 import requests
 import streamlit as st
 import logging
+from requests_oauthlib import OAuth1
 
 # Setup logging for better tracking
 logging.basicConfig(level=logging.INFO)
 
+# Set up logging for better tracking
+logging.basicConfig(level=logging.INFO)
+
 # NetSuite Connection
-def connect_to_netsuite():
+def get_authentication():
+    """Get OAuth1 authentication for NetSuite requests."""
     try:
-        # OAuth headers for NetSuite RESTlet
-        headers = {
-            "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
-                             f"oauth_token={st.secrets['token_key']}, "
-                             f"oauth_signature_method=HMAC-SHA256, "
-                             f"oauth_signature={st.secrets['consumer_secret']}&{st.secrets['token_secret']}",
-            "Content-Type": "application/json"
-        }
-        netsuite_base_url = st.secrets['netsuite_base_url']
-        
-        # Log the headers for debugging
-        logging.info(f"OAuth Headers: {headers}")
-        
-        return netsuite_base_url, headers
+        return OAuth1(
+            st.secrets["consumer_key"],
+            st.secrets["consumer_secret"],
+            st.secrets["token_key"],
+            st.secrets["token_secret"],
+            realm=st.secrets["realm"],
+            signature_method='HMAC-SHA256'
+        )
     except KeyError as e:
         logging.error(f"Missing secret: {e}")
         st.error(f"Missing secret: {e}")
-        return None, None
+        return None
+
 
 # Shopify Connection
 def connect_to_shopify(use_admin_key=False):
