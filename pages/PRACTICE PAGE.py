@@ -24,29 +24,28 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from utils.suiteql import fetch_suiteql_data
+import pandas as pd
+from utils import fetch_suiteql_data
 
 # Page Title
-st.title("Item ID Search")
+st.title('Inventory Check Page')
 
-# Input for Item ID (required)
-item_filter = st.text_input("Enter Item ID (Required)", value="")
+# Input field to get the item ID from the user
+item_id = st.text_input('Enter Item ID', value='17842')
 
-# Build the SuiteQL query to search by itemid
-if item_filter:
-    query = f"SELECT itemid, displayname FROM InventoryItem WHERE itemid = '{item_filter}' LIMIT 10"
-else:
-    query = "SELECT itemid, displayname FROM InventoryItem LIMIT 10"
+# SuiteQL query to fetch inventory data for the item
+query = f"""
+SELECT item, location, quantityonhand, quantityavailable 
+FROM InventoryBalance 
+WHERE item = {item_id}
+"""
 
-# Display the generated query
-st.code(query, language="sql")
-
-# Execute the query
-if st.button("Run Query"):
+# When the user clicks the button, fetch data
+if st.button('Check Inventory'):
     df = fetch_suiteql_data(query)
     
     if not df.empty:
-        st.write(f"Results for Item ID: {item_filter}")
+        st.write(f"Inventory data for item ID: {item_id}")
         st.dataframe(df)
     else:
-        st.error(f"No data found for Item ID: {item_filter}")
+        st.error(f"No inventory data found for item ID {item_id}.")
