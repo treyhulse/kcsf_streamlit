@@ -55,7 +55,7 @@ def update_inventory_and_price(product_id, inventory, price):
 
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
-    netsuite_url = st.secrets['shopifyitemsurl']  # Update with the RESTlet URL
+    netsuite_url = st.secrets['netsuite_restlet_url']  # Update with the RESTlet URL
     headers = {
         "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
                          f"oauth_token={st.secrets['token_key']}, "
