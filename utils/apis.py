@@ -5,7 +5,7 @@ from utils.connections import connect_to_shopify
 
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
-    netsuite_url = st.secrets['netsuite_restlet_url']  # Make sure this is in your secrets.toml
+    netsuite_url = st.secrets['restlet_url']  # Make sure this is in your secrets.toml
     headers = {
         "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
                          f"oauth_token={st.secrets['token_key']}, "
