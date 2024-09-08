@@ -46,10 +46,15 @@ oauth = OAuth1(
 # Function to query NetSuite SuiteQL
 def query_netsuite(item_id):
     url = f"https://{REALM}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
-    headers = {"Content-Type": "application/json", "Prefer": "transient"}
+    headers = {
+        "Content-Type": "application/json",  # Must be JSON
+        "Prefer": "transient"
+    }
     query = {
         "q": f"SELECT item, location, quantityonhand, quantityavailable FROM InventoryBalance WHERE item = {item_id}"
     }
+    
+    # Making the request using dynamic OAuth headers
     response = requests.post(url, headers=headers, json=query, auth=oauth)
 
     if response.status_code == 200:
