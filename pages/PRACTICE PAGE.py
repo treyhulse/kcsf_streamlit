@@ -22,34 +22,36 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-# inventory_check.py
+
 import streamlit as st
-import pandas as pd
-from utils.utils import fetch_suiteql_data
+from utils.suiteql import fetch_suiteql_data
 
 # Page Title
 st.title("Custom SuiteQL Query Builder")
 
-# Step 1: Select Fields
+# Step 1: Select Fields (Item-specific fields only)
 st.subheader("1. Select Fields")
 available_fields = [
-    "item", "location", "quantityonhand", "quantityavailable", "trandate", "status", "tranid"
+    "item", "location", "quantityonhand", "quantityavailable", "status", "tranid"
 ]
 selected_fields = st.multiselect(
     "Choose the fields you want to retrieve:", available_fields, default=["item", "quantityonhand", "quantityavailable"]
 )
 
-# Step 2: Define Filters
+# Step 2: Define Filters (Item-specific)
 st.subheader("2. Define Filters")
 
-# Filter for Item ID
-item_filter = st.text_input("Enter Item ID (Optional)", value="")
+# Filter for Item ID (required)
+item_filter = st.text_input("Enter Item ID (Required)", value="")
 
-# Filter for Date Range
-date_filter = st.date_input("Filter by Date (Optional)")
+# Filter for Location (optional)
+location_filter = st.text_input("Enter Location ID (Optional)", value="")
 
-# Add more filters as needed
-quantity_available_filter = st.number_input("Minimum Quantity Available (Optional)", min_value=0, value=0)
+# Filter for Minimum Quantity on Hand
+min_quantity_filter = st.number_input("Minimum Quantity On Hand (Optional)", min_value=0, value=0)
+
+# Filter for Minimum Quantity Available
+min_quantity_available_filter = st.number_input("Minimum Quantity Available (Optional)", min_value=0, value=0)
 
 # Step 3: Sorting Options
 st.subheader("3. Sorting and Limit")
@@ -61,17 +63,21 @@ limit_results = st.number_input("Limit number of results (Optional)", min_value=
 st.subheader("4. Generated Query")
 query_conditions = []
 
-# If user provided an item ID, add it to conditions
+# Add Item filter as it's required
 if item_filter:
-    query_conditions.append(f"item = {item_filter}")
+    query_conditions.append(f"item = '{item_filter}'")
 
-# If user provided a date filter
-if date_filter:
-    query_conditions.append(f"trandate >= '{date_filter}'")
+# Add Location filter if provided
+if location_filter:
+    query_conditions.append(f"location = '{location_filter}'")
 
-# If user provided a minimum quantity available
-if quantity_available_filter > 0:
-    query_conditions.append(f"quantityavailable >= {quantity_available_filter}")
+# Add minimum quantity on hand filter if provided
+if min_quantity_filter > 0:
+    query_conditions.append(f"quantityonhand >= {min_quantity_filter}")
+
+# Add minimum quantity available filter if provided
+if min_quantity_available_filter > 0:
+    query_conditions.append(f"quantityavailable >= {min_quantity_available_filter}")
 
 # Build WHERE clause
 where_clause = " AND ".join(query_conditions) if query_conditions else ""
