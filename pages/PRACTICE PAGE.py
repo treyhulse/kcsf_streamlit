@@ -25,7 +25,7 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils import fetch_suiteql_data
+from utils.suiteql import fetch_suiteql_data
 
 # Page Title
 st.title('Inventory Check Page')
