@@ -38,11 +38,11 @@ selected_fields = st.multiselect(
     "Choose the fields you want to retrieve:", available_fields, default=["item", "quantityonhand", "quantityavailable"]
 )
 
-# Step 2: Define Filters (Item-specific)
-st.subheader("2. Define Filters")
+# Step 2: Define Filters (Optional Filters)
+st.subheader("2. Optional Filters (You can leave these empty to retrieve all items)")
 
-# Filter for Item ID (required)
-item_filter = st.text_input("Enter Item ID (Required)", value="")
+# Filter for Item ID (optional)
+item_filter = st.text_input("Enter Item ID (Optional)", value="")
 
 # Filter for Location (optional)
 location_filter = st.text_input("Enter Location ID (Optional)", value="")
@@ -63,11 +63,11 @@ limit_results = st.number_input("Limit number of results (Optional)", min_value=
 st.subheader("4. Generated Query")
 query_conditions = []
 
-# Add Item filter as it's required, assuming it's a numeric field, so no quotes around the value
+# Add Item filter if provided
 if item_filter:
     query_conditions.append(f"item = {item_filter}")
 
-# Add Location filter if provided, assuming it's a numeric field, so no quotes around the value
+# Add Location filter if provided
 if location_filter:
     query_conditions.append(f"location = {location_filter}")
 
@@ -79,7 +79,7 @@ if min_quantity_filter > 0:
 if min_quantity_available_filter > 0:
     query_conditions.append(f"quantityavailable >= {min_quantity_available_filter}")
 
-# Build WHERE clause
+# Build WHERE clause (only add it if we have conditions)
 where_clause = " AND ".join(query_conditions) if query_conditions else ""
 
 # Build the full SuiteQL query string
