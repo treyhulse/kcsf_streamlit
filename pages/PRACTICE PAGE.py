@@ -57,8 +57,10 @@ def query_netsuite(item_id):
     # Making the request using dynamic OAuth headers
     response = requests.post(url, headers=headers, json=query, auth=oauth)
 
-    if response.status_code == 200:
-        return response.json()  # Returns the JSON response
+    if response.status_code != 200:
+        st.error(f"Error: {response.status_code}")
+        st.write(response.text)  # Print the full response for debugging
+
     else:
         st.error(f"Error: {response.status_code} - {response.text}")
         return None
