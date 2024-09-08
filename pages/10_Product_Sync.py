@@ -1,6 +1,6 @@
 # 10_Product_Sync.py
 import streamlit as st
-from utils.apis import fetch_all_data_json
+from utils.apis import fetch_all_data_csv
 
 # Title of the page
 st.title("NetSuite & Shopify Product Sync")
@@ -10,8 +10,8 @@ url = st.secrets['url']  # The URL for the NetSuite RESTlet
 
 # Display a spinner while fetching the data
 with st.spinner("Fetching data from NetSuite..."):
-    # Fetch data from the RESTlet (JSON format)
-    data = fetch_all_data_json(url)
+    # Fetch data from the RESTlet (CSV format)
+    data = fetch_all_data_csv(url)
 
 # Check if the data is successfully fetched
 if not data.empty:
