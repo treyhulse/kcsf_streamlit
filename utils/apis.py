@@ -1,54 +1,61 @@
 # utils/apis.py
 import requests
-import pandas as pd
-from io import StringIO
-import logging
 import streamlit as st
-from utils.connections import get_authentication
-import time
+from utils.connections import connect_to_shopify
 
-# Setup logging for error tracking
-logging.basicConfig(level=logging.INFO)
+# Fetch products from NetSuite using RESTlet
+def get_netsuite_products_via_restlet():
+    netsuite_url = st.secrets['netsuite_restlet_url']  # Make sure this is in your secrets.toml
+    headers = {
+        "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
+                         f"oauth_token={st.secrets['token_key']}, "
+                         f"oauth_signature_method=HMAC-SHA256, "
+                         f"oauth_signature={st.secrets['consumer_secret']}&{st.secrets['token_secret']}",
+        "Content-Type": "application/json"
+    }
 
-# Fetch all data from NetSuite RESTlet that returns CSV
-def fetch_all_data_csv(url, max_retries=3):
-    """
-    Fetch all paginated data from a NetSuite RESTlet that returns CSV.
-    The data is combined into a single DataFrame.
-    """
-    all_data = []
-    page = 1
-    auth = get_authentication()
+    try:
+        response = requests.get(netsuite_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()  # Return the JSON response
+        else:
+            st.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
+            return []
+    except Exception as e:
+        st.error(f"An error occurred while fetching products from NetSuite: {str(e)}")
+        return []
 
-    if auth is None:
-        return pd.DataFrame()  # Return empty DataFrame if authentication failed
+# Fetch products from Shopify
+def get_shopify_products():
+    shopify_url, headers = connect_to_shopify(use_admin_key=True)
+    response = requests.get(f"{shopify_url}products.json", headers=headers)
+    if response.status_code == 200:
+        return response.json().get('products', [])
+    else:
+        return []
 
-    while True:
-        for attempt in range(max_retries):
-            try:
-                logging.info(f"Fetching page {page} from {url}")
-                response = requests.get(f"{url}&page={page}", auth=auth)
-                response.raise_for_status()
+# Post product to Shopify
+def post_product_to_shopify(product_data):
+    shopify_url, headers = connect_to_shopify(use_admin_key=True)
+    response = requests.post(f"{shopify_url}products.json", json=product_data, headers=headers)
+    return response.status_code, response.json()
 
-                # Assume the response is CSV, parse the response text
-                df = pd.read_csv(StringIO(response.text))
+# Update product on Shopify
+def update_product_on_shopify(product_id, update_data):
+    shopify_url, headers = connect_to_shopify(use_admin_key=True)
+    response = requests.put(f"{shopify_url}products/{product_id}.json", json=update_data, headers=headers)
+    return response.status_code, response.json()
 
-                if df.empty:
-                    logging.info("Received empty dataframe. No more data.")
-                    return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
-
-                all_data.append(df)
-                logging.info(f"Fetched {len(df)} records from page {page}")
-
-                # If we get less than 1000 records, assume it’s the last page
-                if len(df) < 1000:
-                    return pd.concat(all_data, ignore_index=True)
-
-                page += 1
-                break  # Success, go to the next page
-            except Exception as e:
-                logging.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")
-                if attempt == max_retries - 1:
-                    st.error(f"Failed to fetch data after {max_retries} attempts.")
-                    return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
-                time.sleep(2 ** attempt)  # Exponential backoff
+# Update inventory and price in Shopify
+def update_inventory_and_price(product_id, inventory, price):
+    update_data = {
+        "product": {
+            "variants": [
+                {
+                    "inventory_quantity": inventory,
+                    "price": price
+                }
+            ]
+        }
+    }
+    return update_product_on_shopify(product_id, update_data)
