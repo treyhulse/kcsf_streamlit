@@ -27,20 +27,26 @@ import streamlit as st
 from utils.suiteql import fetch_suiteql_data
 
 # Page Title
-st.title("Test SuiteQL Query (InventoryItem)")
+st.title("Item ID Search")
 
-# Simple query to fetch all records from the InventoryItem table
-query = "SELECT itemid, displayname FROM InventoryItem LIMIT 10"
+# Input for Item ID (required)
+item_filter = st.text_input("Enter Item ID (Required)", value="")
+
+# Build the SuiteQL query to search by itemid
+if item_filter:
+    query = f"SELECT itemid, displayname FROM InventoryItem WHERE itemid = '{item_filter}' LIMIT 10"
+else:
+    query = "SELECT itemid, displayname FROM InventoryItem LIMIT 10"
 
 # Display the generated query
 st.code(query, language="sql")
 
 # Execute the query
-if st.button("Run Test Query"):
+if st.button("Run Query"):
     df = fetch_suiteql_data(query)
     
     if not df.empty:
-        st.write(f"Results for your test query:")
+        st.write(f"Results for Item ID: {item_filter}")
         st.dataframe(df)
     else:
-        st.error("No data found for your query.")
+        st.error(f"No data found for Item ID: {item_filter}")
