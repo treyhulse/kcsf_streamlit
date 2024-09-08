@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
     try:
-        netsuite_url = st.secrets['shopifyitems_url']  # Using the secret for RESTlet URL
+        netsuite_url = st.secrets['url']  # Using the secret for RESTlet URL
         netsuite_base_url, headers = connect_to_netsuite()  # OAuth headers from connection
 
         if netsuite_url and headers:
