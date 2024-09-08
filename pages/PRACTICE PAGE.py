@@ -27,76 +27,20 @@ import streamlit as st
 from utils.suiteql import fetch_suiteql_data
 
 # Page Title
-st.title("Custom SuiteQL Query Builder")
+st.title("Test SuiteQL Query")
 
-# Step 1: Select Fields (Item-specific fields only)
-st.subheader("1. Select Fields")
-available_fields = [
-    "item", "location", "quantityonhand", "quantityavailable", "status", "tranid"
-]
-selected_fields = st.multiselect(
-    "Choose the fields you want to retrieve:", available_fields, default=["item", "quantityonhand", "quantityavailable"]
-)
-
-# Step 2: Define Filters (Optional Filters)
-st.subheader("2. Optional Filters (You can leave these empty to retrieve all items)")
-
-# Filter for Item ID (optional)
-item_filter = st.text_input("Enter Item ID (Optional)", value="")
-
-# Filter for Location (optional)
-location_filter = st.text_input("Enter Location ID (Optional)", value="")
-
-# Filter for Minimum Quantity on Hand
-min_quantity_filter = st.number_input("Minimum Quantity On Hand (Optional)", min_value=0, value=0)
-
-# Filter for Minimum Quantity Available
-min_quantity_available_filter = st.number_input("Minimum Quantity Available (Optional)", min_value=0, value=0)
-
-# Step 3: Sorting Options
-st.subheader("3. Sorting and Limit")
-sort_field = st.selectbox("Sort by Field", options=available_fields, index=0)
-sort_order = st.radio("Sort Order", ("ASC", "DESC"))
-limit_results = st.number_input("Limit number of results (Optional)", min_value=1, value=100)
-
-# Step 4: Build the Query String
-st.subheader("4. Generated Query")
-query_conditions = []
-
-# Add Item filter if provided
-if item_filter:
-    query_conditions.append(f"item = {item_filter}")
-
-# Add Location filter if provided
-if location_filter:
-    query_conditions.append(f"location = {location_filter}")
-
-# Add minimum quantity on hand filter if provided
-if min_quantity_filter > 0:
-    query_conditions.append(f"quantityonhand >= {min_quantity_filter}")
-
-# Add minimum quantity available filter if provided
-if min_quantity_available_filter > 0:
-    query_conditions.append(f"quantityavailable >= {min_quantity_available_filter}")
-
-# Build WHERE clause (only add it if we have conditions)
-where_clause = " AND ".join(query_conditions) if query_conditions else ""
-
-# Build the full SuiteQL query string
-query = f"SELECT {', '.join(selected_fields)} FROM InventoryBalance"
-if where_clause:
-    query += f" WHERE {where_clause}"
-query += f" ORDER BY {sort_field} {sort_order} LIMIT {limit_results}"
+# Simple query to fetch all records from the InventoryBalance table
+query = "SELECT * FROM InventoryBalance LIMIT 10"
 
 # Display the generated query
 st.code(query, language="sql")
 
-# Step 5: Execute the Query
-if st.button("Run Query"):
+# Execute the query
+if st.button("Run Test Query"):
     df = fetch_suiteql_data(query)
     
     if not df.empty:
-        st.write(f"Results for your query:")
+        st.write(f"Results for your test query:")
         st.dataframe(df)
     else:
         st.error("No data found for your query.")
