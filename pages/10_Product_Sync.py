@@ -1,6 +1,10 @@
 # 10_Product_Sync.py
 import streamlit as st
+import logging
 from utils.apis import get_netsuite_products_via_restlet, get_shopify_products, post_product_to_shopify, update_inventory_and_price
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
 st.title("NetSuite & Shopify Product Sync")
 
@@ -14,6 +18,7 @@ with tabs[0]:
         st.table(netsuite_products)
     else:
         st.error("No products available from NetSuite.")
+        logging.error("No products available from NetSuite.")
 
 # Tab 2: View Shopify Products
 with tabs[1]:
@@ -23,6 +28,7 @@ with tabs[1]:
         st.table(shopify_products)
     else:
         st.error("No products available from Shopify.")
+        logging.error("No products available from Shopify.")
 
 # Tab 3: Post Products to Shopify
 with tabs[2]:
@@ -42,8 +48,10 @@ with tabs[2]:
                 st.success("Product posted successfully!")
             else:
                 st.error(f"Failed to post product. Response: {response}")
+                logging.error(f"Failed to post product. Response: {response}")
     else:
         st.error("No products available to post.")
+        logging.error("No products available to post.")
 
 # Tab 4: Update Inventory & Price
 with tabs[3]:
@@ -60,5 +68,7 @@ with tabs[3]:
                 st.success("Product updated successfully!")
             else:
                 st.error(f"Failed to update product. Response: {response}")
+                logging.error(f"Failed to update product. Response: {response}")
     else:
         st.error("No Shopify products available for update.")
+        logging.error("No Shopify products available for update.")
