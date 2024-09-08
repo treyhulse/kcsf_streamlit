@@ -22,9 +22,9 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import streamlit as st
 import requests
+import time
 from requests_oauthlib import OAuth1
 
 # Accessing secrets securely from st.secrets
@@ -34,48 +34,55 @@ TOKEN_KEY = st.secrets["token_key"]
 TOKEN_SECRET = st.secrets["token_secret"]
 REALM = st.secrets["realm"]
 
-# OAuth 1.0 setup
-oauth = OAuth1(
-    CONSUMER_KEY,
-    client_secret=CONSUMER_SECRET,
-    resource_owner_key=TOKEN_KEY,
-    resource_owner_secret=TOKEN_SECRET,
-    signature_method='HMAC-SHA256'
-)
-
-# Function to query NetSuite SuiteQL
-def query_netsuite(item_id):
-    url = f"https://{REALM}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
-    headers = {
-        "Content-Type": "application/json",  # Must be JSON
-        "Prefer": "transient"
-    }
-    query = {
-        "q": f"SELECT item, location, quantityonhand, quantityavailable FROM InventoryBalance WHERE item = {item_id}"
-    }
-    
-    # Making the request using dynamic OAuth headers
-    response = requests.post(url, headers=headers, json=query, auth=oauth)
-
-    if response.status_code != 200:
-        st.error(f"Error: {response.status_code}")
-        st.write(response.text)  # Print the full response for debugging
-
-    else:
-        st.error(f"Error: {response.status_code} - {response.text}")
-        return None
-
-# Streamlit App UI
+# Display Streamlit UI
 st.title('NetSuite Inventory Query')
 
 # Input for item ID
 item_id = st.text_input('Enter Item ID', value='17842')
 
+# Debugging - show OAuth timestamp and nonce generation (time is dynamic)
+st.write(f"OAuth Timestamp: {int(time.time())}")
+
 if st.button('Fetch Inventory Data'):
-    data = query_netsuite(item_id)
-    
-    if data:
-        # Display data in a table
-        st.write("Inventory Data:", data)
-        for row in data['items']:
-            st.write(f"Item: {row['item']}, Location: {row['location']}, Quantity On Hand: {row['quantityonhand']}, Quantity Available: {row['quantityavailable']}")
+    # OPTION 1: Manually Use the Headers from Postman
+    headers = {
+        'Prefer': 'transient',
+        'Content-Type': 'application/json',  # You can try 'text/plain' if Postman used that
+        # Copy the exact Authorization header from Postman for troubleshooting
+        'Authorization': 'OAuth realm="3429264",oauth_consumer_key="your_consumer_key",oauth_token="your_token_key",oauth_signature_method="HMAC-SHA256",oauth_timestamp="your_timestamp",oauth_nonce="your_nonce",oauth_version="1.0",oauth_signature="your_signature"'
+    }
+
+    # Payload (query for SuiteQL)
+    query = {
+        "q": f"SELECT item, location, quantityonhand, quantityavailable FROM InventoryBalance WHERE item = {item_id}"
+    }
+
+    # Make the POST request using copied Postman headers
+    url = f"https://{REALM}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+    response = requests.post(url, headers=headers, json=query)
+
+    # Output the response in Streamlit
+    if response.status_code == 200:
+        st.write(response.json())  # Display the returned data in JSON format
+    else:
+        st.error(f"Error: {response.status_code} - {response.text}")
+        st.write("Response Headers: ", response.headers)
+
+    # OPTION 2: Using dynamic OAuth signature generation
+    oauth = OAuth1(
+        CONSUMER_KEY,
+        client_secret=CONSUMER_SECRET,
+        resource_owner_key=TOKEN_KEY,
+        resource_owner_secret=TOKEN_SECRET,
+        signature_method='HMAC-SHA256'
+    )
+
+    # If you want to fall back to the dynamically generated OAuth1 signature instead
+    response_dynamic = requests.post(url, headers={"Content-Type": "application/json", "Prefer": "transient"}, json=query, auth=oauth)
+
+    # Output the dynamic request result in Streamlit (if manually copying headers fails)
+    if response_dynamic.status_code == 200:
+        st.write(response_dynamic.json())
+    else:
+        st.error(f"Dynamic OAuth Error: {response_dynamic.status_code} - {response_dynamic.text}")
+        st.write("Dynamic Response Headers: ", response_dynamic.headers)
