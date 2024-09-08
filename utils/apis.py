@@ -1,4 +1,5 @@
 # apis.py
+import streamlit as st
 import requests
 from utils.connections import connect_to_netsuite, connect_to_shopify
 
@@ -51,3 +52,25 @@ def update_inventory_and_price(product_id, inventory, price):
         }
     }
     return update_product_on_shopify(product_id, update_data)
+
+# Fetch products from NetSuite using RESTlet
+def get_netsuite_products_via_restlet():
+    netsuite_url = st.secrets['shopifyitemsurl']  # Update with the RESTlet URL
+    headers = {
+        "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
+                         f"oauth_token={st.secrets['token_key']}, "
+                         f"oauth_signature_method=HMAC-SHA256, "
+                         f"oauth_signature={st.secrets['consumer_secret']}&{st.secrets['token_secret']}",
+        "Content-Type": "application/json"
+    }
+
+    try:
+        response = requests.get(netsuite_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
+            return []
+    except Exception as e:
+        st.error(f"An error occurred while fetching products from NetSuite: {str(e)}")
+        return []

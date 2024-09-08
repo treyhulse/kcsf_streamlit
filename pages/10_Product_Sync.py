@@ -1,6 +1,6 @@
 # 10_Product_Sync.py
 import streamlit as st
-from utils.apis import get_netsuite_products, get_shopify_products, post_product_to_shopify, update_inventory_and_price
+from utils.apis import get_netsuite_products, get_shopify_products, post_product_to_shopify, update_inventory_and_price, get_netsuite_products_via_restlet
 
 st.title("NetSuite & Shopify Product Sync")
 
@@ -9,7 +9,7 @@ tabs = st.tabs(["View NetSuite Products", "View Shopify Products", "Post Product
 # Tab 1: View NetSuite Products
 with tabs[0]:
     st.header("NetSuite Products Marked for Shopify")
-    netsuite_products = get_netsuite_products()
+    netsuite_products = get_netsuite_products_via_restlet()
     if netsuite_products:
         st.table(netsuite_products)
     else:
@@ -32,7 +32,7 @@ with tabs[2]:
         if st.button("Post to Shopify"):
             product_data = {
                 "product": {
-                    "title": selected_product['name'],  # Adjust based on your NetSuite product fields
+                    "title": selected_product['itemId'],  # Adjust based on your saved search results
                     "body_html": selected_product['description'],
                     "variants": [{"price": selected_product['price'], "sku": selected_product['sku']}]
                 }
