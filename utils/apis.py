@@ -1,7 +1,7 @@
 # utils/apis.py
 import requests
 import streamlit as st
-from connections import connect_to_shopify
+from utils.connections import connect_to_shopify
 
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
