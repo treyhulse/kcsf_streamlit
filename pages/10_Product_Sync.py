@@ -1,6 +1,6 @@
 # 10_Product_Sync.py
 import streamlit as st
-from utils.apis import get_netsuite_products, get_shopify_products, post_product_to_shopify, update_inventory_and_price, get_netsuite_products_via_restlet
+from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price, get_netsuite_products_via_restlet
 
 st.title("NetSuite & Shopify Product Sync")
 
