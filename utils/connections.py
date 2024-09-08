@@ -3,12 +3,13 @@ import requests
 import streamlit as st
 import logging
 
-# Setup logging
+# Setup logging for better tracking
 logging.basicConfig(level=logging.INFO)
 
 # NetSuite Connection
 def connect_to_netsuite():
     try:
+        # OAuth headers for NetSuite RESTlet
         headers = {
             "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
                              f"oauth_token={st.secrets['token_key']}, "
@@ -17,7 +18,10 @@ def connect_to_netsuite():
             "Content-Type": "application/json"
         }
         netsuite_base_url = st.secrets['netsuite_base_url']
-        logging.info("NetSuite connection successful.")
+        
+        # Log the headers for debugging
+        logging.info(f"OAuth Headers: {headers}")
+        
         return netsuite_base_url, headers
     except KeyError as e:
         logging.error(f"Missing secret: {e}")

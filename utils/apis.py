@@ -10,24 +10,31 @@ logging.basicConfig(level=logging.INFO)
 # Fetch products from NetSuite using RESTlet
 def get_netsuite_products_via_restlet():
     try:
-        netsuite_url = st.secrets['url']  # Use the new key for NetSuite RESTlet
-        headers = {
-            "Authorization": f"OAuth oauth_consumer_key={st.secrets['consumer_key']}, "
-                             f"oauth_token={st.secrets['token_key']}, "
-                             f"oauth_signature_method=HMAC-SHA256, "
-                             f"oauth_signature={st.secrets['consumer_secret']}&{st.secrets['token_secret']}",
-            "Content-Type": "application/json"
-        }
+        netsuite_url = st.secrets['shopifyitems_url']  # Using the secret for RESTlet URL
+        netsuite_base_url, headers = connect_to_netsuite()  # OAuth headers from connection
 
-        logging.info(f"Fetching products from NetSuite RESTlet URL: {netsuite_url}")
-        response = requests.get(netsuite_url, headers=headers)
-        if response.status_code == 200:
-            logging.info("NetSuite products retrieved successfully.")
-            return response.json()  # Returns JSON response containing products
+        if netsuite_url and headers:
+            logging.info(f"Fetching products from NetSuite RESTlet: {netsuite_url}")
+            
+            # Make the request to NetSuite RESTlet
+            response = requests.get(netsuite_url, headers=headers)
+            
+            # Check response status and handle errors
+            if response.status_code == 200:
+                logging.info("NetSuite products retrieved successfully.")
+                return response.json()  # Return JSON data
+            elif response.status_code == 401:
+                logging.error("Unauthorized access. Check the OAuth headers or role permissions.")
+                st.error(f"Failed to fetch products from NetSuite. Status code: 401 (Unauthorized)")
+            else:
+                logging.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
+                st.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
+                return []
         else:
-            logging.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
-            st.error(f"Failed to fetch products from NetSuite. Status code: {response.status_code}")
+            logging.error("NetSuite URL or OAuth headers missing.")
+            st.error("NetSuite URL or OAuth headers missing.")
             return []
+
     except KeyError as e:
         logging.error(f"Missing secret: {e}")
         st.error(f"Missing secret: {e}")
