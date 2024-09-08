@@ -3,7 +3,7 @@ from requests_oauthlib import OAuth1
 import streamlit as st
 import logging
 
-# Setup logging
+# Setup logging for better debugging
 logging.basicConfig(level=logging.INFO)
 
 def get_authentication():
