@@ -27,10 +27,10 @@ import streamlit as st
 from utils.suiteql import fetch_suiteql_data
 
 # Page Title
-st.title("Test SuiteQL Query")
+st.title("Test SuiteQL Query (InventoryItem)")
 
-# Simple query to fetch all records from the InventoryBalance table
-query = "SELECT * FROM InventoryBalance LIMIT 10"
+# Simple query to fetch all records from the InventoryItem table
+query = "SELECT itemid, displayname FROM InventoryItem LIMIT 10"
 
 # Display the generated query
 st.code(query, language="sql")
