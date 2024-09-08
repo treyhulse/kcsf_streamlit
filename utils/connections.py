@@ -1,4 +1,4 @@
-# connections.py
+# utils/connections.py
 import requests
 import streamlit as st
 
