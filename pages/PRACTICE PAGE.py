@@ -63,13 +63,13 @@ limit_results = st.number_input("Limit number of results (Optional)", min_value=
 st.subheader("4. Generated Query")
 query_conditions = []
 
-# Add Item filter as it's required
+# Add Item filter as it's required, assuming it's a numeric field, so no quotes around the value
 if item_filter:
-    query_conditions.append(f"item = '{item_filter}'")
+    query_conditions.append(f"item = {item_filter}")
 
-# Add Location filter if provided
+# Add Location filter if provided, assuming it's a numeric field, so no quotes around the value
 if location_filter:
-    query_conditions.append(f"location = '{location_filter}'")
+    query_conditions.append(f"location = {location_filter}")
 
 # Add minimum quantity on hand filter if provided
 if min_quantity_filter > 0:
