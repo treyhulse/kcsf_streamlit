@@ -32,14 +32,14 @@ st.title("Inventory and Pricing Data")
 # SuiteQL Query
 query = """
 SELECT 
-    item.id AS Internal ID,
-    item.itemid AS Item Name,
-    balance.location AS Warehouse ID,
-    balance.quantityonhand AS Qty On Hand,
-    balance.quantityavailable AS Qty Available,
-    itempricing.pricelevel AS Price Level ID,
-    itempricing.unitprice AS Basic Price,
-    item.custitem142 as Cart Flag
+    item.id AS Internal_ID,
+    item.itemid AS Item_Name,
+    balance.location AS Warehouse_ID,
+    balance.quantityonhand AS Qty_On_Hand,
+    balance.quantityavailable AS Qty_Available,
+    itempricing.pricelevel AS Price_Level_ID,
+    itempricing.unitprice AS Basic_Price,
+    item.custitem142 as Cart_Flag
 FROM 
     item
 JOIN 
