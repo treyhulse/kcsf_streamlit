@@ -48,8 +48,7 @@ LEFT JOIN
 WHERE 
     item.isinactive = 'F'
 ORDER BY 
-    item_name ASC
-LIMIT 100
+    item_name ASC;
 """
 
 # Display the generated query
