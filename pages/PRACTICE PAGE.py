@@ -38,7 +38,8 @@ SELECT
     balance.quantityonhand AS quantity_on_hand,
     balance.quantityavailable AS quantity_available,
     itempricing.pricelevel AS price_level,
-    itempricing.unitprice AS base_price
+    itempricing.unitprice AS base_price,
+    item.custitem142 as cart_flag
 FROM 
     item
 JOIN 
