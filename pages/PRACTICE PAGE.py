@@ -25,42 +25,75 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 from utils.suiteql import fetch_suiteql_data
+import pymongo
+import pandas as pd
+
+# MongoDB connection (replace with your MongoDB connection info)
+client = pymongo.MongoClient(st.secrets["mongo_uri"])
+db = client['netsuite']
+collection = db['savedQueries']
 
 # Page Title
-st.title("Inventory and Pricing Data")
+st.title("Query Builder and Saved Queries")
 
-# SuiteQL Query
-query = """
-SELECT 
-    item.id AS Internal_ID,
-    item.itemid AS Item_Name,
-    balance.location AS Warehouse_ID,
-    balance.quantityonhand AS Qty_On_Hand,
-    balance.quantityavailable AS Qty_Available,
-    itempricing.pricelevel AS Price_Level_ID,
-    itempricing.unitprice AS Basic_Price,
-    item.custitem142 as Cart_Flag
-FROM 
-    item
-JOIN 
-    inventorybalance AS balance ON item.id = balance.item
-LEFT JOIN
-    pricing AS itempricing ON item.id = itempricing.item
-WHERE 
-    item.isinactive = 'F'
-ORDER BY 
-    item_name ASC;
-"""
+# Two columns for layout
+col1, col2 = st.columns([2, 1])
 
-# Display the generated query
-st.code(query, language="sql")
+# Column 1: Query Input
+with col1:
+    st.subheader("Enter and Run Queries")
 
-# Execute the query
-if st.button("Run Query"):
-    df = fetch_suiteql_data(query)
+    # Text area for entering user queries
+    user_query = st.text_area("Enter your SuiteQL query:", height=200)
+
+    # Run Query button
+    if st.button("Run Query"):
+        if user_query.strip() == "":
+            st.error("Please enter a valid query.")
+        else:
+            # Execute the query
+            df = fetch_suiteql_data(user_query)
+            if not df.empty:
+                st.write("Query Results")
+                st.dataframe(df)
+                
+                # Option to save query
+                with st.expander("Save Query"):
+                    query_title = st.text_input("Title your query:")
+                    if st.button("Save Query"):
+                        if query_title.strip() == "":
+                            st.error("Please provide a title for your query.")
+                        else:
+                            # Save the query to the savedQueries collection in MongoDB
+                            query_data = {
+                                "title": query_title,
+                                "query": user_query
+                            }
+                            collection.insert_one(query_data)
+                            st.success(f"Query '{query_title}' saved successfully!")
+            else:
+                st.error("No data found for your query.")
+
+# Column 2: Saved Queries
+with col2:
+    st.subheader("Saved Queries")
     
-    if not df.empty:
-        st.write("Inventory and Pricing Data")
-        st.dataframe(df)
+    # Search saved queries
+    search_term = st.text_input("Search for saved queries")
+    
+    if search_term.strip():
+        # Search the MongoDB collection for matching titles
+        saved_queries = list(collection.find({"title": {"$regex": search_term, "$options": "i"}}))
     else:
-        st.error("No data found for your query.")
+        # Show all saved queries
+        saved_queries = list(collection.find())
+
+    if saved_queries:
+        # Display the saved queries
+        for query in saved_queries:
+            st.write(f"**{query['title']}**")
+            if st.button(f"Load Query: {query['title']}", key=query['_id']):
+                user_query = query['query']  # Load the saved query into the text area
+                st.success(f"Loaded query: {query['title']}")
+    else:
+        st.write("No queries found.")
