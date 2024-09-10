@@ -29,7 +29,7 @@ import pymongo
 import pandas as pd
 
 # MongoDB connection (replace with your MongoDB connection info)
-client = pymongo.MongoClient(st.secrets["mongo_uri"])
+client = pymongo.MongoClient(st.secrets["mongo_connection_string"])
 db = client['netsuite']
 collection = db['savedQueries']
 
