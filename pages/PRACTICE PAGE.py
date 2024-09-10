@@ -26,9 +26,8 @@ st.write(f"You have access to this page.")
 import streamlit as st
 from utils.suiteql import fetch_suiteql_data
 import pymongo
-import pandas as pd
 
-# MongoDB connection (replace with your MongoDB connection info)
+# MongoDB connection (updated to mongo_connection_string)
 client = pymongo.MongoClient(st.secrets["mongo_connection_string"])
 db = client['netsuite']
 collection = db['savedQueries']
@@ -64,10 +63,10 @@ with col1:
                         if query_title.strip() == "":
                             st.error("Please provide a title for your query.")
                         else:
-                            # Save the query to the savedQueries collection in MongoDB
+                            # Save only the SuiteQL query text, not the response
                             query_data = {
                                 "title": query_title,
-                                "query": user_query
+                                "query": user_query  # Only save the text of the query
                             }
                             collection.insert_one(query_data)
                             st.success(f"Query '{query_title}' saved successfully!")
