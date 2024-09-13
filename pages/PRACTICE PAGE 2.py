@@ -1,8 +1,5 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
-from utils.connections import connect_to_netsuite
-from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 
 st.set_page_config(layout="wide")
 
@@ -16,9 +13,20 @@ if user_email is None:
 page_name = 'Practice Page'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
-    st.stop()
+
 
 st.write(f"You have access to this page.")
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
+import pandas as pd
+from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
+from utils.connections import connect_to_netsuite
+from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 
 def main():
     st.header("Open Sales Orders Analysis")
