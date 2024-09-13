@@ -35,7 +35,19 @@ def format_currency(value):
     return "${:,.2f}".format(value) if pd.notna(value) else value
 
 def get_date_range(preset):
-    # ... (keep the existing get_date_range function) ...
+    today = date.today()
+    if preset == "Today":
+        return today, today
+    elif preset == "This Week":
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=4)
+        return start_of_week, end_of_week
+    elif preset == "This Month":
+        start_of_month = today.replace(day=1)
+        end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+        return start_of_month, end_of_month
+    else:
+        return None, None
 
 def main():
     st.header("Open Sales Orders Analysis")
