@@ -81,35 +81,49 @@ def main():
         with st.spinner("Fetching RF Pick Data..."):
             df_rf_pick = process_netsuite_data_csv(st.secrets["url_rf_pick"])
 
-        # Apply mapping
-        df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
-        df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
+        # Apply mapping (with error handling)
+        if 'Ship Via' in df_open_so.columns:
+            df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
+        if 'Terms' in df_open_so.columns:
+            df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
         # Display filters in four columns
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
             st.subheader("Filter by Sales Rep")
-            sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
-            selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
+            if 'Sales Rep' in df_open_so.columns:
+                sales_reps = ['All'] + sorted([sales_rep_mapping.get(rep_id, 'Unknown') for rep_id in df_open_so['Sales Rep'].unique()])
+                selected_sales_reps = st.multiselect("Select Sales Reps", sales_reps, default=['All'])
+            else:
+                st.write("Sales Rep data not available")
+                selected_sales_reps = ['All']
 
         with col2:
             st.subheader("Filter by Ship Via")
-            ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
-            selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
+            if 'Ship Via' in df_open_so.columns:
+                ship_vias = ['All'] + sorted(df_open_so['Ship Via'].unique())
+                selected_ship_vias = st.multiselect("Select Ship Via", ship_vias, default=['All'])
+            else:
+                st.write("Ship Via data not available")
+                selected_ship_vias = ['All']
 
         with col3:
             st.subheader("Filter by Ship Date")
-            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
-            
-            if date_preset == "Custom":
-                min_date = pd.to_datetime(df_open_so['Ship Date']).min()
-                max_date = pd.to_datetime(df_open_so['Ship Date']).max()
-                selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+            if 'Ship Date' in df_open_so.columns:
+                date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
+                
+                if date_preset == "Custom":
+                    min_date = pd.to_datetime(df_open_so['Ship Date']).min()
+                    max_date = pd.to_datetime(df_open_so['Ship Date']).max()
+                    selected_date_range = st.date_input("Select custom date range", [min_date, max_date], min_value=min_date, max_value=max_date)
+                else:
+                    start_date, end_date = get_date_range(date_preset)
+                    st.write(f"Selected range: {start_date} to {end_date}")
+                    selected_date_range = [start_date, end_date]
             else:
-                start_date, end_date = get_date_range(date_preset)
-                st.write(f"Selected range: {start_date} to {end_date}")
-                selected_date_range = [start_date, end_date]
+                st.write("Ship Date data not available")
+                selected_date_range = [date.today(), date.today()]
 
         with col4:
             st.subheader("Filter by Task ID")
@@ -117,33 +131,43 @@ def main():
             filter_without_task_id = st.checkbox("Show rows without Task ID", value=True)
 
         # Normalize 'Ship Date' column to MM/DD/YYYY
-        df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
+        if 'Ship Date' in df_open_so.columns:
+            df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date']).dt.strftime('%m/%d/%Y')
 
         # Merge data
-        merged_df = pd.merge(df_open_so, df_rf_pick[['Task ID', 'Order Number']].drop_duplicates(), on='Order Number', how='left')
-        merged_df['Sales Rep'] = merged_df['Sales Rep'].replace(sales_rep_mapping)
-        merged_df['Order Number'] = merged_df['Order Number'].astype(str)
+        if 'Order Number' in df_open_so.columns and 'Order Number' in df_rf_pick.columns:
+            merged_df = pd.merge(df_open_so, df_rf_pick[['Task ID', 'Order Number']].drop_duplicates(), on='Order Number', how='left')
+        else:
+            st.error("Unable to merge data: 'Order Number' column missing in one or both DataFrames")
+            return
+
+        if 'Sales Rep' in merged_df.columns:
+            merged_df['Sales Rep'] = merged_df['Sales Rep'].replace(sales_rep_mapping)
+        if 'Order Number' in merged_df.columns:
+            merged_df['Order Number'] = merged_df['Order Number'].astype(str)
 
         # Apply filters
-        if 'All' not in selected_sales_reps:
+        if 'All' not in selected_sales_reps and 'Sales Rep' in merged_df.columns:
             merged_df = merged_df[merged_df['Sales Rep'].isin(selected_sales_reps)]
-        if 'All' not in selected_ship_vias:
+        if 'All' not in selected_ship_vias and 'Ship Via' in merged_df.columns:
             merged_df = merged_df[merged_df['Ship Via'].isin(selected_ship_vias)]
 
         # Apply Ship Date filter
-        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
-        merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
+        if 'Ship Date' in merged_df.columns:
+            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], format='%m/%d/%Y')
+            merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(selected_date_range[0])) & (merged_df['Ship Date'] <= pd.to_datetime(selected_date_range[1]))]
 
         # Apply Task ID filters
-        if filter_with_task_id and not filter_without_task_id:
-            merged_df = merged_df[merged_df['Task ID'].notna()]
-        elif filter_without_task_id and not filter_with_task_id:
-            merged_df = merged_df[merged_df['Task ID'].isna()]
+        if 'Task ID' in merged_df.columns:
+            if filter_with_task_id and not filter_without_task_id:
+                merged_df = merged_df[merged_df['Task ID'].notna()]
+            elif filter_without_task_id and not filter_with_task_id:
+                merged_df = merged_df[merged_df['Task ID'].isna()]
 
         # Display metrics
         total_orders = len(merged_df)
-        matched_orders = merged_df['Task ID'].notna().sum()
-        unmatched_orders = merged_df['Task ID'].isna().sum()
+        matched_orders = merged_df['Task ID'].notna().sum() if 'Task ID' in merged_df.columns else 0
+        unmatched_orders = merged_df['Task ID'].isna().sum() if 'Task ID' in merged_df.columns else 0
         successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
 
         col1, col2, col3, col4 = st.columns(4)
@@ -178,25 +202,35 @@ def main():
         df = process_netsuite_data_csv(st.secrets["url_open_so"])
 
         # Normalize 'Ship Date' to MM/DD/YYYY format
-        df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
-        df['Order Number'] = df['Order Number'].astype(str)
-        df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
+        if 'Ship Date' in df.columns:
+            df['Ship Date'] = pd.to_datetime(df['Ship Date']).dt.strftime('%m/%d/%Y')
+        if 'Order Number' in df.columns:
+            df['Order Number'] = df['Order Number'].astype(str)
+        if 'Amount Remaining' in df.columns:
+            df['Amount Remaining'] = df['Amount Remaining'].apply(format_currency)
 
         # Map relevant columns
-        df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
-        df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
-        df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
+        if 'Ship Via' in df.columns:
+            df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
+        if 'Sales Rep' in df.columns:
+            df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+        if 'Terms' in df.columns:
+            df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
 
         # Display Ship Via and Date Range filters in two columns
         col1, col2 = st.columns(2)
 
         with col1:
             st.subheader("Select Ship Via")
-            ship_vias = ['All'] + df['Ship Via'].unique().tolist()
-            selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
+            if 'Ship Via' in df.columns:
+                ship_vias = ['All'] + df['Ship Via'].unique().tolist()
+                selected_ship_vias = st.multiselect("Ship Via", ship_vias, default=['All'])
 
-            if 'All' in selected_ship_vias:
-                selected_ship_vias = df['Ship Via'].unique().tolist()
+                if 'All' in selected_ship_vias:
+                    selected_ship_vias = df['Ship Via'].unique().tolist()
+            else:
+                st.write("Ship Via data not available")
+                selected_ship_vias = ['All']
 
         with col2:
             st.subheader("Select Date Range")
@@ -204,11 +238,15 @@ def main():
             start_date, end_date = get_date_range(date_preset)
 
         # Apply filters
-        df_filtered = df[
-            (df['Ship Via'].isin(selected_ship_vias)) &
-            (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
-            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
-        ]
+        if 'Ship Via' in df.columns and 'Ship Date' in df.columns:
+            df_filtered = df[
+                (df['Ship Via'].isin(selected_ship_vias)) &
+                (pd.to_datetime(df['Ship Date']) >= pd.to_datetime(start_date)) &
+                (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
+            ]
+        else:
+            st.error("Unable to filter data: 'Ship Via' or 'Ship Date' column missing")
+            return
 
         # Display by weekday
         weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
