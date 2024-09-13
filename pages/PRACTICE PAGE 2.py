@@ -24,7 +24,6 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import pandas as pd
-import plotly.express as px
 from utils.data_functions import process_netsuite_data_csv
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 from datetime import date, timedelta
@@ -86,7 +85,7 @@ def main():
         df_open_so['Ship Via'] = df_open_so['Ship Via'].map(ship_via_mapping).fillna('Unknown')
         df_open_so['Terms'] = df_open_so['Terms'].map(terms_mapping).fillna('Unknown')
 
-        # Display filters in four columns (added Task ID as the fourth column)
+        # Display filters in four columns
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
@@ -141,24 +140,7 @@ def main():
         elif filter_without_task_id and not filter_with_task_id:
             merged_df = merged_df[merged_df['Task ID'].isna()]
 
-        # Display charts
-        if not merged_df.empty:
-            col_chart, col_pie = st.columns([2, 1])
-            with col_chart:
-                df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date'])
-                ship_date_counts = df_open_so['Ship Date'].value_counts().sort_index()
-                fig = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
-                st.plotly_chart(fig, use_container_width=True)
-            with col_pie:
-                matched_orders = merged_df['Task ID'].notna().sum()
-                unmatched_orders = merged_df['Task ID'].isna().sum()
-                pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
-                fig = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.write("No data available for the selected filters.")
-
-        # Display metrics and data
+        # Display metrics
         total_orders = len(merged_df)
         matched_orders = merged_df['Task ID'].notna().sum()
         unmatched_orders = merged_df['Task ID'].isna().sum()
@@ -228,31 +210,23 @@ def main():
             (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(end_date))
         ]
 
-        # Group by Ship Date and Ship Via
-        grouped = df_filtered.groupby(['Ship Date', 'Ship Via']).size().reset_index(name='Total Orders')
-
-        # Create 5 vertical columns (Monday through Friday)
-        cols = st.columns(5)
+        # Display by weekday
         weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
         days = pd.date_range(start=start_date, end=end_date, freq='B').strftime('%m/%d/%Y')
 
-        # Display by weekday
-        for i, day_name in enumerate(weekdays):
-            with cols[i]:
-                st.subheader(day_name)
-
-                for date_str in days:
-                    date_obj = pd.to_datetime(date_str)
-                    if date_obj.weekday() == i:
-                        orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
-
-                        if not orders_today.empty:
-                            total_orders = len(orders_today)
-                            with st.expander(f"{date_str} - Total Orders: {total_orders}"):
-                                st.dataframe(orders_today)
-                        else:
-                            with st.expander(f"{date_str} - No shipments"):
-                                st.write("No orders for this day.")
+        for day_name in weekdays:
+            st.subheader(day_name)
+            for date_str in days:
+                date_obj = pd.to_datetime(date_str)
+                if date_obj.strftime('%A') == day_name:
+                    orders_today = df_filtered[df_filtered['Ship Date'] == date_str]
+                    if not orders_today.empty:
+                        total_orders = len(orders_today)
+                        with st.expander(f"{date_str} - Total Orders: {total_orders}"):
+                            st.dataframe(orders_today)
+                    else:
+                        with st.expander(f"{date_str} - No shipments"):
+                            st.write("No orders for this day.")
 
 if __name__ == "__main__":
     main()
