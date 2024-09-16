@@ -101,7 +101,7 @@ def main():
 
         with col3:
             st.subheader("Filter by Ship Date")
-            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "Tomorrow", "This Week", "This Month"])
+            date_preset = st.selectbox("Select date range preset", ["Custom", "Today", "This Week", "This Month"])
             
             if date_preset == "Custom":
                 min_date = pd.to_datetime(df_open_so['Ship Date']).min()
