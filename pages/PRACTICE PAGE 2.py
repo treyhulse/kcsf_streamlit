@@ -91,38 +91,3 @@ if st.button("Fetch Full Sales Data"):
         st.dataframe(sales_data)
     else:
         st.error("No sales data found.")
-
-
-import pandas as pd
-import time
-
-def fetch_suiteql_data_with_pagination(query, limit=1000):
-    # Function to fetch all records by paginating
-    offset = 0
-    all_data = []
-    
-    while True:
-        # Add pagination to the query
-        paginated_query = f"{query} LIMIT {limit} OFFSET {offset}"
-        
-        # Fetch the data using your existing fetch_suiteql_data function
-        data_chunk = fetch_suiteql_data(paginated_query)
-        
-        # Break if no more data is returned
-        if data_chunk.empty:
-            break
-        
-        # Append the data chunk to the overall data
-        all_data.append(data_chunk)
-        
-        # Increment offset to fetch the next batch
-        offset += limit
-        
-        # Sleep to avoid overloading the server (optional)
-        time.sleep(1)
-    
-    # Combine all chunks into a single DataFrame
-    if all_data:
-        return pd.concat(all_data, ignore_index=True)
-    else:
-        return pd.DataFrame()  # Return an empty DataFrame if no data is fetched
