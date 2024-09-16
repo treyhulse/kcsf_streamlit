@@ -43,9 +43,8 @@ ship_via_mapping = {
     26092: "WEB - Your Method",
     140: "SAIA",
     145: "*LTL Best Way",
-    37315: "Forward Air"
-
-
+    37315: "Forward Air",
+    7803: "Fed Ex International Priority",
 
 }
 

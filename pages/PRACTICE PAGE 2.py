@@ -65,7 +65,7 @@ def red_text_if_positive(df):
         # Check if 'Amount Remaining' is greater than 0
         if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
             # Check for conditions to exclude rows from being red
-            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'] and \
+            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and \
                row['Terms'] not in ['Net 30', 'Net 60', 'Net 45']:
                 return ['color: red'] * len(row)
         return [''] * len(row)
