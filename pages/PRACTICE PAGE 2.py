@@ -25,16 +25,14 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import pandas as pd
 import streamlit as st
+import pandas as pd
+from utils.suiteql import fetch_suiteql_data
 
-@st.cache_data
-def fetch_suiteql_data(query):
-    # Function to fetch SuiteQL data; replace this with your actual query execution logic
-    # This is a placeholder for the data fetching from NetSuite API.
-    pass
+# Page Title
+st.title("Inventory and Sales Data")
 
-# Inventory Query
+# Queries to fetch inventory and sales data
 inventory_query = """
 SELECT 
     item.id AS item_id,
@@ -52,13 +50,6 @@ ORDER BY
     item_name ASC;
 """
 
-# Fetch inventory data
-@st.cache_data
-def get_inventory_data():
-    inventory_data = fetch_suiteql_data(inventory_query)
-    return pd.DataFrame(inventory_data)
-
-# Sales Query
 sales_query = """
 SELECT 
     transaction.trandate,
@@ -83,19 +74,21 @@ ORDER BY
     transaction.trandate DESC;
 """
 
-# Fetch sales data
-@st.cache_data
-def get_sales_data():
+# Fetch Inventory Data
+if st.button("Fetch Inventory Data"):
+    inventory_data = fetch_suiteql_data(inventory_query)
+    if not inventory_data.empty:
+        st.write("Inventory Data:")
+        st.dataframe(pd.DataFrame(inventory_data))
+    else:
+        st.error("No inventory data found.")
+
+# Fetch Sales Data
+if st.button("Fetch Sales Data"):
     sales_data = fetch_suiteql_data(sales_query)
-    return pd.DataFrame(sales_data)
+    if not sales_data.empty:
+        st.write("Sales Data:")
+        st.dataframe(pd.DataFrame(sales_data))
+    else:
+        st.error("No sales data found.")
 
-# Load the data into dataframes
-inventory_df = get_inventory_data()
-sales_df = get_sales_data()
-
-# Display the dataframes for manipulation or analysis
-st.write("Inventory Data:")
-st.dataframe(inventory_df)
-
-st.write("Sales Data:")
-st.dataframe(sales_df)
