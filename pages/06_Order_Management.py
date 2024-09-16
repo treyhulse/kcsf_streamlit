@@ -96,7 +96,7 @@ def get_date_ranges():
     return date_options
 
 def main():
-    st.title("NetSuite Data Fetcher")
+    st.title("Order Management")
     st.success("Data fetched from NetSuite")
 
     try:
