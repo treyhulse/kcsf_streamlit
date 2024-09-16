@@ -17,6 +17,7 @@ sales_rep_mapping = {
     4159935: "Derrick Lewis",
     66736: "",
     67473: "Jon Joslin",
+    6: "Leo Galey IV",
 }
 
 # Ship Via mapping
