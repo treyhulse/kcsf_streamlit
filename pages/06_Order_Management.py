@@ -136,7 +136,7 @@ def main():
                     df = df[(pd.to_datetime(df['Ship Date']) >= start_date) &
                             (pd.to_datetime(df['Ship Date']) <= end_date)]
 
-            st.write(f"Data successfully fetched with {len(df)} records.")
+            st.write(f"{len(df)} records.")
             
             # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
             styled_df = red_text_if_positive(df)
@@ -145,9 +145,9 @@ def main():
             # Option to download the unformatted data as CSV
             csv = df.to_csv(index=False)
             st.download_button(
-                label="Download data as CSV",
+                label="Download as CSV",
                 data=csv,
-                file_name="netsuite_data.csv",
+                file_name="order_management.csv",
                 mime="text/csv"
             )
 
