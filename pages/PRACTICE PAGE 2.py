@@ -123,7 +123,7 @@ def main():
 
             # Ship Date Filter with Preset Ranges
             date_options = get_date_ranges()
-            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=5)  # Default to 'All Time'
+            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=4)  # Default to 'All Time'
 
             if date_selection == 'Custom':
                 custom_range = st.sidebar.date_input("Select Custom Date Range", [datetime.today(), datetime.today()])
