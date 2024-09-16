@@ -70,8 +70,8 @@ def preprocess_data(df):
     # Drop rows where 'Ship Date' conversion failed (i.e., they are NaT)
     df = df.dropna(subset=['Ship Date'])
     
-    # Ensure 'Amount' is numeric, and convert non-numeric values to NaN
-    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+    # Ensure 'Amount Remaining' is numeric, and convert non-numeric values to NaN
+    df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
     
     return df
 
@@ -160,17 +160,17 @@ def display_charts(df):
 
 def display_metrics(df):
     total_orders = len(df)
-    if 'Amount' in df.columns:
-        # Ensure 'Amount' is numeric
-        df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
-        total_amount = df['Amount'].sum()
+    if 'Amount Remaining' in df.columns:
+        # Ensure 'Amount Remaining' is numeric
+        df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
+        total_amount = df['Amount Remaining'].sum()
     else:
         total_amount = 0
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Open Orders", total_orders)
     with col2:
-        st.metric("Total Amount", format_currency(total_amount))
+        st.metric("Total Amount Remaining", format_currency(total_amount))
 
 def display_data_table(df):
     with st.expander("View Data Table"):
