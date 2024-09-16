@@ -57,19 +57,26 @@ def format_dataframe(df):
     return df
 
 def red_text_if_positive(df):
-    """Set text to red in rows where 'Amount Remaining' is greater than 0."""
+    """Set text to red in rows where 'Amount Remaining' is greater than 0,
+    unless 'Ship Via' is 'Our Truck', 'Our Truck - Small', 'Our Truck - Large'
+    or 'Terms' is 'Net 30', 'Net 60', 'Net 45'."""
+    
     def red_text(row):
         # Check if 'Amount Remaining' is greater than 0
         if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
-            return ['color: red'] * len(row)
+            # Check for conditions to exclude rows from being red
+            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'] and \
+               row['Terms'] not in ['Net 30', 'Net 60', 'Net 45']:
+                return ['color: red'] * len(row)
         return [''] * len(row)
 
     return df.style.apply(red_text, axis=1)
 
 
+
 def main():
     st.title("NetSuite Data Fetcher")
-    st.success("Data fetched from NetSuite RESTlet")
+    st.success("Data fetched from NetSuite")
 
     try:
         # Fetch Data from the RESTlet URL in Streamlit secrets
