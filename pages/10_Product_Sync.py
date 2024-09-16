@@ -1,10 +1,24 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+import os
 
 st.set_page_config(layout="wide")
 
-# Capture the user's email
-user_email = capture_user_email()
+# Helper function to check if the request is coming from NetSuite
+def is_netsuite_request():
+    referer = st.experimental_get_query_params().get('Referer')
+    # Check if the referer contains 'netsuite.com'
+    return referer and 'https://3429264.app.netsuite.com/' in referer[0]
+
+# Bypass user email capture if accessed from NetSuite
+if is_netsuite_request():
+    # If coming from NetSuite, allow access without capturing email
+    user_email = "netsuite_user@yourdomain.com"  # or any identifier for NetSuite user
+else:
+    # Capture the user's email for non-NetSuite users
+    user_email = capture_user_email()
+
+# Check if email was captured or valid in the context
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
@@ -14,8 +28,8 @@ page_name = 'Product Sync'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
-
 st.write(f"You have access to this page.")
+
 
 ################################################################################################
 
