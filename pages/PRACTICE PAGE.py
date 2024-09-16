@@ -36,7 +36,7 @@ try:
     saved_queries_df = get_collection_data(client, 'savedQueries')
     if not saved_queries_df.empty:
         # Assuming the DataFrame has columns 'name' and 'query'
-        popular_prompts = dict(zip(saved_queries_df['name'], saved_queries_df['query']))
+        popular_prompts = dict(zip(saved_queries_df['savedQueries'], saved_queries_df['query']))
     else:
         st.error("No saved queries found in the database.")
         popular_prompts = {}
