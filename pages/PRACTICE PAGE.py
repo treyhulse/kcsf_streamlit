@@ -25,7 +25,8 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils import fetch_suiteql_data, get_mongo_client, get_collection_data
+from utils.suiteql import fetch_suiteql_data
+from utils.mongo_connection import get_mongo_client, get_collection_data
 
 # Get MongoDB client
 client = get_mongo_client()
