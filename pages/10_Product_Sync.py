@@ -16,6 +16,7 @@ if is_embedded():
 else:
     # For direct access (normal browser), use the original email capture method
     user_email = capture_user_email()
+st.write(f"Welcome, {user_email}! You have access to this page.")
 
 # Step 2: Check if the user email was captured successfully
 if user_email is None:
@@ -28,7 +29,6 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 # Step 4: Render the page content
-st.write(st.experimental_get_query_params())
 st.write(f"Welcome, {user_email}! You have access to this page.")
 
 
