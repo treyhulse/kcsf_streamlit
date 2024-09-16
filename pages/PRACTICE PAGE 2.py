@@ -36,6 +36,23 @@ def apply_mappings(df):
 
     return df
 
+def format_dataframe(df):
+    """Format 'Order Number' as string and 'Amount Remaining' as currency."""
+    if 'Order Number' in df.columns:
+        df['Order Number'] = df['Order Number'].astype(str)
+    
+    if 'Amount Remaining' in df.columns:
+        df['Amount Remaining'] = df['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
+    
+    return df
+
+def highlight_amount_remaining(df):
+    """Highlight rows where 'Amount Remaining' is greater than 0 in red."""
+    def highlight_row(row):
+        return ['background-color: red'] * len(row) if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 else [''] * len(row)
+
+    return df.style.apply(highlight_row, axis=1)
+
 def main():
     st.title("NetSuite Data Fetcher")
     st.success("Data fetched from NetSuite RESTlet")
@@ -50,10 +67,16 @@ def main():
             # Apply the mappings (Sales Rep, Ship Via, Terms) to the DataFrame
             df = apply_mappings(df)
             
-            st.write(f"Data successfully fetched with {len(df)} records.")
-            st.dataframe(df)  # Display the DataFrame in a table format
+            # Format 'Order Number' and 'Amount Remaining' columns
+            df = format_dataframe(df)
 
-            # Option to download data as CSV
+            st.write(f"Data successfully fetched with {len(df)} records.")
+            
+            # Apply conditional formatting to highlight rows where 'Amount Remaining' is > 0
+            styled_df = highlight_amount_remaining(df)
+            st.dataframe(styled_df)  # Display the styled DataFrame
+
+            # Option to download the unformatted data as CSV
             csv = df.to_csv(index=False)
             st.download_button(
                 label="Download data as CSV",
