@@ -169,15 +169,6 @@ def main():
             styled_df = red_text_if_positive(df)
             st.dataframe(styled_df)  # Display the styled DataFrame
 
-            # Option to download the unformatted data as CSV
-            csv = df.to_csv(index=False)
-            st.download_button(
-                label="Download as CSV",
-                data=csv,
-                file_name="order_management.csv",
-                mime="text/csv"
-            )
-
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         logger.error(f"Exception occurred: {str(e)}")
