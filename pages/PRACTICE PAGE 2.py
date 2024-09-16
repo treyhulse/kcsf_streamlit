@@ -1,12 +1,6 @@
 
 import streamlit as st
-import pandas as pd
-import logging
-import traceback
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
-from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
-from datetime import datetime, timedelta
 
 # Configure page layout
 st.set_page_config(layout="wide")
@@ -31,131 +25,99 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import pandas as pd
+from utils.mongo_connection import get_mongo_client, get_collection_data
+from utils.suiteql import fetch_suiteql_data
 
-def apply_mappings(df):
-    """Apply mappings to the DataFrame columns."""
-    if 'Sales Rep' in df.columns:
-        df['Sales Rep'] = df['Sales Rep'].map(sales_rep_mapping).fillna(df['Sales Rep'])
-    
-    if 'Ship Via' in df.columns:
-        df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna(df['Ship Via'])
-    
-    if 'Terms' in df.columns:
-        df['Terms'] = df['Terms'].map(terms_mapping).fillna(df['Terms'])
+# Step 1: Establish connections
+client = get_mongo_client()
 
-    return df
+# Step 2: Fetch data from MongoDB and NetSuite
+# Fetch inventory data from MongoDB (assuming 'inventory' collection for example)
+inventory_data = get_collection_data(client, 'inventory')
 
-def format_dataframe(df):
-    """Format 'Order Number' as string, 'Amount Remaining' as currency, and convert 'Warehouse' to string."""
-    if 'Order Number' in df.columns:
-        df['Order Number'] = df['Order Number'].astype(str)
-    
-    if 'Amount Remaining' in df.columns:
-        df['Amount Remaining'] = df['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
-    
-    if 'Warehouse' in df.columns:
-        df['Warehouse'] = df['Warehouse'].astype(str)
-    
-    return df
+# Fetch sales data using SuiteQL from NetSuite (example query)
+sales_query = """
+SELECT tranid, itemid, quantity, rate, amount, trandate 
+FROM transaction WHERE type = 'SalesOrd'
+"""
+sales_data = fetch_suiteql_data(sales_query)
 
-def red_text_if_positive(df):
-    """Set text to red in rows where 'Amount Remaining' is greater than 0,
-    unless 'Ship Via' is 'Our Truck', 'Our Truck - Small', 'Our Truck - Large'
-    or 'Terms' is 'Net 30', 'Net 60', 'Net 45'."""
-    
-    def red_text(row):
-        # Check if 'Amount Remaining' is greater than 0
-        if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
-            # Check for conditions to exclude rows from being red
-            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and \
-               row['Terms'] not in ['Net 30', 'is any of 1% 10 Net 30', '1% 10 Net 30 Firm', '1% 90 Net 91', '1%-10 Net 20', '1/2% 10 Net 11', '1/2% 10 Net 11 Firm', '2% 10 Net 30', '2% 10, Net 30 Firm', '2% 15 Net 30', 'Account Credit', 'Credit Card - Net 10', 'Credit Card - Net 30', 'Net 10', 'Net 10th', 'Net 15 Days NO CC', 'Net 15 Days YES CC', 'Net 28', 'Net 30', 'Net 45', 'Net 60', 'Net 7', 'Net 90', 'Net Invoice', 'Net Invoice - CC', 'Net-30 NO CC', 'Net-30 YES CC', 'No Charge', '2% 76 Net 77']:
-                return ['color: red'] * len(row)
-        return [''] * len(row)
+# Step 3: Merge data based on itemid
+merged_data = pd.merge(inventory_data, sales_data, on='itemid', how='left')
 
-    return df.style.apply(red_text, axis=1)
+# Step 4: Calculate key metrics
+# Sales velocity: total quantity sold / number of sales days
+merged_data['sales_velocity'] = merged_data.groupby('itemid')['quantity'].transform('sum') / len(merged_data['trandate'].unique())
 
-def get_date_ranges():
-    """Define preset date ranges."""
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday())  # Monday of the current week
-    start_of_month = today.replace(day=1)
-    end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)  # Last day of the month
-    start_of_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+# Calculate reorder point (example logic)
+merged_data['reorder_point'] = merged_data['sales_velocity'] * 30  # 30-day average
 
-    date_options = {
-        'Today': (today, today),
-        'Last Week': (start_of_week - timedelta(days=7), start_of_week - timedelta(days=1)),
-        'This Month': (start_of_month, end_of_month),
-        'Next Month': (start_of_next_month, start_of_next_month + timedelta(days=32)),
-        'All Time': (None, None),  # No filter
-        'Custom': None  # Placeholder for custom date range
-    }
-    return date_options
+# Calculate stock on hand and buffer stock (example logic)
+merged_data['buffer_stock'] = merged_data['reorder_point'] * 0.2
+merged_data['reorder_needed'] = merged_data['quantityonhand'] < (merged_data['reorder_point'] + merged_data['buffer_stock'])
 
-def main():
-    st.title("NetSuite Data Fetcher")
-    st.success("Data fetched from NetSuite")
+# Step 5: Display the merged data and metrics in Streamlit
+st.title("Warehouse Inventory Control and Purchase Recommendation")
 
-    try:
-        # Fetch Data from the RESTlet URL in Streamlit secrets
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
-        
-        if df is None or df.empty:
-            st.warning("No data retrieved from the NetSuite RESTlet.")
-        else:
-            # Apply the mappings (Sales Rep, Ship Via, Terms) to the DataFrame
-            df = apply_mappings(df)
-            
-            # Format 'Order Number', 'Amount Remaining' columns, and convert 'Warehouse' to string
-            df = format_dataframe(df)
+# Key Metrics
+st.metric("Total Inventory Value", merged_data['amount'].sum())
+st.metric("Total Items Below Reorder Point", merged_data['reorder_needed'].sum())
 
-            # Sidebar filters
-            st.sidebar.title("Filters")
+# Recommended purchases DataFrame
+recommended_purchases = merged_data[merged_data['reorder_needed'] == True][['itemid', 'quantityonhand', 'reorder_point', 'sales_velocity', 'buffer_stock']]
+st.subheader("Recommended Items to Purchase")
+st.dataframe(recommended_purchases)
 
-            # Sales Rep Multiselect Filter
-            sales_reps = df['Sales Rep'].unique().tolist()
-            selected_sales_reps = st.sidebar.multiselect("Select Sales Rep(s)", ['All'] + sales_reps, default=['All'])
-            if 'All' not in selected_sales_reps:
-                df = df[df['Sales Rep'].isin(selected_sales_reps)]
+# Visualization: Sales velocity over time
+st.subheader("Sales Velocity by Item")
+st.bar_chart(merged_data[['itemid', 'sales_velocity']].set_index('itemid'))
 
-            # Ship Date Filter with Preset Ranges
-            date_options = get_date_ranges()
-            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=4)  # Default to 'All Time'
+# Step 6: Add Forecasting using Exponential Moving Average (EMA)
+merged_data['sales_forecast'] = merged_data['quantity'].ewm(span=30, adjust=False).mean()
 
-            if date_selection == 'Custom':
-                custom_range = st.sidebar.date_input("Select Custom Date Range", [datetime.today(), datetime.today()])
-                if len(custom_range) == 2:
-                    df = df[(pd.to_datetime(df['Ship Date']) >= pd.to_datetime(custom_range[0])) &
-                            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(custom_range[1]))]
-            else:
-                start_date, end_date = date_options[date_selection]
-                if start_date and end_date:
-                    df = df[(pd.to_datetime(df['Ship Date']) >= start_date) &
-                            (pd.to_datetime(df['Ship Date']) <= end_date)]
+# Visualization of sales forecast
+st.subheader("Sales Forecast (Exponential Moving Average)")
+st.line_chart(merged_data[['itemid', 'sales_forecast']].set_index('itemid'))
 
-            st.write(f"Data successfully fetched with {len(df)} records.")
-            
-            # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
-            styled_df = red_text_if_positive(df)
-            st.dataframe(styled_df)  # Display the styled DataFrame
+# Step 7: Smart Reorder Recommendation Logic with Lead Time and MOQ
+# Assuming we have lead_time and min_order_quantity in the dataset
+merged_data['reorder_quantity'] = (merged_data['reorder_point'] + merged_data['sales_forecast'] * merged_data['lead_time']) - merged_data['quantityonhand']
+merged_data['reorder_quantity'] = merged_data[['reorder_quantity', 'min_order_quantity']].max(axis=1)
 
-            # Option to download the unformatted data as CSV
-            csv = df.to_csv(index=False)
-            st.download_button(
-                label="Download data as CSV",
-                data=csv,
-                file_name="netsuite_data.csv",
-                mime="text/csv"
-            )
+# Display updated recommendations
+recommended_purchases = merged_data[merged_data['reorder_needed'] == True][['itemid', 'quantityonhand', 'reorder_point', 'sales_velocity', 'buffer_stock', 'reorder_quantity']]
+st.subheader("Updated Reorder Recommendations")
+st.dataframe(recommended_purchases)
 
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        logger.error(f"Exception occurred: {str(e)}")
-        logger.error(traceback.format_exc())
-        st.error("Please check the logs for more details.")
+# Step 8: Insights and Alerts
+# Add a stockout risk column
+merged_data['stockout_risk'] = merged_data['quantityonhand'] < merged_data['buffer_stock']
 
-if __name__ == "__main__":
-    main()
+# Show items with stockout risk
+st.subheader("Items at Risk of Stockout")
+at_risk_items = merged_data[merged_data['stockout_risk'] == True][['itemid', 'quantityonhand', 'reorder_point', 'sales_velocity', 'buffer_stock']]
+st.dataframe(at_risk_items)
+
+# Alerts for overstock
+merged_data['overstock_alert'] = merged_data['quantityonhand'] > (merged_data['reorder_point'] * 1.5)
+overstock_items = merged_data[merged_data['overstock_alert'] == True][['itemid', 'quantityonhand', 'reorder_point']]
+st.subheader("Overstock Items")
+st.dataframe(overstock_items)
+
+# Step 9: Scenario Analysis
+st.sidebar.subheader("Scenario Analysis")
+forecast_increase = st.sidebar.slider("Increase Forecast by (%)", min_value=0, max_value=100, value=10)
+lead_time_change = st.sidebar.slider("Adjust Lead Time by (days)", min_value=-10, max_value=10, value=0)
+
+# Adjust sales forecast and lead time in real-time
+merged_data['adjusted_forecast'] = merged_data['sales_forecast'] * (1 + forecast_increase / 100)
+merged_data['adjusted_lead_time'] = merged_data['lead_time'] + lead_time_change
+
+# Recalculate reorder quantities based on adjusted values
+merged_data['adjusted_reorder_quantity'] = (merged_data['reorder_point'] + merged_data['adjusted_forecast'] * merged_data['adjusted_lead_time']) - merged_data['quantityonhand']
+
+# Display the results of the scenario analysis
+st.subheader("Scenario Analysis: Adjusted Reordering Recommendations")
+st.dataframe(merged_data[['itemid', 'quantityonhand', 'adjusted_reorder_quantity']])
+
