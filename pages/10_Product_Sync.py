@@ -1,36 +1,18 @@
 import streamlit as st
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-st.set_page_config(layout="wide")
+# Capture and display all query parameters for debugging
+query_params = st.experimental_get_query_params()
+st.write(query_params)  # This will print all query parameters, including 'email'
 
-# Helper function to check if the app is embedded in an iframe
-def is_embedded():
-    # Experimental feature to detect if running inside an iframe
-    return st.experimental_get_query_params().get('embed', [None])[0] == 'true'
+# Attempt to capture the 'email' parameter
+user_email = query_params.get('email', [None])[0]
 
-# Step 1: Check if the app is running in an iframe or standalone
-if is_embedded():
-    # If embedded in iframe, use the email passed from the NetSuite query parameters
-    query_params = st.experimental_get_query_params()
-    user_email = query_params.get('email', [None])[0]
-else:
-    # For direct access (normal browser), use the original email capture method
-    user_email = capture_user_email()
-st.write(f"Welcome, {user_email}! You have access to this page.")
-
-# Step 2: Check if the user email was captured successfully
+# Check if email was captured successfully
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
-
-# Step 3: Validate access to this specific page
-page_name = 'Showcase'  # Adjust this based on the current page
-if not validate_page_access(user_email, page_name):
-    show_permission_violation()
-
-# Step 4: Render the page content
-st.write(f"Welcome, {user_email}! You have access to this page.")
-
+else:
+    st.write(f"Captured email: {user_email}")
 
 
 ################################################################################################
