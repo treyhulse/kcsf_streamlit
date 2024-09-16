@@ -6,22 +6,32 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+# Configure page layout
 st.set_page_config(layout="wide")
 
-# User Authentication
+# Capture the user's email
 user_email = capture_user_email()
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-page_name = 'Practice Page'  # Define the page name
+# Validate access to this specific page
+page_name = 'Practice Page'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
     st.stop()
+
+st.write(f"You have access to this page.")
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def apply_mappings(df):
     """Apply mappings to the DataFrame columns."""
@@ -46,12 +56,12 @@ def format_dataframe(df):
     
     return df
 
-def highlight_amount_remaining(df):
-    """Highlight rows where 'Amount Remaining' is greater than 0 in red."""
-    def highlight_row(row):
-        return ['background-color: red'] * len(row) if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 else [''] * len(row)
-
-    return df.style.apply(highlight_row, axis=1)
+def red_text_if_positive(df):
+    """Set rows with 'Amount Remaining' greater than 0 to have red text."""
+    def red_text(row):
+        return ['color: red' if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 else [''] * len(row)]
+    
+    return df.style.apply(red_text, axis=1)
 
 def main():
     st.title("NetSuite Data Fetcher")
@@ -72,8 +82,8 @@ def main():
 
             st.write(f"Data successfully fetched with {len(df)} records.")
             
-            # Apply conditional formatting to highlight rows where 'Amount Remaining' is > 0
-            styled_df = highlight_amount_remaining(df)
+            # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
+            styled_df = red_text_if_positive(df)
             st.dataframe(styled_df)  # Display the styled DataFrame
 
             # Option to download the unformatted data as CSV
