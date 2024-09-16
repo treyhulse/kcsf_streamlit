@@ -57,11 +57,15 @@ def format_dataframe(df):
     return df
 
 def red_text_if_positive(df):
-    """Set rows with 'Amount Remaining' greater than 0 to have red text."""
+    """Set text to red in rows where 'Amount Remaining' is greater than 0."""
     def red_text(row):
-        return ['color: red' if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 else [''] * len(row)]
-    
+        # Check if 'Amount Remaining' is greater than 0
+        if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
+            return ['color: red'] * len(row)
+        return [''] * len(row)
+
     return df.style.apply(red_text, axis=1)
+
 
 def main():
     st.title("NetSuite Data Fetcher")
