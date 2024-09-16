@@ -23,44 +23,68 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-# app.py or the specific page file in your Streamlit app
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_suiteql_data  # Adjust the import based on your project structure
+from utils import fetch_suiteql_data, get_mongo_client, get_collection_data
 
-# Sample popular prompts with their corresponding SuiteQL scripts
-popular_prompts = {
-    "All Customers": "SELECT * FROM customer;",
-    "Recent Transactions": "SELECT * FROM transaction ORDER BY tranDate DESC LIMIT 10;",
-    "Low Stock Items": "SELECT * FROM item WHERE quantityOnHand < 5;"
-}
+# Get MongoDB client
+client = get_mongo_client()
 
-# Create two columns with specified width ratios
-left_col, right_col = st.columns([3, 1])
+# Fetch saved queries from 'savedQueries' collection
+try:
+    saved_queries_df = get_collection_data(client, 'savedQueries')
+    if not saved_queries_df.empty:
+        # Assuming the DataFrame has columns 'name' and 'query'
+        popular_prompts = dict(zip(saved_queries_df['name'], saved_queries_df['query']))
+    else:
+        st.error("No saved queries found in the database.")
+        popular_prompts = {}
+except Exception as e:
+    st.error(f"Failed to load saved queries: {e}")
+    popular_prompts = {}
 
-with right_col:
-    st.header("Popular Prompts")
-    # Display a selection box for prompts
-    selected_prompt = st.radio("Select a prompt:", options=list(popular_prompts.keys()))
+# Close the MongoDB client
+client.close()
 
-# Retrieve the SuiteQL script based on the selected prompt
-default_query = popular_prompts[selected_prompt]
+if popular_prompts:
+    # Create two columns with specified width ratios
+    left_col, right_col = st.columns([3, 1])
 
-with left_col:
-    st.header("SuiteQL Query Input")
-    # Text area for users to input or edit SuiteQL scripts
-    suiteql_query = st.text_area("Enter your SuiteQL script here:", value=default_query, height=200)
+    with right_col:
+        st.header("Popular Prompts")
+        # Display a selection box for prompts
+        selected_prompt = st.radio("Select a prompt:", options=list(popular_prompts.keys()))
+        st.markdown("---")  # Add a horizontal line for separation
 
-    # Button to execute the query
-    if st.button("Run Query"):
-        # Execute the SuiteQL script using your fetch_suiteql_data function
-        try:
-            results_df = fetch_suiteql_data(suiteql_query)
-            if not results_df.empty:
-                # Display the results in a table
-                st.subheader("Query Results")
-                st.dataframe(results_df)
-            else:
-                st.info("No data returned for this query.")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+    # Retrieve the SuiteQL script based on the selected prompt
+    default_query = popular_prompts[selected_prompt]
+
+    with left_col:
+        st.header("SuiteQL Query Input")
+        # Text area for users to input or edit SuiteQL scripts
+        suiteql_query = st.text_area("Enter your SuiteQL script here:", value=default_query, height=200)
+
+        # Button to execute the query
+        if st.button("Run Query"):
+            # Execute the SuiteQL script using your fetch_suiteql_data function
+            try:
+                results_df = fetch_suiteql_data(suiteql_query)
+                if not results_df.empty:
+                    # Display the results in a table
+                    st.subheader("Query Results")
+                    st.dataframe(results_df)
+
+                    # Provide a download option
+                    csv = results_df.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="Download data as CSV",
+                        data=csv,
+                        file_name='query_results.csv',
+                        mime='text/csv',
+                    )
+                else:
+                    st.info("No data returned for this query.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+else:
+    st.warning("No popular prompts available.")
