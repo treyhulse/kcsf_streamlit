@@ -54,8 +54,27 @@ inventory_data = fetch_suiteql_data(inventory_query)
 
 # Fetch sales data using SuiteQL from NetSuite (example query)
 sales_query = """
-SELECT tranid, itemid, quantity, rate, amount, trandate 
-FROM transaction WHERE type = 'SalesOrd'
+SELECT 
+    transaction.trandate,
+    transaction.tranid,
+    customer.entityid AS customer_name,
+    item.itemid AS item_name,
+    transactionline.quantity,
+    transactionline.rate,
+    transactionline.netamount AS line_total
+FROM 
+    transaction
+JOIN 
+    transactionline ON transaction.id = transactionline.transaction
+JOIN 
+    item ON transactionline.item = item.id
+JOIN 
+    customer ON transaction.entity = customer.id
+WHERE 
+    transaction.type = 'SalesOrd' 
+    AND transaction.trandate >= TO_DATE('01/01/2023', 'MM/DD/YYYY')
+ORDER BY 
+    transaction.trandate DESC;
 """
 sales_data = fetch_suiteql_data(sales_query)
 
