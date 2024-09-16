@@ -67,6 +67,40 @@ def fetch_suiteql_data(query, max_retries=3):
             time.sleep(2 ** attempt)  # Exponential backoff
 
 
+def fetch_suiteql_data_with_pagination(query, limit=1000):
+    """
+    Fetch all data using pagination by incrementing internalid.
+    """
+    all_data = pd.DataFrame()  # Initialize an empty DataFrame
+    last_internal_id = 0  # Start with 0 or a minimum known internal ID
+    
+    while True:
+        # Modify the query to fetch records greater than the last fetched internal ID
+        paginated_query = f"""
+        {query} AND transaction.internalid > {last_internal_id}
+        ORDER BY transaction.internalid ASC
+        LIMIT {limit}
+        """
+        
+        # Fetch the data
+        data_chunk = fetch_suiteql_data(paginated_query)
+        
+        # Break if no more data is returned
+        if data_chunk.empty:
+            logger.info("No more data to fetch.")
+            break
+        
+        # Append the data chunk to the overall data
+        all_data = pd.concat([all_data, data_chunk], ignore_index=True)
+        
+        # Update last_internal_id to the highest internal ID from the current chunk
+        last_internal_id = data_chunk['internalid'].max()
+        
+        # Sleep to avoid overloading the server (optional)
+        time.sleep(1)
+    
+    return all_data  # Return the combined DataFrame
+
 def fetch_suiteql_data_with_date_pagination(query_template, start_date, end_date, step_days=30):
     """
     Fetch all data using date range pagination by batching queries by date ranges.
