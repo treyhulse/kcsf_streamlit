@@ -3,9 +3,18 @@ from utils.auth import validate_page_access, show_permission_violation
 
 st.set_page_config(layout="wide")
 
-# Capture email from the query parameters
+# Check for user email in query parameters first
 query_params = st.experimental_get_query_params()
 user_email = query_params.get('email', [None])[0]
+
+# Fallback: Check if the request is coming from your NetSuite domain
+def is_netsuite_request():
+    referer = st.experimental_get_query_params().get('Referer')
+    return referer and '3429264.app.netsuite.com' in referer[0]
+
+# If email is still None, and it's from NetSuite, use a placeholder email
+if user_email is None and is_netsuite_request():
+    user_email = "netsuite_user@yourdomain.com"
 
 # Check if email was passed and is valid
 if user_email is None:
@@ -18,6 +27,7 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 st.write(f"You have access to this page.")
+
 
 
 
