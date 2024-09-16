@@ -1,10 +1,13 @@
 import streamlit as st
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.auth import validate_page_access, show_permission_violation
 
 st.set_page_config(layout="wide")
 
-# Capture the user's email
-user_email = capture_user_email()
+# Capture email from query parameters
+query_params = st.experimental_get_query_params()
+user_email = query_params.get('email', [None])[0]
+
+# Check if the user email was passed
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
@@ -14,8 +17,8 @@ page_name = 'Product Sync'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
+st.write(f"Welcome, {user_email}! You have access to this page.")
 
-st.write(f"You have access to this page.")
 
 
 ################################################################################################
