@@ -56,13 +56,6 @@ def preprocess_data(df):
     # Check for and handle invalid 'Amount Remaining' values
     df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
     
-    # Log any rows where 'Amount Remaining' was invalid
-    if df['Amount Remaining'].isna().sum() > 0:
-        logger.warning(f"Invalid 'Amount Remaining' values detected and coerced to NaN: {df['Amount Remaining'].isna().sum()} rows affected.")
-    
-    # Drop rows where 'Amount Remaining' is NaN (invalid values in 'Amount Remaining' column)
-    df = df.dropna(subset=['Amount Remaining'])
-    
     return df
 
 def filter_data(df, selected_sales_reps, selected_ship_vias):
