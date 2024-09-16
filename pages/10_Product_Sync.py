@@ -14,7 +14,7 @@ def is_netsuite_request():
 
 # If email is still None, and it's from NetSuite, use a placeholder email
 if user_email is None and is_netsuite_request():
-    user_email = "netsuite_user@yourdomain.com"
+    user_email = "trey.hulse@kcstorefixtures.com"
 
 # Check if email was passed and is valid
 if user_email is None:
