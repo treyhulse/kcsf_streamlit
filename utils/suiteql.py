@@ -2,6 +2,13 @@
 import requests
 from requests_oauthlib import OAuth1
 import streamlit as st
+import pandas as pd
+import time
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Authentication setup for all pages
 def get_authentication():
@@ -18,10 +25,6 @@ def get_authentication():
         signature_method='HMAC-SHA256'
     )
 
-
-import pandas as pd
-import time
-
 def fetch_suiteql_data(query, max_retries=3):
     """
     This function fetches data from NetSuite's SuiteQL API.
@@ -33,14 +36,6 @@ def fetch_suiteql_data(query, max_retries=3):
     Returns:
         pd.DataFrame: DataFrame containing the results of the query.
     """
-    import pandas as pd
-    import time
-    import logging
-
-    # Set up logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-
     url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
     auth = get_authentication()
     all_data = []
@@ -76,7 +71,7 @@ def fetch_suiteql_data_with_pagination(query, limit=1000):
     """
     Fetch all data using pagination by incrementing internalid.
     """
-    all_data = []
+    all_data = pd.DataFrame()  # Initialize an empty DataFrame
     last_internal_id = 0  # Start with 0 or a minimum known internal ID
     
     while True:
@@ -92,10 +87,11 @@ def fetch_suiteql_data_with_pagination(query, limit=1000):
         
         # Break if no more data is returned
         if data_chunk.empty:
+            logger.info("No more data to fetch.")
             break
         
         # Append the data chunk to the overall data
-        all_data.append(data_chunk)
+        all_data = pd.concat([all_data, data_chunk], ignore_index=True)
         
         # Update last_internal_id to the highest internal ID from the current chunk
         last_internal_id = data_chunk['internalid'].max()
@@ -103,8 +99,5 @@ def fetch_suiteql_data_with_pagination(query, limit=1000):
         # Sleep to avoid overloading the server (optional)
         time.sleep(1)
     
-    # Combine all chunks into a single DataFrame
-    if all_data:
-        return pd.concat(all_data, ignore_index=True)
-    else:
-        return pd.DataFrame()  # Return an empty DataFrame if no data is fetched
+    return all_data  # Return the combined DataFrame
+
