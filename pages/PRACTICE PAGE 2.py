@@ -27,7 +27,7 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_suiteql_data_with_pagination
+from utils.suiteql import fetch_suiteql_data_with_pagination, fetch_suiteql_data_with_date_pagination, fetch_suiteql_data
 
 # Page Title
 st.title("Inventory and Sales Data with Pagination")
@@ -87,6 +87,44 @@ if st.button("Fetch Full Inventory Data"):
 # Fetch Sales Data with Pagination
 if st.button("Fetch Full Sales Data"):
     sales_data = fetch_suiteql_data_with_pagination(sales_query)
+    if not sales_data.empty:
+        st.write("Sales Data:")
+        st.dataframe(sales_data)
+    else:
+        st.error("No sales data found.")
+
+
+# Base query template for sales data with date range placeholder
+sales_query_template = """
+SELECT 
+    transaction.internalid,
+    transaction.trandate,
+    transaction.tranid,
+    customer.entityid AS customer_name,
+    item.itemid AS item_name,
+    transactionline.quantity,
+    transactionline.rate,
+    transactionline.netamount AS line_total
+FROM 
+    transaction
+JOIN 
+    transactionline ON transaction.id = transactionline.transaction
+JOIN 
+    item ON transactionline.item = item.id
+JOIN 
+    customer ON transaction.entity = customer.id
+WHERE 
+    transaction.type = 'SalesOrd' 
+    AND transaction.trandate BETWEEN '{start_date}' AND '{end_date}'
+ORDER BY 
+    transaction.trandate DESC;
+"""
+
+# Fetch data with date-based pagination
+if st.button("Fetch Full Sales Data"):
+    start_date = '2023-01-01'
+    end_date = '2023-12-31'
+    sales_data = fetch_suiteql_data_with_date_pagination(sales_query_template, start_date, end_date, step_days=30)
     if not sales_data.empty:
         st.write("Sales Data:")
         st.dataframe(sales_data)

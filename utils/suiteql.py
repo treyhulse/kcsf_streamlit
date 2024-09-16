@@ -67,37 +67,51 @@ def fetch_suiteql_data(query, max_retries=3):
             time.sleep(2 ** attempt)  # Exponential backoff
 
 
-def fetch_suiteql_data_with_pagination(query, limit=1000):
+def fetch_suiteql_data_with_date_pagination(query_template, start_date, end_date, step_days=30):
     """
-    Fetch all data using pagination by incrementing internalid.
+    Fetch all data using date range pagination by batching queries by date ranges.
+    Args:
+        query_template (str): The SuiteQL query template without the date condition.
+        start_date (str): The start date in the format 'YYYY-MM-DD'.
+        end_date (str): The end date in the format 'YYYY-MM-DD'.
+        step_days (int): Number of days to fetch in each batch.
+
+    Returns:
+        pd.DataFrame: The combined DataFrame with all results.
     """
-    all_data = pd.DataFrame()  # Initialize an empty DataFrame
-    last_internal_id = 0  # Start with 0 or a minimum known internal ID
-    
-    while True:
-        # Modify the query to fetch records greater than the last fetched internal ID
-        paginated_query = f"""
-        {query} AND transaction.internalid > {last_internal_id}
-        ORDER BY transaction.internalid ASC
-        LIMIT {limit}
-        """
-        
+    import datetime
+    all_data = pd.DataFrame()
+
+    current_start = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+    current_end = current_start + datetime.timedelta(days=step_days)
+
+    final_end = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+    while current_start <= final_end:
+        # Adjust date range if it exceeds the final end date
+        if current_end > final_end:
+            current_end = final_end
+
+        # Format the date strings for the query
+        current_start_str = current_start.strftime("%Y-%m-%d")
+        current_end_str = current_end.strftime("%Y-%m-%d")
+
+        # Create the paginated query
+        paginated_query = query_template.format(start_date=current_start_str, end_date=current_end_str)
+
         # Fetch the data
         data_chunk = fetch_suiteql_data(paginated_query)
-        
+
         # Break if no more data is returned
         if data_chunk.empty:
-            logger.info("No more data to fetch.")
             break
-        
+
         # Append the data chunk to the overall data
         all_data = pd.concat([all_data, data_chunk], ignore_index=True)
-        
-        # Update last_internal_id to the highest internal ID from the current chunk
-        last_internal_id = data_chunk['internalid'].max()
-        
-        # Sleep to avoid overloading the server (optional)
-        time.sleep(1)
-    
+
+        # Update the start date for the next batch
+        current_start = current_end + datetime.timedelta(days=1)
+        current_end = current_start + datetime.timedelta(days=step_days)
+
     return all_data  # Return the combined DataFrame
 
