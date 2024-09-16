@@ -15,6 +15,7 @@ sales_rep_mapping = {
     4168032: "Trey Hulse",
     4152972: "Gary Bargen",
     4159935: "Derrick Lewis",
+    66736: "",
     67473: "Jon Joslin",
 }
 
@@ -120,5 +121,15 @@ ship_via_mapping = {
     9672: "Z DO NOT USE FedEx Ground®"
 }
 
-# Remove duplicates
-ship_via_mapping = {k: v for k, v in ship_via_mapping.items()}
+# Terms mapping
+terms_mapping = {
+    2: "Net 30",
+    11: "Credit Card - Prepay",
+    10: "Prepay",
+    13: "Net 45",
+    3: "Net 60",
+    19: "Check",
+    27: "ACH",
+    37: "Account Credit",
+    18: "No Charge"
+}
