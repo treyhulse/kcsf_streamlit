@@ -47,12 +47,15 @@ def apply_mappings(df):
     return df
 
 def format_dataframe(df):
-    """Format 'Order Number' as string and 'Amount Remaining' as currency."""
+    """Format 'Order Number' as string, 'Amount Remaining' as currency, and convert 'Warehouse' to string."""
     if 'Order Number' in df.columns:
         df['Order Number'] = df['Order Number'].astype(str)
     
     if 'Amount Remaining' in df.columns:
         df['Amount Remaining'] = df['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
+    
+    if 'Warehouse' in df.columns:
+        df['Warehouse'] = df['Warehouse'].astype(str)
     
     return df
 
@@ -65,14 +68,12 @@ def red_text_if_positive(df):
         # Check if 'Amount Remaining' is greater than 0
         if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
             # Check for conditions to exclude rows from being red
-            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and \
+            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'] and \
                row['Terms'] not in ['Net 30', 'Net 60', 'Net 45']:
                 return ['color: red'] * len(row)
         return [''] * len(row)
 
     return df.style.apply(red_text, axis=1)
-
-
 
 def main():
     st.title("NetSuite Data Fetcher")
@@ -88,8 +89,25 @@ def main():
             # Apply the mappings (Sales Rep, Ship Via, Terms) to the DataFrame
             df = apply_mappings(df)
             
-            # Format 'Order Number' and 'Amount Remaining' columns
+            # Format 'Order Number', 'Amount Remaining' columns, and convert 'Warehouse' to string
             df = format_dataframe(df)
+
+            # Sidebar filters
+            st.sidebar.title("Filters")
+
+            # Sales Rep Filter
+            sales_reps = ['All'] + df['Sales Rep'].unique().tolist()
+            selected_sales_rep = st.sidebar.selectbox("Select Sales Rep", sales_reps, index=0)
+            if selected_sales_rep != 'All':
+                df = df[df['Sales Rep'] == selected_sales_rep]
+            
+            # Ship Date Filter
+            min_date = pd.to_datetime(df['Ship Date']).min()
+            max_date = pd.to_datetime(df['Ship Date']).max()
+            date_range = st.sidebar.date_input("Select Ship Date Range", [min_date, max_date])
+            if len(date_range) == 2:
+                df = df[(pd.to_datetime(df['Ship Date']) >= pd.to_datetime(date_range[0])) &
+                        (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(date_range[1]))]
 
             st.write(f"Data successfully fetched with {len(df)} records.")
             
