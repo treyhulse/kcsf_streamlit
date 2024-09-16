@@ -69,7 +69,7 @@ def red_text_if_positive(df):
         if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
             # Check for conditions to exclude rows from being red
             if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'] and \
-               row['Terms'] not in ['Net 30', 'Net 60', 'Net 45']:
+               row['Terms'] not in ['Net 30', 'is any of 1% 10 Net 30', '1% 10 Net 30 Firm', '1% 90 Net 91', '1%-10 Net 20', '1/2% 10 Net 11', '1/2% 10 Net 11 Firm', '2% 10 Net 30', '2% 10, Net 30 Firm', '2% 15 Net 30', 'Account Credit', 'Credit Card - Net 10', 'Credit Card - Net 30', 'Net 10', 'Net 10th', 'Net 15 Days NO CC', 'Net 15 Days YES CC', 'Net 28', 'Net 30', 'Net 45', 'Net 60', 'Net 7', 'Net 90', 'Net Invoice', 'Net Invoice - CC', 'Net-30 NO CC', 'Net-30 YES CC', 'No Charge', '2% 76 Net 77']:
                 return ['color: red'] * len(row)
         return [''] * len(row)
 
