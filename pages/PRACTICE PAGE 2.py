@@ -70,8 +70,12 @@ def preprocess_data(df):
     # Drop rows where 'Ship Date' is NaT (invalid date)
     df = df.dropna(subset=['Ship Date'])
 
-    # Convert 'Amount Remaining' to numeric, coerce invalid values to NaN
+    # Check for and handle invalid 'Amount Remaining' values
     df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
+    
+    # Log any rows where 'Amount Remaining' was invalid
+    if df['Amount Remaining'].isna().sum() > 0:
+        logger.warning(f"Invalid 'Amount Remaining' values detected and coerced to NaN: {df['Amount Remaining'].isna().sum()} rows affected.")
     
     # Drop rows where 'Amount Remaining' is NaN (invalid values in 'Amount Remaining' column)
     df = df.dropna(subset=['Amount Remaining'])
