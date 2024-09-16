@@ -20,7 +20,7 @@ if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-page_name = 'Order Management Dashboard'  # Adjust this based on the current page
+page_name = 'Practice Page'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
     st.stop()
