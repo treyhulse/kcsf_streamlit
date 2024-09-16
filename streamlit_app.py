@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="NetSuite Data Analytics",
+    page_title="KC Store Fixtures",
     page_icon="./assets/KCSF_Square.png",
     layout="wide",
     initial_sidebar_state="expanded",
