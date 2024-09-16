@@ -83,29 +83,15 @@ def preprocess_data(df):
     return df
 
 
-def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
+def filter_data(df, selected_sales_reps, selected_ship_vias):
     # Filter by Sales Rep
     if selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
     # Filter by Ship Via
     if selected_ship_vias:
         df = df[df['Ship Via'].isin(selected_ship_vias)]
-    # Filter by Ship Date
-    if date_range and date_range[0] is not None and date_range[1] is not None:
-        start_date, end_date = date_range
-        try:
-            df = df[
-                (df['Ship Date'].dt.date >= start_date) &
-                (df['Ship Date'].dt.date <= end_date)
-            ]
-        except Exception as e:
-            st.error(f"Date filtering error: {e}")
-            logger.error(f"Date filtering error: {e}")
-            return pd.DataFrame()  # Return empty DataFrame
-    else:
-        st.error("Invalid date range selected.")
-        return pd.DataFrame()  # Return empty DataFrame
-    return df
+
+    return df  # No date filtering
 
 def display_filters(df):
     st.sidebar.header("Filters")
