@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import logging
@@ -80,15 +81,16 @@ def get_date_ranges():
     """Define preset date ranges."""
     today = datetime.today()
     start_of_week = today - timedelta(days=today.weekday())  # Monday of the current week
-    start_of_last_week = start_of_week - timedelta(days=7)
+    end_of_week = start_of_week + timedelta(days=6)  # Sunday of the current week
     start_of_month = today.replace(day=1)
+    end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)  # Last day of the month
     start_of_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
 
     date_options = {
         'Today': (today, today),
-        'This Week': (start_of_week, today),
-        'Last Week': (start_of_last_week, start_of_last_week + timedelta(days=6)),
-        'This Month': (start_of_month, today),
+        'This Week': (start_of_week, end_of_week),
+        'Last Week': (start_of_week - timedelta(days=7), start_of_week - timedelta(days=1)),
+        'This Month': (start_of_month, end_of_month),
         'Next Month': (start_of_next_month, start_of_next_month + timedelta(days=32)),
         'All Time': (None, None),  # No filter
         'Custom': None  # Placeholder for custom date range
@@ -123,7 +125,7 @@ def main():
 
             # Ship Date Filter with Preset Ranges
             date_options = get_date_ranges()
-            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=3)
+            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=5)  # Default to 'All Time'
 
             if date_selection == 'Custom':
                 custom_range = st.sidebar.date_input("Select Custom Date Range", [datetime.today(), datetime.today()])
