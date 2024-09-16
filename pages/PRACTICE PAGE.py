@@ -1,6 +1,12 @@
 import streamlit as st
+import pandas as pd
+import logging
+import traceback
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
+from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 
+# Configure page layout
 st.set_page_config(layout="wide")
 
 # Capture the user's email
@@ -13,7 +19,7 @@ if user_email is None:
 page_name = 'Practice Page'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
-
+    st.stop()
 
 st.write(f"You have access to this page.")
 
@@ -23,76 +29,77 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-from utils.suiteql import fetch_suiteql_data
-import pymongo
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# MongoDB connection (updated to mongo_connection_string)
-client = pymongo.MongoClient(st.secrets["mongo_connection_string"])
-db = client['netsuite']
-collection = db['savedQueries']
+def apply_mappings(df):
+    """Apply mappings to the DataFrame columns."""
+    if 'Sales Rep' in df.columns:
+        df['Sales Rep'] = df['Sales Rep'].map(sales_rep_mapping).fillna(df['Sales Rep'])
+    
+    if 'Ship Via' in df.columns:
+        df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna(df['Ship Via'])
+    
+    if 'Terms' in df.columns:
+        df['Terms'] = df['Terms'].map(terms_mapping).fillna(df['Terms'])
 
-# Page Title
-st.title("Query Builder and Saved Queries")
+    return df
 
-# Two columns for layout
-col1, col2 = st.columns([2, 1])
+def format_dataframe(df):
+    """Format 'Order Number' as string and 'Amount Remaining' as currency."""
+    if 'Order Number' in df.columns:
+        df['Order Number'] = df['Order Number'].astype(str)
+    
+    if 'Amount Remaining' in df.columns:
+        df['Amount Remaining'] = df['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
+    
+    return df
 
-# Column 1: Query Input
-with col1:
-    st.subheader("Enter and Run Queries")
+def red_text_if_positive(df):
+    """Set rows with 'Amount Remaining' greater than 0 to have red text."""
+    def red_text(row):
+        return ['color: red' if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 else [''] * len(row)]
+    
+    return df.style.apply(red_text, axis=1)
 
-    # Text area for entering user queries
-    user_query = st.text_area("Enter your SuiteQL query:", height=200)
+def main():
+    st.title("NetSuite Data Fetcher")
+    st.success("Data fetched from NetSuite RESTlet")
 
-    # Run Query button
-    if st.button("Run Query"):
-        if user_query.strip() == "":
-            st.error("Please enter a valid query.")
+    try:
+        # Fetch Data from the RESTlet URL in Streamlit secrets
+        df = process_netsuite_data_csv(st.secrets["url_open_so"])
+        
+        if df is None or df.empty:
+            st.warning("No data retrieved from the NetSuite RESTlet.")
         else:
-            # Execute the query
-            df = fetch_suiteql_data(user_query)
-            if not df.empty:
-                st.write("Query Results")
-                st.dataframe(df)
-                
-                # Option to save query
-                with st.expander("Save Query"):
-                    query_title = st.text_input("Title your query:")
-                    if st.button("Save Query"):
-                        if query_title.strip() == "":
-                            st.error("Please provide a title for your query.")
-                        else:
-                            # Save only the SuiteQL query text, not the response
-                            query_data = {
-                                "title": query_title,
-                                "query": user_query  # Only save the text of the query
-                            }
-                            collection.insert_one(query_data)
-                            st.success(f"Query '{query_title}' saved successfully!")
-            else:
-                st.error("No data found for your query.")
+            # Apply the mappings (Sales Rep, Ship Via, Terms) to the DataFrame
+            df = apply_mappings(df)
+            
+            # Format 'Order Number' and 'Amount Remaining' columns
+            df = format_dataframe(df)
 
-# Column 2: Saved Queries
-with col2:
-    st.subheader("Saved Queries")
-    
-    # Search saved queries
-    search_term = st.text_input("Search for saved queries")
-    
-    if search_term.strip():
-        # Search the MongoDB collection for matching titles
-        saved_queries = list(collection.find({"title": {"$regex": search_term, "$options": "i"}}))
-    else:
-        # Show all saved queries
-        saved_queries = list(collection.find())
+            st.write(f"Data successfully fetched with {len(df)} records.")
+            
+            # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
+            styled_df = red_text_if_positive(df)
+            st.dataframe(styled_df)  # Display the styled DataFrame
 
-    if saved_queries:
-        # Display the saved queries
-        for query in saved_queries:
-            st.write(f"**{query['title']}**")
-            if st.button(f"Load Query: {query['title']}", key=query['_id']):
-                user_query = query['query']  # Load the saved query into the text area
-                st.success(f"Loaded query: {query['title']}")
-    else:
-        st.write("No queries found.")
+            # Option to download the unformatted data as CSV
+            csv = df.to_csv(index=False)
+            st.download_button(
+                label="Download data as CSV",
+                data=csv,
+                file_name="netsuite_data.csv",
+                mime="text/csv"
+            )
+
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+        logger.error(f"Exception occurred: {str(e)}")
+        logger.error(traceback.format_exc())
+        st.error("Please check the logs for more details.")
+
+if __name__ == "__main__":
+    main()
