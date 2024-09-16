@@ -44,7 +44,8 @@ def get_date_range(preset):
         end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         return start_of_month, end_of_month
     else:
-        return None, None
+        # Default to 'Today' if unrecognized preset
+        return today, today
 
 @st.cache_data(ttl=600)  # Cache data for 10 minutes
 def load_data(url):
@@ -62,8 +63,10 @@ def preprocess_data(df):
     df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
     df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
     df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
-    # Convert 'Ship Date' to datetime
-    df['Ship Date'] = pd.to_datetime(df['Ship Date'])
+    # Convert 'Ship Date' to datetime, coerce errors
+    df['Ship Date'] = pd.to_datetime(df['Ship Date'], errors='coerce')
+    # Drop rows where 'Ship Date' conversion failed
+    df = df.dropna(subset=['Ship Date'])
     return df
 
 def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
@@ -74,9 +77,12 @@ def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
     if selected_ship_vias:
         df = df[df['Ship Via'].isin(selected_ship_vias)]
     # Filter by Ship Date
-    if date_range:
+    if date_range and date_range[0] is not None and date_range[1] is not None:
         start_date, end_date = date_range
         df = df[(df['Ship Date'].dt.date >= start_date) & (df['Ship Date'].dt.date <= end_date)]
+    else:
+        st.error("Invalid date range selected.")
+        return pd.DataFrame()  # Return empty DataFrame
     return df
 
 def display_filters(df):
@@ -90,9 +96,19 @@ def display_filters(df):
     # Ship Date Filter
     date_preset = st.sidebar.selectbox("Date Range Preset", ["Custom", "Today", "This Week", "This Month"], index=3)
     if date_preset == "Custom":
-        min_date = df['Ship Date'].min().date()
-        max_date = df['Ship Date'].max().date()
-        start_date, end_date = st.sidebar.date_input("Ship Date Range", [min_date, max_date], min_value=min_date, max_value=max_date)
+        # Ensure 'Ship Date' has valid dates
+        if df['Ship Date'].notna().any():
+            min_ship_date = df['Ship Date'].min().date()
+            max_ship_date = df['Ship Date'].max().date()
+            start_date, end_date = st.sidebar.date_input(
+                "Ship Date Range",
+                [min_ship_date, max_ship_date],
+                min_value=min_ship_date,
+                max_value=max_ship_date
+            )
+        else:
+            st.error("No valid 'Ship Date' data available for date range selection.")
+            return [], [], None
     else:
         start_date, end_date = get_date_range(date_preset)
     return selected_sales_reps, selected_ship_vias, (start_date, end_date)
@@ -103,16 +119,30 @@ def display_charts(df):
         return
     # Open Sales Orders by Ship Date
     ship_date_counts = df['Ship Date'].dt.date.value_counts().sort_index()
-    fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+    fig_line = px.line(
+        x=ship_date_counts.index,
+        y=ship_date_counts.values,
+        labels={'x': 'Ship Date', 'y': 'Number of Orders'},
+        title='Open Sales Orders by Ship Date'
+    )
     st.plotly_chart(fig_line, use_container_width=True)
     # Orders by Ship Via
     ship_via_counts = df['Ship Via'].value_counts()
-    fig_pie = px.pie(values=ship_via_counts.values, names=ship_via_counts.index, title='Orders by Ship Via')
+    fig_pie = px.pie(
+        values=ship_via_counts.values,
+        names=ship_via_counts.index,
+        title='Orders by Ship Via'
+    )
     st.plotly_chart(fig_pie, use_container_width=True)
 
 def display_metrics(df):
     total_orders = len(df)
-    total_amount = df['Amount'].sum() if 'Amount' in df.columns else 0
+    if 'Amount' in df.columns:
+        # Ensure 'Amount' is numeric
+        df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+        total_amount = df['Amount'].sum()
+    else:
+        total_amount = 0
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Open Orders", total_orders)
@@ -124,7 +154,12 @@ def display_data_table(df):
         st.write(f"Total records after filtering: {len(df)}")
         st.dataframe(df)
         csv = df.to_csv(index=False)
-        st.download_button(label="Download data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name="filtered_sales_orders.csv",
+            mime="text/csv"
+        )
 
 def main():
     st.title("Order Management Dashboard")
@@ -138,6 +173,8 @@ def main():
         df = preprocess_data(df)
         # Display Filters and get user selection
         selected_sales_reps, selected_ship_vias, date_range = display_filters(df)
+        if date_range is None:
+            return  # Exit if date range is invalid
         # Apply Filters
         df_filtered = filter_data(df, selected_sales_reps, selected_ship_vias, date_range)
         # Display Metrics
