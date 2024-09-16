@@ -3,15 +3,25 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 
 st.set_page_config(layout="wide")
 
-# Capture the user's email (from query parameters or any existing logic)
-query_params = st.experimental_get_query_params()
-user_email = query_params.get('email', [None])[0]
+# Helper function to check if the app is embedded in an iframe
+def is_embedded():
+    # Using the `embed=true` parameter to detect if it's embedded
+    return st.experimental_get_query_params().get('embed', [None])[0] == 'true'
 
-# If embedded and email is not found, show a link to the direct app URL
+# Try to capture the user's email, either via iframe or direct browser access
+if is_embedded():
+    # Capture email via query parameters when embedded in iframe (NetSuite)
+    query_params = st.experimental_get_query_params()
+    user_email = query_params.get('email', [None])[0]
+else:
+    # Capture email normally when accessed in the browser
+    user_email = capture_user_email()
+
+# Check if the user email was captured successfully
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.markdown("""
-        Please [click here](https://kcstorefixtures.streamlit.app) to log in and view this page in your browser.
+        Please [click here](https://kcstorefixtures.streamlit.app) to log in directly in your browser.
     """)
     st.stop()
 
@@ -21,6 +31,7 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 st.write(f"Welcome, {user_email}! You have access to this page.")
+
 
 
 
