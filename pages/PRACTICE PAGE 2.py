@@ -48,9 +48,9 @@ def get_date_range(preset):
         return today, today
 
 @st.cache_data(ttl=600)  # Cache data for 10 minutes
-def load_data(url):
+def load_data(url_open_so):
     logger.info("Attempting to fetch data from NetSuite restlet")
-    df = process_netsuite_data_csv(url)
+    df = process_netsuite_data_csv(url_open_so)
     if df is None or df.empty:
         logger.warning("Retrieved dataframe is empty or None")
         st.warning("No data retrieved from the data source.")
