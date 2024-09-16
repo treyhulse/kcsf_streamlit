@@ -1,19 +1,17 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-import os
 
 st.set_page_config(layout="wide")
 
-# Helper function to check if the request is coming from NetSuite
+# Helper function to check if the request is coming from your NetSuite domain
 def is_netsuite_request():
     referer = st.experimental_get_query_params().get('Referer')
-    # Check if the referer contains 'netsuite.com'
-    return referer and 'https://3429264.app.netsuite.com/' in referer[0]
+    # Check if the referer contains your NetSuite domain
+    return referer and '3429264.app.netsuite.com' in referer[0]
 
-# Bypass user email capture if accessed from NetSuite
+# If the request comes from your NetSuite domain, skip email capture
 if is_netsuite_request():
-    # If coming from NetSuite, allow access without capturing email
-    user_email = "netsuite_user@yourdomain.com"  # or any identifier for NetSuite user
+    user_email = "netsuite_user@yourdomain.com"  # Placeholder email or identifier for NetSuite users
 else:
     # Capture the user's email for non-NetSuite users
     user_email = capture_user_email()
@@ -29,6 +27,7 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 st.write(f"You have access to this page.")
+
 
 
 ################################################################################################
