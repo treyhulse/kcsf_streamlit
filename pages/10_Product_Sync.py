@@ -28,8 +28,8 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 # Step 4: Render the page content
-st.write(f"Welcome, {user_email}! You have access to this page.")
 st.write(st.experimental_get_query_params())
+st.write(f"Welcome, {user_email}! You have access to this page.")
 
 
 
