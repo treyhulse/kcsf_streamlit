@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.express as px
 from utils.data_functions import process_netsuite_data_csv
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
-from datetime import date, timedelta
 import logging
 import traceback
 
@@ -30,22 +29,6 @@ def apply_mapping(column, mapping_dict):
 
 def format_currency(value):
     return "${:,.2f}".format(value) if pd.notna(value) else value
-
-def get_date_range(preset):
-    today = date.today()
-    if preset == "Today":
-        return today, today
-    elif preset == "This Week":
-        start_of_week = today - timedelta(days=today.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        return start_of_week, end_of_week
-    elif preset == "This Month":
-        start_of_month = today.replace(day=1)
-        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        return start_of_month, end_of_month
-    else:
-        # Default to 'Today' if unrecognized preset
-        return today, today
 
 @st.cache_data(ttl=600)  # Cache data for 10 minutes
 def load_data(url_open_so):
@@ -82,7 +65,6 @@ def preprocess_data(df):
     
     return df
 
-
 def filter_data(df, selected_sales_reps, selected_ship_vias):
     # Filter by Sales Rep
     if selected_sales_reps:
@@ -98,36 +80,13 @@ def display_filters(df):
     # Sales Rep Filter
     sales_reps = sorted(df['Sales Rep'].dropna().unique())
     selected_sales_reps = st.sidebar.multiselect("Sales Reps", sales_reps, default=sales_reps)
+    
     # Ship Via Filter
     ship_vias = sorted(df['Ship Via'].dropna().unique())
     selected_ship_vias = st.sidebar.multiselect("Ship Via", ship_vias, default=ship_vias)
-    # Ship Date Filter
-    date_preset = st.sidebar.selectbox("Date Range Preset", ["Custom", "Today", "This Week", "This Month"], index=3)
-    if date_preset == "Custom":
-        # Ensure 'Ship Date' has valid dates
-        if df['Ship Date'].notna().any():
-            min_ship_date = df['Ship Date'].min().date()
-            max_ship_date = df['Ship Date'].max().date()
-            # Check if min and max dates are of date type
-            if isinstance(min_ship_date, date) and isinstance(max_ship_date, date):
-                start_date, end_date = st.sidebar.date_input(
-                    "Ship Date Range",
-                    [min_ship_date, max_ship_date],
-                    min_value=min_ship_date,
-                    max_value=max_ship_date
-                )
-                # Ensure start_date and end_date are dates
-                if isinstance(start_date, list):
-                    start_date, end_date = start_date
-            else:
-                st.error("Invalid date values found in 'Ship Date'.")
-                return [], [], None
-        else:
-            st.error("No valid 'Ship Date' data available for date range selection.")
-            return [], [], None
-    else:
-        start_date, end_date = get_date_range(date_preset)
-    return selected_sales_reps, selected_ship_vias, (start_date, end_date)
+    
+    # Return filters without the date filter
+    return selected_sales_reps, selected_ship_vias
 
 def display_charts(df):
     if df.empty:
@@ -164,7 +123,6 @@ def display_metrics(df):
     with col2:
         st.metric("Total Amount Remaining", format_currency(total_amount_remaining))
 
-
 def display_data_table(df):
     with st.expander("View Data Table"):
         st.write(f"Total records after filtering: {len(df)}")
@@ -188,11 +146,9 @@ def main():
         # Preprocess Data
         df = preprocess_data(df)
         # Display Filters and get user selection
-        selected_sales_reps, selected_ship_vias, date_range = display_filters(df)
-        if date_range is None:
-            return  # Exit if date range is invalid
+        selected_sales_reps, selected_ship_vias = display_filters(df)
         # Apply Filters
-        df_filtered = filter_data(df, selected_sales_reps, selected_ship_vias, date_range)
+        df_filtered = filter_data(df, selected_sales_reps, selected_ship_vias)
         # Display Metrics
         display_metrics(df_filtered)
         # Display Charts
