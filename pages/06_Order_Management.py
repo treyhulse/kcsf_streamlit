@@ -115,7 +115,6 @@ def calculate_kpis(filtered_df):
 
 def main():
     st.title("Order Management")
-    st.success("Data fetched from NetSuite")
 
     try:
         # Fetch Data from the RESTlet URL in Streamlit secrets
