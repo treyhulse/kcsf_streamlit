@@ -20,7 +20,7 @@ if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
 
-page_name = 'Practice Page'  # Adjust this based on the current page
+page_name = 'Practice Page'  # Updated page name as per your request
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
     st.stop()
@@ -69,6 +69,30 @@ def preprocess_data(df):
     df = df.dropna(subset=['Ship Date'])
     return df
 
+def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
+    # Filter by Sales Rep
+    if selected_sales_reps:
+        df = df[df['Sales Rep'].isin(selected_sales_reps)]
+    # Filter by Ship Via
+    if selected_ship_vias:
+        df = df[df['Ship Via'].isin(selected_ship_vias)]
+    # Filter by Ship Date
+    if date_range and date_range[0] is not None and date_range[1] is not None:
+        start_date, end_date = date_range
+        try:
+            df = df[
+                (df['Ship Date'].dt.date >= start_date) &
+                (df['Ship Date'].dt.date <= end_date)
+            ]
+        except Exception as e:
+            st.error(f"Date filtering error: {e}")
+            logger.error(f"Date filtering error: {e}")
+            return pd.DataFrame()  # Return empty DataFrame
+    else:
+        st.error("Invalid date range selected.")
+        return pd.DataFrame()  # Return empty DataFrame
+    return df
+
 def display_filters(df):
     st.sidebar.header("Filters")
     # Sales Rep Filter
@@ -84,12 +108,20 @@ def display_filters(df):
         if df['Ship Date'].notna().any():
             min_ship_date = df['Ship Date'].min().date()
             max_ship_date = df['Ship Date'].max().date()
-            start_date, end_date = st.sidebar.date_input(
-                "Ship Date Range",
-                [min_ship_date, max_ship_date],
-                min_value=min_ship_date,
-                max_value=max_ship_date
-            )
+            # Check if min and max dates are of date type
+            if isinstance(min_ship_date, date) and isinstance(max_ship_date, date):
+                start_date, end_date = st.sidebar.date_input(
+                    "Ship Date Range",
+                    [min_ship_date, max_ship_date],
+                    min_value=min_ship_date,
+                    max_value=max_ship_date
+                )
+                # Ensure start_date and end_date are dates
+                if isinstance(start_date, list):
+                    start_date, end_date = start_date
+            else:
+                st.error("Invalid date values found in 'Ship Date'.")
+                return [], [], None
         else:
             st.error("No valid 'Ship Date' data available for date range selection.")
             return [], [], None
@@ -146,7 +178,7 @@ def display_data_table(df):
         )
 
 def main():
-    st.title("Order Management Dashboard")
+    st.title("Open Sales Orders Analysis")
     st.success("You have access to this page.")
     try:
         # Load Data
@@ -160,12 +192,13 @@ def main():
         if date_range is None:
             return  # Exit if date range is invalid
         # Apply Filters
+        df_filtered = filter_data(df, selected_sales_reps, selected_ship_vias, date_range)
         # Display Metrics
-        display_metrics(df)
+        display_metrics(df_filtered)
         # Display Charts
-        display_charts(df)
+        display_charts(df_filtered)
         # Display Data Table
-        display_data_table(df)
+        display_data_table(df_filtered)
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         logger.error(f"Exception occurred: {str(e)}")
