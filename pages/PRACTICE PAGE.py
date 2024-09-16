@@ -23,76 +23,44 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+# app.py or the specific page file in your Streamlit app
 import streamlit as st
-from utils.suiteql import fetch_suiteql_data
-import pymongo
+import pandas as pd
+from utils.suiteql import fetch_suiteql_data  # Adjust the import based on your project structure
 
-# MongoDB connection (updated to mongo_connection_string)
-client = pymongo.MongoClient(st.secrets["mongo_connection_string"])
-db = client['netsuite']
-collection = db['savedQueries']
+# Sample popular prompts with their corresponding SuiteQL scripts
+popular_prompts = {
+    "All Customers": "SELECT * FROM customer;",
+    "Recent Transactions": "SELECT * FROM transaction ORDER BY tranDate DESC LIMIT 10;",
+    "Low Stock Items": "SELECT * FROM item WHERE quantityOnHand < 5;"
+}
 
-# Page Title
-st.title("Query Builder and Saved Queries")
+# Create two columns with specified width ratios
+left_col, right_col = st.columns([3, 1])
 
-# Two columns for layout
-col1, col2 = st.columns([2, 1])
+with right_col:
+    st.header("Popular Prompts")
+    # Display a selection box for prompts
+    selected_prompt = st.radio("Select a prompt:", options=list(popular_prompts.keys()))
 
-# Column 1: Query Input
-with col1:
-    st.subheader("Enter and Run Queries")
+# Retrieve the SuiteQL script based on the selected prompt
+default_query = popular_prompts[selected_prompt]
 
-    # Text area for entering user queries
-    user_query = st.text_area("Enter your SuiteQL query:", height=200)
+with left_col:
+    st.header("SuiteQL Query Input")
+    # Text area for users to input or edit SuiteQL scripts
+    suiteql_query = st.text_area("Enter your SuiteQL script here:", value=default_query, height=200)
 
-    # Run Query button
+    # Button to execute the query
     if st.button("Run Query"):
-        if user_query.strip() == "":
-            st.error("Please enter a valid query.")
-        else:
-            # Execute the query
-            df = fetch_suiteql_data(user_query)
-            if not df.empty:
-                st.write("Query Results")
-                st.dataframe(df)
-                
-                # Option to save query
-                with st.expander("Save Query"):
-                    query_title = st.text_input("Title your query:")
-                    if st.button("Save Query"):
-                        if query_title.strip() == "":
-                            st.error("Please provide a title for your query.")
-                        else:
-                            # Save only the SuiteQL query text, not the response
-                            query_data = {
-                                "title": query_title,
-                                "query": user_query  # Only save the text of the query
-                            }
-                            collection.insert_one(query_data)
-                            st.success(f"Query '{query_title}' saved successfully!")
+        # Execute the SuiteQL script using your fetch_suiteql_data function
+        try:
+            results_df = fetch_suiteql_data(suiteql_query)
+            if not results_df.empty:
+                # Display the results in a table
+                st.subheader("Query Results")
+                st.dataframe(results_df)
             else:
-                st.error("No data found for your query.")
-
-# Column 2: Saved Queries
-with col2:
-    st.subheader("Saved Queries")
-    
-    # Search saved queries
-    search_term = st.text_input("Search for saved queries")
-    
-    if search_term.strip():
-        # Search the MongoDB collection for matching titles
-        saved_queries = list(collection.find({"title": {"$regex": search_term, "$options": "i"}}))
-    else:
-        # Show all saved queries
-        saved_queries = list(collection.find())
-
-    if saved_queries:
-        # Display the saved queries
-        for query in saved_queries:
-            st.write(f"**{query['title']}**")
-            if st.button(f"Load Query: {query['title']}", key=query['_id']):
-                user_query = query['query']  # Load the saved query into the text area
-                st.success(f"Loaded query: {query['title']}")
-    else:
-        st.write("No queries found.")
+                st.info("No data returned for this query.")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
