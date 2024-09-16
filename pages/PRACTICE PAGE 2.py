@@ -27,10 +27,10 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_suiteql_data
+from utils.suiteql import fetch_suiteql_data_with_pagination
 
 # Page Title
-st.title("Inventory and Sales Data")
+st.title("Inventory and Sales Data with Pagination")
 
 # Queries to fetch inventory and sales data
 inventory_query = """
@@ -74,21 +74,55 @@ ORDER BY
     transaction.trandate DESC;
 """
 
-# Fetch Inventory Data
-if st.button("Fetch Inventory Data"):
-    inventory_data = fetch_suiteql_data(inventory_query)
+# Fetch Inventory Data with Pagination
+if st.button("Fetch Full Inventory Data"):
+    inventory_data = fetch_suiteql_data_with_pagination(inventory_query)
     if not inventory_data.empty:
         st.write("Inventory Data:")
-        st.dataframe(pd.DataFrame(inventory_data))
+        st.dataframe(inventory_data)
     else:
         st.error("No inventory data found.")
 
-# Fetch Sales Data
-if st.button("Fetch Sales Data"):
-    sales_data = fetch_suiteql_data(sales_query)
+# Fetch Sales Data with Pagination
+if st.button("Fetch Full Sales Data"):
+    sales_data = fetch_suiteql_data_with_pagination(sales_query)
     if not sales_data.empty:
         st.write("Sales Data:")
-        st.dataframe(pd.DataFrame(sales_data))
+        st.dataframe(sales_data)
     else:
         st.error("No sales data found.")
 
+
+import pandas as pd
+import time
+
+def fetch_suiteql_data_with_pagination(query, limit=1000):
+    # Function to fetch all records by paginating
+    offset = 0
+    all_data = []
+    
+    while True:
+        # Add pagination to the query
+        paginated_query = f"{query} LIMIT {limit} OFFSET {offset}"
+        
+        # Fetch the data using your existing fetch_suiteql_data function
+        data_chunk = fetch_suiteql_data(paginated_query)
+        
+        # Break if no more data is returned
+        if data_chunk.empty:
+            break
+        
+        # Append the data chunk to the overall data
+        all_data.append(data_chunk)
+        
+        # Increment offset to fetch the next batch
+        offset += limit
+        
+        # Sleep to avoid overloading the server (optional)
+        time.sleep(1)
+    
+    # Combine all chunks into a single DataFrame
+    if all_data:
+        return pd.concat(all_data, ignore_index=True)
+    else:
+        return pd.DataFrame()  # Return an empty DataFrame if no data is fetched
