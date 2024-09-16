@@ -95,6 +95,24 @@ def get_date_ranges():
     }
     return date_options
 
+def calculate_kpis(df):
+    """Calculate metrics for the KPI boxes."""
+    total_orders = len(df)
+    
+    # Total Orders Not Ready (those with red text from conditional formatting)
+    not_ready_orders = df.apply(lambda row: float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 and 
+                                row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and 
+                                row['Terms'] not in ['Net 30', 'Net 60', 'Net 45'], axis=1)
+    total_orders_not_ready = not_ready_orders.sum()
+
+    # Total Orders Ready (those not in red text)
+    total_orders_ready = total_orders - total_orders_not_ready
+
+    # Total Revenue Outstanding for orders not ready
+    total_revenue_outstanding = df[not_ready_orders]['Amount Remaining'].apply(lambda x: float(x.replace('$', '').replace(',', ''))).sum()
+
+    return total_orders, total_orders_ready, total_orders_not_ready, total_revenue_outstanding
+
 def main():
     st.title("Order Management")
     st.success("Data fetched from NetSuite")
@@ -111,6 +129,16 @@ def main():
             
             # Format 'Order Number', 'Amount Remaining' columns, and convert 'Warehouse' to string
             df = format_dataframe(df)
+
+            # Calculate KPI metrics
+            total_orders, total_orders_ready, total_orders_not_ready, total_revenue_outstanding = calculate_kpis(df)
+
+            # Display KPI metric boxes
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Total Orders", total_orders)
+            col2.metric("Total Orders Ready", total_orders_ready)
+            col3.metric("Total Orders Not Ready", total_orders_not_ready)
+            col4.metric("Total Revenue Outstanding", f"${total_revenue_outstanding:,.2f}")
 
             # Sidebar filters
             st.sidebar.title("Filters")
