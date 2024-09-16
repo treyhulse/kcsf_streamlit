@@ -63,15 +63,18 @@ def preprocess_data(df):
     df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
     df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
     df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
-
-    # Convert 'Ship Date' to datetime, coerce errors
+    
+    # Convert 'Ship Date' to datetime, coerce invalid values
     df['Ship Date'] = pd.to_datetime(df['Ship Date'], errors='coerce')
     
-    # Drop rows where 'Ship Date' conversion failed (i.e., they are NaT)
+    # Drop rows where 'Ship Date' is NaT (invalid date)
     df = df.dropna(subset=['Ship Date'])
-    
-    # Ensure 'Amount Remaining' is numeric, and convert non-numeric values to NaN
+
+    # Convert 'Amount Remaining' to numeric, coerce invalid values to NaN
     df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
+    
+    # Drop rows where 'Amount Remaining' is NaN (invalid values in 'Amount Remaining' column)
+    df = df.dropna(subset=['Amount Remaining'])
     
     return df
 
@@ -162,15 +165,15 @@ def display_metrics(df):
     total_orders = len(df)
     if 'Amount Remaining' in df.columns:
         # Ensure 'Amount Remaining' is numeric
-        df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce')
-        total_amount = df['Amount Remaining'].sum()
+        total_amount_remaining = df['Amount Remaining'].sum()
     else:
-        total_amount = 0
+        total_amount_remaining = 0
     col1, col2 = st.columns(2)
     with col1:
         st.metric("Total Open Orders", total_orders)
     with col2:
-        st.metric("Total Amount Remaining", format_currency(total_amount))
+        st.metric("Total Amount Remaining", format_currency(total_amount_remaining))
+
 
 def display_data_table(df):
     with st.expander("View Data Table"):
