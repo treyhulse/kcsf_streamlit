@@ -1,22 +1,13 @@
 import streamlit as st
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.auth import validate_page_access, show_permission_violation
 
 st.set_page_config(layout="wide")
 
-# Helper function to check if the request is coming from your NetSuite domain
-def is_netsuite_request():
-    referer = st.experimental_get_query_params().get('Referer')
-    # Check if the referer contains your NetSuite domain
-    return referer and '3429264.app.netsuite.com' in referer[0]
+# Capture email from the query parameters
+query_params = st.experimental_get_query_params()
+user_email = query_params.get('email', [None])[0]
 
-# If the request comes from your NetSuite domain, skip email capture
-if is_netsuite_request():
-    user_email = "netsuite_user@yourdomain.com"  # Placeholder email or identifier for NetSuite users
-else:
-    # Capture the user's email for non-NetSuite users
-    user_email = capture_user_email()
-
-# Check if email was captured or valid in the context
+# Check if email was passed and is valid
 if user_email is None:
     st.error("Unable to retrieve user information.")
     st.stop()
