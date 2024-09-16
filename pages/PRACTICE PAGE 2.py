@@ -81,14 +81,12 @@ def get_date_ranges():
     """Define preset date ranges."""
     today = datetime.today()
     start_of_week = today - timedelta(days=today.weekday())  # Monday of the current week
-    end_of_week = start_of_week + timedelta(days=6)  # Sunday of the current week
     start_of_month = today.replace(day=1)
     end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)  # Last day of the month
     start_of_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
 
     date_options = {
         'Today': (today, today),
-        'This Week': (start_of_week, end_of_week),
         'Last Week': (start_of_week - timedelta(days=7), start_of_week - timedelta(days=1)),
         'This Month': (start_of_month, end_of_month),
         'Next Month': (start_of_next_month, start_of_next_month + timedelta(days=32)),
