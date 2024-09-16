@@ -5,6 +5,7 @@ import traceback
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
+from datetime import datetime, timedelta
 
 # Configure page layout
 st.set_page_config(layout="wide")
@@ -75,6 +76,25 @@ def red_text_if_positive(df):
 
     return df.style.apply(red_text, axis=1)
 
+def get_date_ranges():
+    """Define preset date ranges."""
+    today = datetime.today()
+    start_of_week = today - timedelta(days=today.weekday())  # Monday of the current week
+    start_of_last_week = start_of_week - timedelta(days=7)
+    start_of_month = today.replace(day=1)
+    start_of_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+
+    date_options = {
+        'Today': (today, today),
+        'This Week': (start_of_week, today),
+        'Last Week': (start_of_last_week, start_of_last_week + timedelta(days=6)),
+        'This Month': (start_of_month, today),
+        'Next Month': (start_of_next_month, start_of_next_month + timedelta(days=32)),
+        'All Time': (None, None),  # No filter
+        'Custom': None  # Placeholder for custom date range
+    }
+    return date_options
+
 def main():
     st.title("NetSuite Data Fetcher")
     st.success("Data fetched from NetSuite")
@@ -95,19 +115,26 @@ def main():
             # Sidebar filters
             st.sidebar.title("Filters")
 
-            # Sales Rep Filter
-            sales_reps = ['All'] + df['Sales Rep'].unique().tolist()
-            selected_sales_rep = st.sidebar.selectbox("Select Sales Rep", sales_reps, index=0)
-            if selected_sales_rep != 'All':
-                df = df[df['Sales Rep'] == selected_sales_rep]
-            
-            # Ship Date Filter
-            min_date = pd.to_datetime(df['Ship Date']).min()
-            max_date = pd.to_datetime(df['Ship Date']).max()
-            date_range = st.sidebar.date_input("Select Ship Date Range", [min_date, max_date])
-            if len(date_range) == 2:
-                df = df[(pd.to_datetime(df['Ship Date']) >= pd.to_datetime(date_range[0])) &
-                        (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(date_range[1]))]
+            # Sales Rep Multiselect Filter
+            sales_reps = df['Sales Rep'].unique().tolist()
+            selected_sales_reps = st.sidebar.multiselect("Select Sales Rep(s)", ['All'] + sales_reps, default=['All'])
+            if 'All' not in selected_sales_reps:
+                df = df[df['Sales Rep'].isin(selected_sales_reps)]
+
+            # Ship Date Filter with Preset Ranges
+            date_options = get_date_ranges()
+            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=3)
+
+            if date_selection == 'Custom':
+                custom_range = st.sidebar.date_input("Select Custom Date Range", [datetime.today(), datetime.today()])
+                if len(custom_range) == 2:
+                    df = df[(pd.to_datetime(df['Ship Date']) >= pd.to_datetime(custom_range[0])) &
+                            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(custom_range[1]))]
+            else:
+                start_date, end_date = date_options[date_selection]
+                if start_date and end_date:
+                    df = df[(pd.to_datetime(df['Ship Date']) >= start_date) &
+                            (pd.to_datetime(df['Ship Date']) <= end_date)]
 
             st.write(f"Data successfully fetched with {len(df)} records.")
             
