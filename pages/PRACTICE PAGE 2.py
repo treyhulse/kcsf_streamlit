@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import logging
 import traceback
+from datetime import datetime, timedelta
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
+from utils.data_functions import process_netsuite_data_csv
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 
 # Configure page layout
@@ -33,6 +34,17 @@ st.write(f"You have access to this page.")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Helper function to check if a date is within this week
+def is_within_this_week(date_str):
+    try:
+        date = pd.to_datetime(date_str, errors='coerce')
+        today = datetime.today()
+        start_of_week = today - timedelta(days=today.weekday())  # Monday of this week
+        end_of_week = start_of_week + timedelta(days=6)  # Sunday of this week
+        return start_of_week <= date <= end_of_week
+    except Exception:
+        return False
+
 def apply_mappings(df):
     """Apply mappings to the DataFrame columns."""
     if 'Sales Rep' in df.columns:
@@ -56,16 +68,41 @@ def format_dataframe(df):
     
     return df
 
-def red_text_if_positive(df):
-    """Set text to red in rows where 'Amount Remaining' is greater than 0."""
-    def red_text(row):
-        # Check if 'Amount Remaining' is greater than 0
-        if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
-            return ['color: red'] * len(row)
-        return [''] * len(row)
+def apply_conditional_formatting(df):
+    """Apply conditional formatting based on complex filters."""
+    def evaluate_row(row):
+        # Status filters
+        good_status = row['status'] in ['SalesOrd:D', 'SalesOrd:B', 'SalesOrd:E'] and \
+                      row['status'] not in ['BlankOrd:B', 'BlankOrd:H', 'BlankOrd:A', 'BlankOrd:R']
+        
+        # Quantity formula check: {quantity} - {quantityshiprecv} > 0
+        good_quantity = row['quantity'] - row['quantityshiprecv'] > 0
+        
+        # Shipping must be 'F'
+        good_shipping = row['shipping'] == 'F'
+        
+        # Taxline must be 'F'
+        good_taxline = row['taxline'] == 'F'
+        
+        # Complex conditions
+        good_complex_condition = (
+            (row['total'] - row['custbody37'] <= 0) or
+            (row['shipmethod'] in ['141', '148', '226']) or
+            (row['customer.credithold'] in ['ON', 'OFF', 'AUTO'] and
+             row['terms'] in ['5', '23', '21', '31', '22', '24', '6', '29', '28', '37', '30', '25', '7', '14', '1', '34',
+                              '16', '2', '13', '3', '15', '8', '4', '35', '33', '32', '18', '38'])
+        )
+        
+        # custbody219 must be within this week
+        good_custom_body = is_within_this_week(row['custbody219'])
+        
+        # Combine all conditions
+        is_good_to_go = all([good_status, good_quantity, good_shipping, good_taxline, good_complex_condition, good_custom_body])
+        
+        # Return styles: red text for rows that are not good to go
+        return ['color: red'] * len(row) if not is_good_to_go else [''] * len(row)
 
-    return df.style.apply(red_text, axis=1)
-
+    return df.style.apply(evaluate_row, axis=1)
 
 def main():
     st.title("NetSuite Data Fetcher")
@@ -86,8 +123,8 @@ def main():
 
             st.write(f"Data successfully fetched with {len(df)} records.")
             
-            # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
-            styled_df = red_text_if_positive(df)
+            # Apply conditional formatting based on complex filters
+            styled_df = apply_conditional_formatting(df)
             st.dataframe(styled_df)  # Display the styled DataFrame
 
             # Option to download the unformatted data as CSV
