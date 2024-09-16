@@ -16,10 +16,10 @@ def get_mongo_client():
         logging.debug("Attempting to connect to MongoDB...")
         connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
         client = MongoClient(connection_string, 
-                             ssl=True,
-                             serverSelectionTimeoutMS=30000,
-                             connectTimeoutMS=30000,
-                             socketTimeoutMS=30000)
+                     ssl=True,
+                     serverSelectionTimeoutMS=30000,
+                     connectTimeoutMS=30000,
+                     socketTimeoutMS=30000)
         logging.info("MongoDB connection successful")
         return client
     except Exception as e:
@@ -31,7 +31,7 @@ def get_collection_data(client, collection_name):
         logging.debug(f"Fetching data from collection: {collection_name}")
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
-        data = pd.DataFrame(list(collection.find()))  # Fetch all documents
+        data = pd.DataFrame(list(collection.find().limit(5)))  # Limit to 5 documents
         logging.info(f"Data fetched successfully from {collection_name}")
         return data
     except Exception as e:
