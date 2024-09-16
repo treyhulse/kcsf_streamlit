@@ -63,11 +63,18 @@ def preprocess_data(df):
     df['Ship Via'] = apply_mapping(df['Ship Via'], ship_via_mapping)
     df['Terms'] = apply_mapping(df['Terms'], terms_mapping)
     df['Sales Rep'] = apply_mapping(df['Sales Rep'], sales_rep_mapping)
+
     # Convert 'Ship Date' to datetime, coerce errors
     df['Ship Date'] = pd.to_datetime(df['Ship Date'], errors='coerce')
-    # Drop rows where 'Ship Date' conversion failed
+    
+    # Drop rows where 'Ship Date' conversion failed (i.e., they are NaT)
     df = df.dropna(subset=['Ship Date'])
+    
+    # Ensure 'Amount' is numeric, and convert non-numeric values to NaN
+    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+    
     return df
+
 
 def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
     # Filter by Sales Rep
