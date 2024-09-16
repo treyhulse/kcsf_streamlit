@@ -32,26 +32,27 @@ from utils.suiteql import fetch_suiteql_data_with_pagination
 # Page Title
 st.title("Inventory and Sales Data with Pagination")
 
-# Queries to fetch inventory and sales data
+# SuiteQL Queries for Inventory and Sales Data
+
 inventory_query = """
 SELECT 
     item.id AS item_id,
     item.itemid AS item_name,
     balance.location AS location_name,
     balance.quantityonhand AS quantity_on_hand,
-    balance.quantityavailable AS quantity_available
+    balance.quantityavailable AS quantity_available,
+    item.internalid AS internalid
 FROM 
     item
 JOIN 
     inventorybalance AS balance ON item.id = balance.item
 WHERE 
     item.isinactive = 'F'
-ORDER BY 
-    item_name ASC;
 """
 
 sales_query = """
 SELECT 
+    transaction.internalid,
     transaction.trandate,
     transaction.tranid,
     customer.entityid AS customer_name,
@@ -71,7 +72,7 @@ WHERE
     transaction.type = 'SalesOrd' 
     AND transaction.trandate >= TO_DATE('01/01/2023', 'MM/DD/YYYY')
 ORDER BY 
-    transaction.trandate DESC;
+    transaction.trandate DESC
 """
 
 # Fetch Inventory Data with Pagination

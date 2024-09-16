@@ -18,6 +18,10 @@ def get_authentication():
         signature_method='HMAC-SHA256'
     )
 
+
+import pandas as pd
+import time
+
 def fetch_suiteql_data(query, max_retries=3):
     """
     This function fetches data from NetSuite's SuiteQL API.
@@ -67,19 +71,23 @@ def fetch_suiteql_data(query, max_retries=3):
                 return pd.DataFrame(all_data) if all_data else pd.DataFrame()
             time.sleep(2 ** attempt)  # Exponential backoff
 
-import pandas as pd
-import time
 
 def fetch_suiteql_data_with_pagination(query, limit=1000):
-    # Function to fetch all records by paginating
-    offset = 0
+    """
+    Fetch all data using pagination by incrementing internalid.
+    """
     all_data = []
+    last_internal_id = 0  # Start with 0 or a minimum known internal ID
     
     while True:
-        # Add pagination to the query
-        paginated_query = f"{query} LIMIT {limit} OFFSET {offset}"
+        # Modify the query to fetch records greater than the last fetched internal ID
+        paginated_query = f"""
+        {query} AND transaction.internalid > {last_internal_id}
+        ORDER BY transaction.internalid ASC
+        LIMIT {limit}
+        """
         
-        # Fetch the data using your existing fetch_suiteql_data function
+        # Fetch the data
         data_chunk = fetch_suiteql_data(paginated_query)
         
         # Break if no more data is returned
@@ -89,8 +97,8 @@ def fetch_suiteql_data_with_pagination(query, limit=1000):
         # Append the data chunk to the overall data
         all_data.append(data_chunk)
         
-        # Increment offset to fetch the next batch
-        offset += limit
+        # Update last_internal_id to the highest internal ID from the current chunk
+        last_internal_id = data_chunk['internalid'].max()
         
         # Sleep to avoid overloading the server (optional)
         time.sleep(1)
