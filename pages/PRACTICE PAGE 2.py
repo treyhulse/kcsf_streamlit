@@ -69,22 +69,6 @@ def preprocess_data(df):
     df = df.dropna(subset=['Ship Date'])
     return df
 
-def filter_data(df, selected_sales_reps, selected_ship_vias, date_range):
-    # Filter by Sales Rep
-    if selected_sales_reps:
-        df = df[df['Sales Rep'].isin(selected_sales_reps)]
-    # Filter by Ship Via
-    if selected_ship_vias:
-        df = df[df['Ship Via'].isin(selected_ship_vias)]
-    # Filter by Ship Date
-    if date_range and date_range[0] is not None and date_range[1] is not None:
-        start_date, end_date = date_range
-        df = df[(df['Ship Date'].dt.date >= start_date) & (df['Ship Date'].dt.date <= end_date)]
-    else:
-        st.error("Invalid date range selected.")
-        return pd.DataFrame()  # Return empty DataFrame
-    return df
-
 def display_filters(df):
     st.sidebar.header("Filters")
     # Sales Rep Filter
@@ -176,13 +160,12 @@ def main():
         if date_range is None:
             return  # Exit if date range is invalid
         # Apply Filters
-        df_filtered = filter_data(df, selected_sales_reps, selected_ship_vias, date_range)
         # Display Metrics
-        display_metrics(df_filtered)
+        display_metrics(df)
         # Display Charts
-        display_charts(df_filtered)
+        display_charts(df)
         # Display Data Table
-        display_data_table(df_filtered)
+        display_data_table(df)
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         logger.error(f"Exception occurred: {str(e)}")
