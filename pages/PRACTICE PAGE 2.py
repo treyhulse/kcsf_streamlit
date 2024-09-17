@@ -89,31 +89,33 @@ if not sales_data.empty:
     # Filter the data based on selected product category
     category_data = sales_data[sales_data['Product Category'] == selected_category]
 
-    # Handle duplicates in the Date column by aggregating (e.g., summing quantities on the same date)
-    category_data = category_data.groupby(['Date']).agg({
-        'Quantity': 'sum',  # Sum quantities for the same date
-        'Amount': 'sum',  # Sum amounts for the same date, if available
-    }).reset_index()
-
     # Ensure the Date is sorted in ascending order to avoid the monotonic error
     category_data = category_data.sort_values(by='Date')
 
+    # Debugging: Check if we have any data for the category
+    st.write(f"Number of records for {selected_category}: {len(category_data)}")
+    st.write(category_data.head())  # Display first few rows for debugging
+    
     # Calculate the rolling 3-month average of 'Quantity'
     category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
+
+    # Debugging: Check if the rolling average is being calculated
+    st.write("Rolling 3-month average calculated:")
+    st.write(category_data[['Date', '3_month_avg']].dropna().head())  # Display rolling avg data
     
     # Plot the rolling average for the selected product category
-    st.subheader(f"Rolling 3-Month Average for {selected_category}")
-    st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
+    if not category_data['3_month_avg'].dropna().empty:
+        st.subheader(f"Rolling 3-Month Average for {selected_category}")
+        st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
+    else:
+        st.write(f"No rolling average data available for {selected_category}.")
     
     # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
     recommended_quantity = category_data['Quantity'].quantile(0.90)
     st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
 
     # Display unique item count and total quantity in the selected category
-    # If the 'Item' column exists and is needed, modify this section accordingly
-    # unique_items = category_data['Item'].nunique()
     total_quantity = category_data['Quantity'].sum()
-    # st.metric("Unique Items in Category", unique_items)
     st.metric("Total Quantity of Items", total_quantity)
 
     progress_bar.progress(100)
