@@ -31,8 +31,6 @@ st.write(f"You have access to this page.")
 import pandas as pd
 from utils.mongo_connection import get_mongo_client, get_collection_data
 
-
-
 # Add a title to the Streamlit page
 st.title("Supply Chain Data Overview")
 
