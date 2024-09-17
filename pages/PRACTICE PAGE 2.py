@@ -30,6 +30,40 @@ st.write(f"You have access to this page.")
 
 import pandas as pd
 from utils.mongo_connection import get_mongo_client, get_collection_data
+from datetime import timedelta
+
+# Cache the function to load data, resetting every hour
+@st.cache_data(ttl=timedelta(hours=1))
+def load_sales_data():
+    client = None
+    try:
+        # Get MongoDB client
+        client = get_mongo_client()
+        # Fetch data from the 'salesLines' collection
+        sales_data = get_collection_data(client, 'salesLines')
+        
+        # Drop duplicate rows to avoid the reindexing error
+        sales_data = sales_data.drop_duplicates()
+        
+        # Check for necessary columns
+        if 'Product Category' in sales_data.columns and 'Quantity' in sales_data.columns and 'Date' in sales_data.columns:
+            # Convert 'Date' to datetime and 'Quantity' and 'Amount' to numeric
+            sales_data['Date'] = pd.to_datetime(sales_data['Date'], errors='coerce')
+            sales_data['Quantity'] = pd.to_numeric(sales_data['Quantity'], errors='coerce')
+            if 'Amount' in sales_data.columns:
+                sales_data['Amount'] = pd.to_numeric(sales_data['Amount'], errors='coerce')
+            # Drop rows with NaN in essential columns
+            sales_data = sales_data.dropna(subset=['Date', 'Quantity'])
+            return sales_data
+        else:
+            st.write("Required columns ('Product Category', 'Quantity', 'Date') not found in the dataset.")
+            return pd.DataFrame()  # Return empty DataFrame if columns are missing
+    except Exception as e:
+        st.error(f"Error fetching or processing data: {e}")
+        return pd.DataFrame()  # Return empty DataFrame in case of errors
+    finally:
+        if client:
+            client.close()
 
 # Add a title to the Streamlit page
 st.title("Supply Chain Data Overview")
@@ -37,69 +71,42 @@ st.title("Supply Chain Data Overview")
 # Progress bar for data load
 progress_bar = st.progress(0)
 
-# Connect to the MongoDB client and fetch data
-st.write("Loading data from MongoDB...")
+# Load the sales data
+progress_bar.progress(10)
+sales_data = load_sales_data()
+progress_bar.progress(50)
 
-try:
-    # Get MongoDB client
-    client = get_mongo_client()
+# Check if sales data is loaded and not empty
+if not sales_data.empty:
+    progress_bar.progress(80)
+
+    # Single select dropdown to choose a product category
+    selected_category = st.selectbox(
+        'Select a Product Category', 
+        options=sales_data['Product Category'].unique()
+    )
     
-    # Fetch data from the 'salesLines' collection
-    progress_bar.progress(10)
-    sales_data = get_collection_data(client, 'salesLines')
-    progress_bar.progress(50)
+    # Filter the data based on selected product category
+    category_data = sales_data[sales_data['Product Category'] == selected_category]
+
+    # Calculate the rolling 3-month average of 'Quantity'
+    category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
     
-    # Check if the data has the necessary columns
-    if 'Product Category' in sales_data.columns and 'Quantity' in sales_data.columns and 'Date' in sales_data.columns:
-        
-        # Convert the 'Date' column to a datetime format if it's not already
-        sales_data['Date'] = pd.to_datetime(sales_data['Date'], errors='coerce')
-        
-        # Convert 'Quantity' and 'Amount' columns to numeric (handle errors by coercing to NaN)
-        sales_data['Quantity'] = pd.to_numeric(sales_data['Quantity'], errors='coerce')
-        if 'Amount' in sales_data.columns:
-            sales_data['Amount'] = pd.to_numeric(sales_data['Amount'], errors='coerce')
-        
-        # Drop rows where Date is not valid or Quantity is NaN (optional step)
-        sales_data = sales_data.dropna(subset=['Date', 'Quantity'])
+    # Plot the rolling average for the selected product category
+    st.subheader(f"Rolling 3-Month Average for {selected_category}")
+    st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
+    
+    # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
+    recommended_quantity = category_data['Quantity'].quantile(0.90)
+    st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
 
-        # Sort the data by Date for correct rolling calculations
-        sales_data = sales_data.sort_values(by='Date')
-        progress_bar.progress(80)
-        
-        # Single select dropdown to choose a product category
-        selected_category = st.selectbox(
-            'Select a Product Category', 
-            options=sales_data['Product Category'].unique()
-        )
-        
-        # Filter the data based on selected product category
-        category_data = sales_data[sales_data['Product Category'] == selected_category]
+    # Display unique item count and total quantity in the selected category
+    unique_items = category_data['Item'].nunique()
+    total_quantity = category_data['Quantity'].sum()
+    st.metric("Unique Items in Category", unique_items)
+    st.metric("Total Quantity of Items", total_quantity)
 
-        # Calculate the rolling 3-month average of 'Quantity'
-        category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
-        
-        # Plot the rolling average for the selected product category
-        st.subheader(f"Rolling 3-Month Average for {selected_category}")
-        st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
-        
-        # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
-        recommended_quantity = category_data['Quantity'].quantile(0.90)
-        st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
-
-        # Display unique item count and total quantity in the selected category
-        unique_items = category_data['Item'].nunique()
-        total_quantity = category_data['Quantity'].sum()
-        st.metric("Unique Items in Category", unique_items)
-        st.metric("Total Quantity of Items", total_quantity)
-        
-    else:
-        st.write("Required columns ('Product Category', 'Quantity', 'Date') not found in the dataset.")
-except Exception as e:
-    st.error(f"Error fetching or processing data: {e}")
-
-# Close the MongoDB connection when done
-finally:
     progress_bar.progress(100)
-    if client:
-        client.close()
+else:
+    st.write("No data found or error fetching the data.")
+
