@@ -34,6 +34,9 @@ from utils.mongo_connection import get_mongo_client, get_collection_data
 # Add a title to the Streamlit page
 st.title("Supply Chain Data Overview")
 
+# Progress bar for data load
+progress_bar = st.progress(0)
+
 # Connect to the MongoDB client and fetch data
 st.write("Loading data from MongoDB...")
 
@@ -42,8 +45,10 @@ try:
     client = get_mongo_client()
     
     # Fetch data from the 'salesLines' collection
+    progress_bar.progress(10)
     sales_data = get_collection_data(client, 'salesLines')
-
+    progress_bar.progress(50)
+    
     # Check if the data has the necessary columns
     if 'Product Category' in sales_data.columns and 'Quantity' in sales_data.columns and 'Date' in sales_data.columns:
         
@@ -60,23 +65,34 @@ try:
 
         # Sort the data by Date for correct rolling calculations
         sales_data = sales_data.sort_values(by='Date')
-
-        # Group by 'Product Category' and calculate the rolling 3-month average of 'Quantity'
-        grouped_data = sales_data.groupby('Product Category').apply(
-            lambda x: x.set_index('Date')['Quantity'].rolling(window='90D').mean()
-        ).reset_index()
-
-        # Plotting the rolling average for each product category
-        st.subheader("Rolling 3-Month Average of Quantity by Product Category")
-
-        # Streamlit's native line chart visualization
-        categories = grouped_data['Product Category'].unique()
+        progress_bar.progress(80)
         
-        # Loop through each category to plot
-        for category in categories:
-            category_data = grouped_data[grouped_data['Product Category'] == category]
-            st.line_chart(category_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
+        # Single select dropdown to choose a product category
+        selected_category = st.selectbox(
+            'Select a Product Category', 
+            options=sales_data['Product Category'].unique()
+        )
+        
+        # Filter the data based on selected product category
+        category_data = sales_data[sales_data['Product Category'] == selected_category]
 
+        # Calculate the rolling 3-month average of 'Quantity'
+        category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
+        
+        # Plot the rolling average for the selected product category
+        st.subheader(f"Rolling 3-Month Average for {selected_category}")
+        st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
+        
+        # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
+        recommended_quantity = category_data['Quantity'].quantile(0.90)
+        st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
+
+        # Display unique item count and total quantity in the selected category
+        unique_items = category_data['Item'].nunique()
+        total_quantity = category_data['Quantity'].sum()
+        st.metric("Unique Items in Category", unique_items)
+        st.metric("Total Quantity of Items", total_quantity)
+        
     else:
         st.write("Required columns ('Product Category', 'Quantity', 'Date') not found in the dataset.")
 except Exception as e:
@@ -84,5 +100,6 @@ except Exception as e:
 
 # Close the MongoDB connection when done
 finally:
+    progress_bar.progress(100)
     if client:
         client.close()
