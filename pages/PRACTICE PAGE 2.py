@@ -75,7 +75,7 @@ try:
         # Loop through each category to plot
         for category in categories:
             category_data = grouped_data[grouped_data['Product Category'] == category]
-            st.line_chart(category_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True, key=category)
+            st.line_chart(category_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
 
     else:
         st.write("Required columns ('Product Category', 'Quantity', 'Date') not found in the dataset.")
