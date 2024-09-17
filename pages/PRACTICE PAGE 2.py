@@ -89,6 +89,12 @@ if not sales_data.empty:
     # Filter the data based on selected product category
     category_data = sales_data[sales_data['Product Category'] == selected_category]
 
+    # Handle duplicates in the Date column by aggregating (e.g., summing quantities on the same date)
+    category_data = category_data.groupby(['Date']).agg({
+        'Quantity': 'sum',  # Sum quantities for the same date
+        'Amount': 'sum',  # Sum amounts for the same date, if available
+    }).reset_index()
+
     # Ensure the Date is sorted in ascending order to avoid the monotonic error
     category_data = category_data.sort_values(by='Date')
 
@@ -104,9 +110,10 @@ if not sales_data.empty:
     st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
 
     # Display unique item count and total quantity in the selected category
-    unique_items = category_data['Item'].nunique()
+    # If the 'Item' column exists and is needed, modify this section accordingly
+    # unique_items = category_data['Item'].nunique()
     total_quantity = category_data['Quantity'].sum()
-    st.metric("Unique Items in Category", unique_items)
+    # st.metric("Unique Items in Category", unique_items)
     st.metric("Total Quantity of Items", total_quantity)
 
     progress_bar.progress(100)
