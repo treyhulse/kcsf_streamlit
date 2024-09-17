@@ -81,39 +81,50 @@ progress_bar.progress(50)
 if not sales_data.empty:
     progress_bar.progress(80)
 
-    # Single select dropdown to choose a product category
-    selected_category = st.selectbox(
-        'Select a Product Category', 
-        options=sales_data['Product Category'].unique()
+    # Multi-select dropdown for product categories with a max of 5 selections
+    selected_categories = st.multiselect(
+        'Select up to 5 Product Categories', 
+        options=sales_data['Product Category'].unique(),
+        max_selections=5
     )
-    
-    # Filter the data based on selected product category
-    category_data = sales_data[sales_data['Product Category'] == selected_category]
 
-    # Handle duplicates in the Date column by aggregating (e.g., summing quantities on the same date)
-    category_data = category_data.groupby('Date').agg({
-        'Quantity': 'sum',  # Sum quantities for the same date
-        'Amount': 'sum',  # Sum amounts for the same date, if available
-    }).reset_index()
+    if selected_categories:
+        # Filter the data based on selected product categories
+        filtered_data = sales_data[sales_data['Product Category'].isin(selected_categories)]
 
-    # Ensure the Date is sorted in ascending order to avoid the monotonic error
-    category_data = category_data.sort_values(by='Date')
+        # Group data by 'Date' and aggregate quantities
+        filtered_data = filtered_data.groupby(['Date', 'Product Category']).agg({
+            'Quantity': 'sum',
+            'Amount': 'sum'
+        }).reset_index()
 
-    # Group data by week and sum the 'Quantity'
-    category_data.set_index('Date', inplace=True)
-    weekly_data = category_data['Quantity'].resample('W').sum().reset_index()
+        # Ensure the Date is sorted in ascending order
+        filtered_data = filtered_data.sort_values(by='Date')
 
-    # Plot the weekly sales by product category with a line chart
-    st.subheader(f"Weekly Sales for {selected_category}")
-    st.line_chart(weekly_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
+        # Plot sales by week for each selected category
+        st.subheader(f"Weekly Sales for Selected Categories")
 
-    # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
-    recommended_quantity = category_data['Quantity'].quantile(0.90)
-    st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
+        for category in selected_categories:
+            category_data = filtered_data[filtered_data['Product Category'] == category]
+            
+            # Group by week and sum the 'Quantity'
+            category_data.set_index('Date', inplace=True)
+            weekly_data = category_data['Quantity'].resample('W').sum().reset_index()
 
-    # Display unique item count and total quantity in the selected category
-    total_quantity = category_data['Quantity'].sum()
-    st.metric("Total Quantity of Items", total_quantity)
+            # Plot the weekly sales by product category with a line chart
+            st.subheader(f"Weekly Sales for {category}")
+            st.line_chart(weekly_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
+
+        # Calculate the recommended quantity on hand (90th percentile) for all categories combined
+        recommended_quantity = filtered_data['Quantity'].quantile(0.90)
+        st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
+
+        # Display the total quantity for all selected categories
+        total_quantity = filtered_data['Quantity'].sum()
+        st.metric("Total Quantity of Items", total_quantity)
+
+    else:
+        st.write("Please select up to 5 product categories.")
 
     progress_bar.progress(100)
 else:
