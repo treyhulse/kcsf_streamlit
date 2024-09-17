@@ -89,6 +89,9 @@ if not sales_data.empty:
     # Filter the data based on selected product category
     category_data = sales_data[sales_data['Product Category'] == selected_category]
 
+    # Ensure the Date is sorted in ascending order to avoid the monotonic error
+    category_data = category_data.sort_values(by='Date')
+
     # Calculate the rolling 3-month average of 'Quantity'
     category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
     
@@ -109,4 +112,3 @@ if not sales_data.empty:
     progress_bar.progress(100)
 else:
     st.write("No data found or error fetching the data.")
-
