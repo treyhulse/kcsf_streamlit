@@ -32,7 +32,6 @@ import pandas as pd
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from datetime import timedelta
 
-
 # Cache the function to load data, resetting every hour
 @st.cache_data(ttl=timedelta(hours=1))
 def load_sales_data():
@@ -92,7 +91,7 @@ if not sales_data.empty:
         # Filter the data based on selected product categories
         filtered_data = sales_data[sales_data['Product Category'].isin(selected_categories)]
 
-        # Group data by 'Date' and aggregate quantities
+        # Group data by 'Date' and 'Product Category' and aggregate quantities
         filtered_data = filtered_data.groupby(['Date', 'Product Category']).agg({
             'Quantity': 'sum',
             'Amount': 'sum'
@@ -101,27 +100,34 @@ if not sales_data.empty:
         # Ensure the Date is sorted in ascending order
         filtered_data = filtered_data.sort_values(by='Date')
 
-        # Plot sales by week for each selected category
-        st.subheader(f"Weekly Sales for Selected Categories")
+        # Reshape the data for comparison in a single plot
+        pivot_data = filtered_data.pivot(index='Date', columns='Product Category', values='Quantity')
 
+        # Plot all selected categories on the same line chart
+        st.subheader(f"Weekly Sales Comparison for Selected Categories")
+        st.line_chart(pivot_data, width=700, height=400, use_container_width=True)
+
+        # Create a DataFrame for recommended quantity on hand and total quantity
+        summary_data = []
         for category in selected_categories:
             category_data = filtered_data[filtered_data['Product Category'] == category]
             
-            # Group by week and sum the 'Quantity'
-            category_data.set_index('Date', inplace=True)
-            weekly_data = category_data['Quantity'].resample('W').sum().reset_index()
+            # Calculate the recommended quantity on hand (90th percentile)
+            recommended_quantity = category_data['Quantity'].quantile(0.90)
+            
+            # Total quantity
+            total_quantity = category_data['Quantity'].sum()
+            
+            summary_data.append({
+                'Product Category': category,
+                'Recommended Quantity on Hand': recommended_quantity,
+                'Total Quantity of Items': total_quantity
+            })
 
-            # Plot the weekly sales by product category with a line chart
-            st.subheader(f"Weekly Sales for {category}")
-            st.line_chart(weekly_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
-
-        # Calculate the recommended quantity on hand (90th percentile) for all categories combined
-        recommended_quantity = filtered_data['Quantity'].quantile(0.90)
-        st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
-
-        # Display the total quantity for all selected categories
-        total_quantity = filtered_data['Quantity'].sum()
-        st.metric("Total Quantity of Items", total_quantity)
+        # Display the summary in a DataFrame
+        summary_df = pd.DataFrame(summary_data)
+        st.subheader("Summary of Selected Categories")
+        st.dataframe(summary_df)
 
     else:
         st.write("Please select up to 5 product categories.")
