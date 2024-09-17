@@ -31,7 +31,14 @@ def get_collection_data(client, collection_name):
         logging.debug(f"Fetching data from collection: {collection_name}")
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
-        data = pd.DataFrame(list(collection.find().limit(5)))  # Limit to 5 documents
+        
+        # Fetch the entire collection and convert it to a DataFrame
+        data = pd.DataFrame(list(collection.find()))
+        
+        # Drop the '_id' column
+        if '_id' in data.columns:
+            data = data.drop('_id', axis=1)
+        
         logging.info(f"Data fetched successfully from {collection_name}")
         return data
     except Exception as e:
