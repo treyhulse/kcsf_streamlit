@@ -82,7 +82,7 @@ def merge_dataframes(items_df, inventory_df):
 
 # Main function to render the Streamlit page
 def main():
-    st.title("Items and Inventory Merger")
+    st.title("Items and Inventory Dataset")
 
     # Load data from MongoDB collections
     items_df = load_items_data()
