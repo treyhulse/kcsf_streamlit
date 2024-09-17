@@ -32,6 +32,7 @@ import pandas as pd
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from datetime import timedelta
 
+
 # Cache the function to load data, resetting every hour
 @st.cache_data(ttl=timedelta(hours=1))
 def load_sales_data():
@@ -102,16 +103,16 @@ if not sales_data.empty:
     st.write(f"Number of records for {selected_category}: {len(category_data)}")
     st.write(category_data.head())  # Display first few rows for debugging
     
-    # Calculate the rolling 3-month average of 'Quantity'
-    category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='90D').mean()
+    # Adjusted to a 30-day rolling average instead of 90 days
+    category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='30D').mean()
 
     # Debugging: Check if the rolling average is being calculated
-    st.write("Rolling 3-month average calculated:")
+    st.write("Rolling 30-day average calculated:")
     st.write(category_data[['Date', '3_month_avg']].dropna().head())  # Display rolling avg data
     
     # Plot the rolling average for the selected product category
     if not category_data['3_month_avg'].dropna().empty:
-        st.subheader(f"Rolling 3-Month Average for {selected_category}")
+        st.subheader(f"Rolling 30-Day Average for {selected_category}")
         st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
     else:
         st.write(f"No rolling average data available for {selected_category}.")
