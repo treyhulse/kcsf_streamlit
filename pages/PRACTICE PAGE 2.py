@@ -32,6 +32,7 @@ import pandas as pd
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from datetime import timedelta
 
+
 # Cache the function to load data, resetting every hour
 @st.cache_data(ttl=timedelta(hours=1))
 def load_sales_data():
@@ -87,9 +88,20 @@ if not sales_data.empty:
         max_selections=5
     )
 
-    if selected_categories:
-        # Filter the data based on selected product categories
-        filtered_data = sales_data[sales_data['Product Category'].isin(selected_categories)]
+    # Multi-select filter for 'Status' column with default selection set to 'Billed'
+    default_status = ['Billed']
+    selected_status = st.multiselect(
+        'Select Status', 
+        options=sales_data['Status'].unique(), 
+        default=default_status
+    )
+
+    if selected_categories and selected_status:
+        # Filter the data based on selected product categories and status
+        filtered_data = sales_data[
+            (sales_data['Product Category'].isin(selected_categories)) &
+            (sales_data['Status'].isin(selected_status))
+        ]
 
         # Group data by 'Date' and 'Product Category' and aggregate quantities
         filtered_data = filtered_data.groupby(['Date', 'Product Category']).agg({
@@ -130,7 +142,7 @@ if not sales_data.empty:
         st.dataframe(summary_df)
 
     else:
-        st.write("Please select up to 5 product categories.")
+        st.write("Please select up to 5 product categories and a status.")
 
     progress_bar.progress(100)
 else:
