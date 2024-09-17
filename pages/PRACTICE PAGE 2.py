@@ -89,6 +89,12 @@ if not sales_data.empty:
     # Filter the data based on selected product category
     category_data = sales_data[sales_data['Product Category'] == selected_category]
 
+    # Handle duplicates in the Date column by aggregating (e.g., summing quantities on the same date)
+    category_data = category_data.groupby('Date').agg({
+        'Quantity': 'sum',  # Sum quantities for the same date
+        'Amount': 'sum',  # Sum amounts for the same date, if available
+    }).reset_index()
+
     # Ensure the Date is sorted in ascending order to avoid the monotonic error
     category_data = category_data.sort_values(by='Date')
 
