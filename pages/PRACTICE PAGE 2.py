@@ -50,8 +50,13 @@ try:
         # Convert the 'Date' column to a datetime format if it's not already
         sales_data['Date'] = pd.to_datetime(sales_data['Date'], errors='coerce')
         
-        # Drop rows where Date is not valid (optional step)
-        sales_data = sales_data.dropna(subset=['Date'])
+        # Convert 'Quantity' and 'Amount' columns to numeric (handle errors by coercing to NaN)
+        sales_data['Quantity'] = pd.to_numeric(sales_data['Quantity'], errors='coerce')
+        if 'Amount' in sales_data.columns:
+            sales_data['Amount'] = pd.to_numeric(sales_data['Amount'], errors='coerce')
+        
+        # Drop rows where Date is not valid or Quantity is NaN (optional step)
+        sales_data = sales_data.dropna(subset=['Date', 'Quantity'])
 
         # Sort the data by Date for correct rolling calculations
         sales_data = sales_data.sort_values(by='Date')
