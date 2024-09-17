@@ -99,24 +99,14 @@ if not sales_data.empty:
     # Ensure the Date is sorted in ascending order to avoid the monotonic error
     category_data = category_data.sort_values(by='Date')
 
-    # Debugging: Check if we have any data for the category
-    st.write(f"Number of records for {selected_category}: {len(category_data)}")
-    st.write(category_data.head())  # Display first few rows for debugging
-    
-    # Adjusted to a 30-day rolling average instead of 90 days
-    category_data['3_month_avg'] = category_data.set_index('Date')['Quantity'].rolling(window='30D').mean()
+    # Group data by week and sum the 'Quantity'
+    category_data.set_index('Date', inplace=True)
+    weekly_data = category_data['Quantity'].resample('W').sum().reset_index()
 
-    # Debugging: Check if the rolling average is being calculated
-    st.write("Rolling 30-day average calculated:")
-    st.write(category_data[['Date', '3_month_avg']].dropna().head())  # Display rolling avg data
-    
-    # Plot the rolling average for the selected product category
-    if not category_data['3_month_avg'].dropna().empty:
-        st.subheader(f"Rolling 30-Day Average for {selected_category}")
-        st.line_chart(category_data.set_index('Date')['3_month_avg'], width=700, height=400, use_container_width=True)
-    else:
-        st.write(f"No rolling average data available for {selected_category}.")
-    
+    # Plot the weekly sales by product category with a line chart
+    st.subheader(f"Weekly Sales for {selected_category}")
+    st.line_chart(weekly_data.set_index('Date')['Quantity'], width=700, height=400, use_container_width=True)
+
     # Calculate the recommended quantity on hand (this could be based on the 90th percentile of quantity)
     recommended_quantity = category_data['Quantity'].quantile(0.90)
     st.metric("Recommended Quantity on Hand", f"{recommended_quantity:.2f}")
