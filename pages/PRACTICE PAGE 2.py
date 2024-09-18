@@ -28,6 +28,7 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data
 
@@ -52,8 +53,10 @@ merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 
 # Add a checkbox to select all Sales Reps
 all_sales_reps = st.sidebar.checkbox("Select All Sales Reps", value=True)
 if all_sales_reps:
+    # Select all sales reps if "Select All" is checked
     sales_rep_filter = merged_data['Sales Rep'].unique()
 else:
+    # Allow individual selection of sales reps
     sales_rep_filter = st.sidebar.multiselect("Select Sales Reps", options=merged_data['Sales Rep'].unique())
 
 # Filter Ship Via (without default 'All')
@@ -67,8 +70,12 @@ show_tasked = st.sidebar.checkbox("Show rows with Task ID", value=True)
 show_untasked = st.sidebar.checkbox("Show rows without Task ID", value=True)
 
 # Apply filters
-if sales_rep_filter:
+
+# Apply sales rep filter only if sales_rep_filter is not empty or 'Select All' is checked
+if all_sales_reps or sales_rep_filter:
     merged_data = merged_data[merged_data['Sales Rep'].isin(sales_rep_filter)]
+
+# Apply Ship Via filter
 if ship_via_filter:
     merged_data = merged_data[merged_data['Ship Via'].isin(ship_via_filter)]
 
