@@ -32,6 +32,12 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Progress bar
+progress_bar = st.progress(0)
+
 # Function to calculate key metrics
 def calculate_metrics(df, df_type):
     total_records = df.shape[0]
@@ -41,12 +47,6 @@ def calculate_metrics(df, df_type):
         return total_records, outstanding_amount
     elif df_type == "sales_orders":
         return total_records, outstanding_amount
-
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Progress bar
-progress_bar = st.progress(0)
 
 # Fetch and filter data
 def fetch_and_filter_data(saved_search_id, progress_value):
@@ -63,15 +63,21 @@ def fetch_and_filter_data(saved_search_id, progress_value):
     return df
 
 # Fetch data for both estimates and sales orders
+estimate_data = fetch_restlet_data("customsearch5127")
+sales_order_data = fetch_restlet_data("customsearch5122")
+
+# Extract unique sales reps from both datasets for the filter
+unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).dropna().unique()
+
+# Sales rep filter in the sidebar
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=[])
+
+# Now apply the filtering after getting sales reps
 estimate_data = fetch_and_filter_data("customsearch5127", 25)
 sales_order_data = fetch_and_filter_data("customsearch5122", 50)
 
 # Remove progress bar once the data is loaded
 progress_bar.empty()
-
-# Extract unique sales reps from both datasets for the filter
-unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).unique()
-selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=[])
 
 # Main top section with key metrics
 st.header("Key Metrics")
