@@ -29,7 +29,7 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from restlet import fetch_restlet_data
+from utils.restlet import fetch_restlet_data
 import pandas as pd
 
 # Function to calculate key metrics
