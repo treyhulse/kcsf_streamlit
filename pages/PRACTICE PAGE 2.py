@@ -28,7 +28,6 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data
 
@@ -46,13 +45,21 @@ st.sidebar.header("Filters")
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Merge the dataframes on 'Order Number' (as previously fixed)
+# Merge the dataframes on 'Order Number'
 merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
                        on='Order Number', how='left')
 
-# Filters - Simulating what's shown in the image
-sales_rep_filter = st.sidebar.multiselect("Select Sales Reps", options=merged_data['Sales Rep'].unique(), default='All')
-ship_via_filter = st.sidebar.multiselect("Select Ship Via", options=merged_data['Ship Via'].unique(), default='All')
+# Add a checkbox to select all Sales Reps
+all_sales_reps = st.sidebar.checkbox("Select All Sales Reps", value=True)
+if all_sales_reps:
+    sales_rep_filter = merged_data['Sales Rep'].unique()
+else:
+    sales_rep_filter = st.sidebar.multiselect("Select Sales Reps", options=merged_data['Sales Rep'].unique())
+
+# Filter Ship Via (without default 'All')
+ship_via_filter = st.sidebar.multiselect("Select Ship Via", options=merged_data['Ship Via'].unique())
+
+# Custom date range filter
 date_range_filter = st.sidebar.date_input("Select custom date range", [])
 
 # Filter by Task ID options
@@ -60,12 +67,12 @@ show_tasked = st.sidebar.checkbox("Show rows with Task ID", value=True)
 show_untasked = st.sidebar.checkbox("Show rows without Task ID", value=True)
 
 # Apply filters
-if sales_rep_filter != 'All':
+if sales_rep_filter:
     merged_data = merged_data[merged_data['Sales Rep'].isin(sales_rep_filter)]
-if ship_via_filter != 'All':
+if ship_via_filter:
     merged_data = merged_data[merged_data['Ship Via'].isin(ship_via_filter)]
 
-# Filter data based on task ID
+# Filter data based on Task ID
 if not show_tasked:
     merged_data = merged_data[merged_data['Task ID'].isna()]
 if not show_untasked:
@@ -92,7 +99,7 @@ st.subheader("Open Sales Orders by Ship Date")
 line_chart_data = merged_data.groupby('Ship Date')['Order Number'].count().reset_index()
 st.line_chart(line_chart_data, x='Ship Date', y='Order Number')
 
-# Pie chart for tasked vs. untasked orders
+# Pie chart for tasked vs untasked orders
 st.subheader("Tasked vs Untasked Orders")
 pie_chart_data = pd.DataFrame({
     'Orders': ['Tasked Orders', 'Untasked Orders'],
