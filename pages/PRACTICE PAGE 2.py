@@ -186,4 +186,4 @@ with tab2:
             day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
             with col:
                 with st.expander(f"{day} ({len(day_orders)} Orders)"):
-                    st.write(day_orders[['Order Number', 'Sales Rep', 'Ship Date', 'Ship Via']])
+                    st.write(day_orders)
