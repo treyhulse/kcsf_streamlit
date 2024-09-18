@@ -37,9 +37,14 @@ sales_rep_mapping = {
     # Add mappings if necessary (e.g., '1': 'John Doe')
 }
 
-# URLs for the two RESTlets
-estimate_url = st.secrets['url_estimates']  # Replace with actual secret key
-sales_order_url = st.secrets['url_sales_orders']  # Replace with actual secret key
+# Fetching estimates
+estimate_url = f"{st.secrets['url_restlet']}?savedSearchId=customsearch5127"
+estimate_data = process_netsuite_data_json(estimate_url, sales_rep_mapping)
+
+# Fetching sales orders
+sales_order_url = f"{st.secrets['url_restlet']}?savedSearchId=customsearch5122"
+sales_order_data = process_netsuite_data_json(sales_order_url, sales_rep_mapping)
+
 
 # Create tabs for Estimates and Sales Orders
 tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
