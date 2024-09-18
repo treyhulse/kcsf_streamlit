@@ -30,7 +30,16 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_raw_data
+from utils.restlet import fetch_restlet_data
+
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
+
+# Sidebar filters
+st.sidebar.header("Filters")
 
 def main():
     st.header("Fetch and Display Data")
