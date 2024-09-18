@@ -114,6 +114,10 @@ elif ship_date_filter == 'Custom Range' and start_date and end_date:
 if 'All' not in sales_rep_filter:
     merged_df = merged_df[merged_df['Sales Rep'].isin(sales_rep_filter)]
 
+# Apply Ship Via filter
+if 'All' not in ship_via_filter:
+    merged_df = merged_df[merged_df['Ship Via'].isin(ship_via_filter)]
+
 # Apply Tasked/Untasked Orders filter
 if tasked_orders and not untasked_orders:
     merged_df = merged_df[merged_df['Task ID'].notna()]
@@ -182,4 +186,4 @@ with tab2:
             day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
             with col:
                 with st.expander(f"{day} ({len(day_orders)} Orders)"):
-                    st.write(day_orders[['Order Number', 'Sales Rep', 'Ship Date']])
+                    st.write(day_orders[['Order Number', 'Sales Rep', 'Ship Date', 'Ship Via']])
