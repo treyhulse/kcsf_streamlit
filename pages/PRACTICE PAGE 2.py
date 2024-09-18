@@ -28,9 +28,10 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -52,14 +53,29 @@ merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='le
 # Sidebar filters
 st.sidebar.header('Filters')
 
-# Sales Rep filter
-sales_rep_filter = st.sidebar.multiselect('Sales Rep', options=merged_df['Sales Rep'].unique(), default=merged_df['Sales Rep'].unique())
+# Sales Rep filter with 'All' option
+sales_rep_list = merged_df['Sales Rep'].unique().tolist()
+sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
-# Ship Date filter
-ship_date_filter = st.sidebar.radio(
-    'Ship Date',
-    options=['Today', 'Past', 'Future']
+sales_rep_filter = st.sidebar.multiselect(
+    'Sales Rep', 
+    options=sales_rep_list, 
+    default='All'
 )
+
+# Ship Date filter with custom range option
+date_filter_options = ['Today', 'Past', 'Future', 'Custom Range']
+ship_date_filter = st.sidebar.selectbox(
+    'Ship Date',
+    options=date_filter_options
+)
+
+if ship_date_filter == 'Custom Range':
+    start_date = st.sidebar.date_input('Start Date', datetime.today() - timedelta(days=7))
+    end_date = st.sidebar.date_input('End Date', datetime.today())
+else:
+    start_date = None
+    end_date = None
 
 # Tasked Orders checkbox
 tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
@@ -69,15 +85,19 @@ untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
 
 # Apply Ship Date filter
 today = datetime.today().date()
+
 if ship_date_filter == 'Today':
     merged_df = merged_df[merged_df['Ship Date'] == today]
 elif ship_date_filter == 'Past':
     merged_df = merged_df[merged_df['Ship Date'] <= today]
 elif ship_date_filter == 'Future':
     merged_df = merged_df[merged_df['Ship Date'] > today]
+elif ship_date_filter == 'Custom Range' and start_date and end_date:
+    merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
+                          (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
 
 # Apply Sales Rep filter
-if sales_rep_filter:
+if 'All' not in sales_rep_filter:
     merged_df = merged_df[merged_df['Sales Rep'].isin(sales_rep_filter)]
 
 # Apply Tasked/Untasked Orders filter
