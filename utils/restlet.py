@@ -20,8 +20,10 @@ def get_authentication():
     )
 
 # Function to fetch JSON data from RESTlet and convert it to a DataFrame
-def fetch_restlet_data(url):
+def fetch_restlet_data(saved_search_id):
+    url = f"{st.secrets['restlet_url']}&savedSearchId={saved_search_id}"
     auth = get_authentication()
+    
     try:
         logger.info(f"Fetching data from: {url}")
         response = requests.get(url, auth=auth, headers={"Content-Type": "application/json"})
