@@ -28,10 +28,10 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-import pandas as pd
 from utils.restlet import fetch_restlet_data
+import pandas as pd
 
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
@@ -41,24 +41,13 @@ def fetch_raw_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-def main():
-    st.header("Fetch and Display Data")
+# Fetch raw data for both estimates and sales orders
+estimate_data_raw = fetch_raw_data("customsearch5065")
+sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-    # Fetch raw data for both estimates and sales orders
-    with st.progress("Fetching Open Order Data..."):
-        estimate_data_raw = fetch_raw_data("customsearch5065")
-        df_estimate = pd.DataFrame(estimate_data_raw)
+# Display the raw data for estimates and sales orders
+st.subheader("Order Data")
+st.dataframe(estimate_data_raw)
 
-    with st.progress("Fetching RF-Smart Task Data..."):
-        sales_order_data_raw = fetch_raw_data("customsearch5066")
-        df_sales_order = pd.DataFrame(sales_order_data_raw)
-
-    # Display the dataframes
-    st.subheader("Open Order Data")
-    st.dataframe(df_estimate)
-
-    st.subheader("RF-Smart Task Data")
-    st.dataframe(df_sales_order)
-
-if __name__ == "__main__":
-    main()
+st.subheader("Pick Task Data")
+st.dataframe(sales_order_data_raw)
