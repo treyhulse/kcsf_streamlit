@@ -78,7 +78,7 @@ ship_via_filter = st.sidebar.multiselect(
 )
 
 # Ship Date filter with custom range option
-date_filter_options = ['Today', 'Past', 'Future', 'Custom Range']
+date_filter_options = ['Today', 'Past (including today)', 'Future (including today)', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
     'Ship Date',
     options=date_filter_options
@@ -102,10 +102,10 @@ today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
 
 if ship_date_filter == 'Today':
     merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
-elif ship_date_filter == 'Past':
+elif ship_date_filter == 'Past (including today)':
     merged_df = merged_df[merged_df['Ship Date'] <= today]
-elif ship_date_filter == 'Future':
-    merged_df = merged_df[merged_df['Ship Date'] > today]
+elif ship_date_filter == 'Future (including today)':
+    merged_df = merged_df[merged_df['Ship Date'] >= today]
 elif ship_date_filter == 'Custom Range' and start_date and end_date:
     merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
                           (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
