@@ -46,10 +46,6 @@ st.sidebar.header("Filters")
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Debugging: Check the column names to ensure they match
-st.write("Estimate Data Columns:", estimate_data_raw.columns)
-st.write("Sales Order Data Columns:", sales_order_data_raw.columns)
-
 # Assuming the correct column name is 'Order Number'
 # Update with the correct column names as observed in the output above
 try:
