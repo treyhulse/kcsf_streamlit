@@ -38,15 +38,12 @@ def calculate_metrics(df, df_type):
     outstanding_amount = df['Amount Remaining'].astype(float).sum()
     
     if df_type == "estimates":
-        st.metric("Total Estimates Open", total_records)
-        st.metric("$ Outstanding from Estimates", f"${outstanding_amount:,.2f}")
+        return total_records, outstanding_amount
     elif df_type == "sales_orders":
-        st.metric("Total Sales Orders Open", total_records)
-        st.metric("$ Outstanding from Sales Orders", f"${outstanding_amount:,.2f}")
+        return total_records, outstanding_amount
 
 # Sidebar filters
 st.sidebar.header("Filters")
-selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=[], default=[])
 
 # Progress bar
 progress_bar = st.progress(0)
@@ -72,15 +69,50 @@ sales_order_data = fetch_and_filter_data("customsearch5122", 50)
 # Remove progress bar once the data is loaded
 progress_bar.empty()
 
+# Extract unique sales reps from both datasets for the filter
+unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).unique()
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=[])
+
 # Main top section with key metrics
 st.header("Key Metrics")
-st.columns(2)  # Create two columns for two metrics in each row
 with st.container():
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
+
+    estimates_count, estimates_outstanding = calculate_metrics(estimate_data, "estimates")
+    sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data, "sales_orders")
+    
+    # Add drop shadow effect to metric boxes
+    metric_box_style = """
+    <style>
+    .metric-box {
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        border-radius: 5px;
+        background-color: white;
+    }
+    </style>
+    """
+    st.markdown(metric_box_style, unsafe_allow_html=True)
+
     with col1:
-        calculate_metrics(estimate_data, "estimates")
+        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
+        st.metric("Total Estimates Open", estimates_count)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     with col2:
-        calculate_metrics(sales_order_data, "sales_orders")
+        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
+        st.metric("$ Outstanding from Estimates", f"${estimates_outstanding:,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col3:
+        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
+        st.metric("Total Sales Orders Open", sales_orders_count)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with col4:
+        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
+        st.metric("$ Outstanding from Sales Orders", f"${sales_orders_outstanding:,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
