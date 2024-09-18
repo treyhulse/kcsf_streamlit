@@ -73,6 +73,15 @@ def calculate_metrics(df):
     outstanding_revenue = df['Amount Remaining'].astype(float).sum()
     return total_records, ready_records, not_ready_records, outstanding_revenue
 
+# Function to apply conditional formatting row by row
+def highlight_not_ready(s):
+    # Check if the row is 'Not Ready' (i.e. payment not made or not in stock)
+    payment_status_ready = s['Payment Status'] in ['Paid', 'Terms']
+    stock_status_ready = s['Stock Status'] == 'In Stock'
+    if not (payment_status_ready and stock_status_ready):
+        return ['color: red'] * len(s)  # Apply red formatting to the whole row
+    return [''] * len(s)  # No formatting if ready
+
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
 tab1, tab2 = st.tabs(["Sales Orders", "Estimates"])
@@ -91,9 +100,10 @@ with tab1:
     col3.metric("Total Orders Not Ready", not_ready_orders)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
 
-    # Display the sales orders dataframe
+    # Apply conditional formatting to sales orders that are not ready
     if not sales_order_data.empty:
-        st.dataframe(sales_order_data)
+        styled_sales_order_data = sales_order_data.style.apply(highlight_not_ready, axis=1)
+        st.dataframe(styled_sales_order_data)
     else:
         st.write("No data available for Sales Orders.")
 
@@ -111,8 +121,9 @@ with tab2:
     col3.metric("Total Estimates Not Ready", not_ready_estimates)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
 
-    # Display the estimates dataframe
+    # Apply conditional formatting to estimates that are not ready
     if not estimate_data.empty:
-        st.dataframe(estimate_data)
+        styled_estimate_data = estimate_data.style.apply(highlight_not_ready, axis=1)
+        st.dataframe(styled_estimate_data)
     else:
         st.write("No data available for Estimates.")
