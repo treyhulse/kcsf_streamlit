@@ -32,8 +32,9 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from utils.restlet import fetch_restlet_data
 import pandas as pd
+import altair as alt
+from utils.restlet import fetch_restlet_data
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -73,13 +74,30 @@ def calculate_metrics(df):
     outstanding_revenue = df['Amount Remaining'].astype(float).sum()
     return total_records, ready_records, not_ready_records, outstanding_revenue
 
-# Function to apply conditional formatting to the 'Sales Order' column only
-def highlight_conditions_column(s):
-    if s['Payment Status'] == 'Needs Payment':
-        return ['color: red' if col == 'Sales Order' else '' for col in s.index]
-    elif s['Stock Status'] == 'Back Ordered':
-        return ['color: orange' if col == 'Sales Order' else '' for col in s.index]
-    return [''] * len(s)  # No formatting otherwise
+# Add 'Source' column to distinguish between sales orders and estimates
+estimate_data['Source'] = 'Estimates'
+sales_order_data['Source'] = 'Sales Orders'
+
+# Combine the data
+combined_data = pd.concat([estimate_data[['Date Created', 'Amount Remaining', 'Source']],
+                           sales_order_data[['Date Created', 'Amount Remaining', 'Source']]])
+
+# Group by 'Date Created' and 'Source' to get the sum of 'Amount Remaining'
+combined_data_grouped = combined_data.groupby(['Date Created', 'Source'], as_index=False)['Amount Remaining'].sum()
+
+# Create stacked bar chart using Altair
+chart = alt.Chart(combined_data_grouped).mark_bar().encode(
+    x='Date Created:T',
+    y='sum(Amount Remaining):Q',
+    color='Source:N'
+).properties(
+    width=700,
+    height=400,
+    title="Revenue from Estimates and Sales Orders"
+)
+
+# Display the chart
+st.altair_chart(chart)
 
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
