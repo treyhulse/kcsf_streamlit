@@ -50,6 +50,9 @@ pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 # Merge the two dataframes on 'Order Number', keeping all rows from open_order_data
 merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='left')
 
+# Convert 'Ship Date' to datetime format
+merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
+
 # Sidebar filters
 st.sidebar.header('Filters')
 
