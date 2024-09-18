@@ -28,6 +28,7 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 
@@ -38,16 +39,16 @@ def fetch_raw_data(saved_search_id):
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Sidebar filters
-st.sidebar.header("Filters")
+# Fetch raw data
+open_order_data = fetch_raw_data("customsearch5065") 
+pick_task_data = fetch_raw_data("customsearch5066") 
 
-# Fetch raw data for both estimates and sales orders
-estimate_data_raw = fetch_raw_data("customsearch5065")
-sales_order_data_raw = fetch_raw_data("customsearch5066")
+# Select only 'Order Number' and 'Task ID' from pick_task_data
+pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 
-# Display the raw data for estimates and sales orders
-st.subheader("Estimate Data")
-st.dataframe(estimate_data_raw)
+# Merge the two dataframes on 'Order Number', keeping all rows from open_order_data
+merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='left')
 
-st.subheader("Sales Order Data")
-st.dataframe(sales_order_data_raw)
+# Display the merged dataframe in an expander section
+with st.expander("View Merged Data"):
+    st.write(merged_df)
