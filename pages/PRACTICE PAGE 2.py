@@ -53,9 +53,8 @@ def main():
         with st.spinner("Fetching Open Sales Orders..."):
             df_open_so = fetch_restlet_data("customsearch5065")
 
-        # Fetch secondary saved search data (for Task ID)
-        with st.spinner("Fetching RF Pick Data..."):
-            df_rf_pick = fetch_restlet_data("customsearch5066")
+        # Load secondary saved search data (for Task ID) from uploaded file
+        df_rf_pick = pd.read_csv('/mnt/data/RFSMARTPickTaskLineSearchResults687.csv')
 
         # Check if required columns exist before merging
         if 'Sales Order' in df_open_so.columns and 'Sales Order' in df_rf_pick.columns and 'Task ID' in df_rf_pick.columns:
