@@ -32,80 +32,71 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 
-# Cache the data fetching process, reset cache every 15 minutes (900 seconds)
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
-def fetch_and_filter_data(saved_search_id):
-    # Fetch data from RESTlet
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)
-    
-    # Apply sales rep filter if selected and not 'All'
-    if selected_sales_reps and 'All' not in selected_sales_reps:
-        df = df[df['Sales Rep'].isin(selected_sales_reps)]
-    
     return df
 
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Fetch raw data for initializing sales rep filter
-estimate_data = fetch_restlet_data("customsearch5127")
-sales_order_data = fetch_restlet_data("customsearch5122")
+# Fetch raw data for both estimates and sales orders
+estimate_data_raw = fetch_raw_data("customsearch5127")
+sales_order_data_raw = fetch_raw_data("customsearch5122")
 
 # Extract unique sales reps from both datasets and add 'All' option
-unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).dropna().unique()
+unique_sales_reps = pd.concat([estimate_data_raw['Sales Rep'], sales_order_data_raw['Sales Rep']]).dropna().unique()
 unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
 
 # Sales rep filter in the sidebar
 selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
 
-# Progress bar
-progress_bar = st.progress(0)
+# Apply the filter dynamically (not cached) to both datasets
+def apply_filters(df):
+    if selected_sales_reps and 'All' not in selected_sales_reps:
+        df = df[df['Sales Rep'].isin(selected_sales_reps)]
+    return df
 
-# Fetch data for both estimates and sales orders with caching
-estimate_data = fetch_and_filter_data("customsearch5127")
-progress_bar.progress(50)
-sales_order_data = fetch_and_filter_data("customsearch5122")
-progress_bar.progress(100)
-
-# Remove progress bar once the data is loaded
-progress_bar.empty()
+estimate_data = apply_filters(estimate_data_raw)
+sales_order_data = apply_filters(sales_order_data_raw)
 
 # Function to calculate key metrics
-def calculate_metrics(df, df_type):
+def calculate_metrics(df):
     total_records = df.shape[0]
     outstanding_amount = df['Amount Remaining'].astype(float).sum()
-    
     return total_records, outstanding_amount
 
 # Main top section with key metrics
 st.header("Order Management")
 with st.container():
-    # Increase column size and adjust layout
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1], gap="medium")
+    # Define column sizes and ensure proper layout
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1], gap="small")
 
-    estimates_count, estimates_outstanding = calculate_metrics(estimate_data, "estimates")
-    sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data, "sales_orders")
+    estimates_count, estimates_outstanding = calculate_metrics(estimate_data)
+    sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data)
     
-    # Add better layout to metric boxes
+    # Refine the layout and size for the metric boxes
     metric_box_style = """
     <style>
     .metric-box {
         box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 15px;
-        border-radius: 5px;
+        padding: 10px;
+        border-radius: 8px;
         background-color: white;
         text-align: center;
-        height: 150px;  /* Fixed height */
+        height: 120px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;  /* Adjusted font size */
+        font-size: 1.5rem;  /* Adjusted font size */
     }
     </style>
     """
     st.markdown(metric_box_style, unsafe_allow_html=True)
 
-    # Display the metrics with adjusted layout
+    # Display the metrics with proper layout and fit inside the boxes
     with col1:
         st.markdown('<div class="metric-box">', unsafe_allow_html=True)
         st.metric("Total Estimates Open", estimates_count)
