@@ -47,8 +47,8 @@ sales_order_data_raw = fetch_raw_data("customsearch5066")
 
 # Merge the dataframes on the 'Sales Order' column
 # Assuming the column that holds the sales order number is named 'Sales Order' in both dataframes
-merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Sales Order', 'Task ID']], 
-                       on='Sales Order', how='left')
+merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
+                       on='Order Number', how='left')
 
 # Display the raw data
 st.subheader("Merged Order and Pick Task Data")
