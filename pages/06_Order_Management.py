@@ -82,30 +82,25 @@ sales_order_data['Source'] = 'Sales Orders'
 combined_data = pd.concat([estimate_data[['Date Created', 'Amount Remaining', 'Source']],
                            sales_order_data[['Date Created', 'Amount Remaining', 'Source']]])
 
-# Group by 'Date Created' and 'Source' to get the sum of 'Amount Remaining'
-combined_data_grouped = combined_data.groupby(['Date Created', 'Source'], as_index=False)['Amount Remaining'].sum()
+# Create 'Year-Month' column for proper grouping by year and month
+combined_data['Year-Month'] = pd.to_datetime(combined_data['Date Created']).dt.to_period('M')
+
+# Group by 'Year-Month' and 'Source' to get the sum of 'Amount Remaining'
+combined_data_grouped = combined_data.groupby(['Year-Month', 'Source'], as_index=False)['Amount Remaining'].sum()
 
 # Create stacked bar chart using Altair
 chart = alt.Chart(combined_data_grouped).mark_bar().encode(
-    x='Date Created:T',
-    y='sum(Amount Remaining):Q',
+    x=alt.X('Year-Month:T', title='Year-Month'),
+    y=alt.Y('sum(Amount Remaining):Q', title='Total Amount Remaining'),
     color='Source:N'
 ).properties(
-    width=700,
+    width=st.beta_width(),  # Full width of the Streamlit window
     height=400,
-    title="Revenue from Estimates and Sales Orders"
+    title="Revenue from Estimates and Sales Orders by Month and Year"
 )
 
 # Display the chart
-st.altair_chart(chart)
-
-# Function to apply conditional formatting to the 'Sales Order' column only
-def highlight_conditions_column(s):
-    if s['Payment Status'] == 'Needs Payment':
-        return ['color: red' if col == 'Sales Order' else '' for col in s.index]
-    elif s['Stock Status'] == 'Back Ordered':
-        return ['color: orange' if col == 'Sales Order' else '' for col in s.index]
-    return [''] * len(s)  # No formatting otherwise
+st.altair_chart(chart, use_container_width=True)
 
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
