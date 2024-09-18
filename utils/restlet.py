@@ -24,7 +24,7 @@ def fetch_restlet_data(url):
     auth = get_authentication()
     try:
         logger.info(f"Fetching data from: {url}")
-        response = requests.get(url, auth=auth, headers={"Accept": "application/json"})
+        response = requests.get(url, auth=auth, headers={"Content-Type": "application/json"})
         response.raise_for_status()
 
         # Assuming the response is JSON, turn it into a DataFrame
