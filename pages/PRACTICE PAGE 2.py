@@ -109,6 +109,29 @@ if tasked_orders and not untasked_orders:
 elif untasked_orders and not tasked_orders:
     merged_df = merged_df[merged_df['Task ID'].isna()]
 
-# Display the filtered dataframe in an expander section
-with st.expander("View Filtered Data"):
-    st.write(merged_df)
+# Metrics
+total_orders = len(merged_df)
+tasked_orders_count = merged_df['Task ID'].notna().sum()
+untasked_orders_count = merged_df['Task ID'].isna().sum()
+task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
+
+# Display metrics
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Open Orders", total_orders)
+col2.metric("Tasked Orders", tasked_orders_count)
+col3.metric("Untasked Orders", untasked_orders_count)
+col4.metric("Task Percentage", f"{task_percentage:.2f}%")
+
+# Visualization section
+col5, col6 = st.columns([2, 1])
+
+# Line chart: y-axis = amount of orders, x-axis = ship date
+with col5:
+    orders_by_date = merged_df.groupby(merged_df['Ship Date'].dt.date).size()
+    st.line_chart(orders_by_date)
+
+# Pie chart: tasked vs. untasked orders
+with col6:
+    pie_data = pd.Series([tasked_orders_count, untasked_orders_count], index=["Tasked Orders", "Untasked Orders"])
+    st.write(pie_data.plot.pie(autopct='%1.1f%%', figsize=(5, 5), startangle=90))
+    st.pyplot()  # Render the pie chart
