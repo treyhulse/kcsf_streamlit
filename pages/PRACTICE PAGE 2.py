@@ -76,7 +76,7 @@ def highlight_conditions(s):
     if s['Payment Status'] == 'Needs Payment':
         return ['color: red'] * len(s)  # Red text for Needs Payment
     elif s['Stock Status'] == 'Back Ordered':
-        return ['color: yellow'] * len(s)  # Yellow text for Back Ordered
+        return ['color: orange'] * len(s)  # Orange text for Back Ordered
     return [''] * len(s)  # No formatting otherwise
 
 # Subtabs for Estimates and Sales Orders
