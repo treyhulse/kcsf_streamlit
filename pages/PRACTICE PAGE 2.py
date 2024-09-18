@@ -28,8 +28,6 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-import pandas as pd
 from utils.data_functions import process_netsuite_data_json
 
 # Set up sales rep mapping (if needed for the 'salesrep' column)
@@ -37,14 +35,8 @@ sales_rep_mapping = {
     # Add mappings if necessary (e.g., '1': 'John Doe')
 }
 
-# Fetching estimates
-estimate_url = f"{st.secrets['url_restlet']}?savedSearchId=customsearch5127"
-estimate_data = process_netsuite_data_json(estimate_url, sales_rep_mapping)
-
-# Fetching sales orders
-sales_order_url = f"{st.secrets['url_restlet']}?savedSearchId=customsearch5122"
-sales_order_data = process_netsuite_data_json(sales_order_url, sales_rep_mapping)
-
+# External RESTlet URL (without savedSearchId)
+restlet_url_base = "https://3429264.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1718&deploy=1"
 
 # Create tabs for Estimates and Sales Orders
 tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
@@ -52,6 +44,11 @@ tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
 # Tab for Estimates
 with tab1:
     st.header("Estimate Management")
+    
+    # Build the full URL by appending the saved search ID
+    estimate_url = f"{restlet_url_base}&savedSearchId=customsearch5127"
+    
+    # Fetch and display Estimate data
     estimate_data = process_netsuite_data_json(estimate_url, sales_rep_mapping)
     if not estimate_data.empty:
         st.dataframe(estimate_data)
@@ -61,6 +58,11 @@ with tab1:
 # Tab for Sales Orders
 with tab2:
     st.header("Sales Order Management")
+    
+    # Build the full URL by appending the saved search ID
+    sales_order_url = f"{restlet_url_base}&savedSearchId=customsearch5122"
+    
+    # Fetch and display Sales Order data
     sales_order_data = process_netsuite_data_json(sales_order_url, sales_rep_mapping)
     if not sales_order_data.empty:
         st.dataframe(sales_order_data)
