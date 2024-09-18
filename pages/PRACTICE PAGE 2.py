@@ -110,37 +110,48 @@ if tasked_orders and not untasked_orders:
 elif untasked_orders and not tasked_orders:
     merged_df = merged_df[merged_df['Task ID'].isna()]
 
-# Metrics
-total_orders = len(merged_df)
-tasked_orders_count = merged_df['Task ID'].notna().sum()
-untasked_orders_count = merged_df['Task ID'].isna().sum()
-task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
+# Tab layout
+tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
 
-# Display metrics
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total Open Orders", total_orders)
-col2.metric("Tasked Orders", tasked_orders_count)
-col3.metric("Untasked Orders", untasked_orders_count)
-col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
+# Tab 1: Shipping Report
+with tab1:
+    # Metrics
+    total_orders = len(merged_df)
+    tasked_orders_count = merged_df['Task ID'].notna().sum()
+    untasked_orders_count = merged_df['Task ID'].isna().sum()
+    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
-# Display charts using Plotly
-if not merged_df.empty:
-    col_chart, col_pie = st.columns([2, 1])
-    with col_chart:
-        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
-        ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
-        fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
-        st.plotly_chart(fig_line, use_container_width=True)
-    
-    with col_pie:
-        matched_orders = merged_df['Task ID'].notna().sum()
-        unmatched_orders = merged_df['Task ID'].isna().sum()
-        pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
-        fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
-        st.plotly_chart(fig_pie, use_container_width=True)
-else:
-    st.write("No data available for the selected filters.")
+    # Display metrics
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Open Orders", total_orders)
+    col2.metric("Tasked Orders", tasked_orders_count)
+    col3.metric("Untasked Orders", untasked_orders_count)
+    col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
 
-# Display filtered DataFrame in an expander
-with st.expander("View Filtered Data Table"):
+    # Display charts using Plotly
+    if not merged_df.empty:
+        col_chart, col_pie = st.columns([2, 1])
+        with col_chart:
+            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+            ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
+            fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+            st.plotly_chart(fig_line, use_container_width=True)
+        
+        with col_pie:
+            matched_orders = merged_df['Task ID'].notna().sum()
+            unmatched_orders = merged_df['Task ID'].isna().sum()
+            pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
+            fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
+            st.plotly_chart(fig_pie, use_container_width=True)
+    else:
+        st.write("No data available for the selected filters.")
+
+    # Display filtered DataFrame in an expander
+    with st.expander("View Filtered Data Table"):
+        st.write(merged_df)
+
+# Tab 2: Shipping Calendar
+with tab2:
+    st.write("Shipping Calendar View")
+    # Display the merged DataFrame
     st.write(merged_df)
