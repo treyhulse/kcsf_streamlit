@@ -32,26 +32,9 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Progress bar
-progress_bar = st.progress(0)
-
-# Function to calculate key metrics
-def calculate_metrics(df, df_type):
-    total_records = df.shape[0]
-    outstanding_amount = df['Amount Remaining'].astype(float).sum()
-    
-    if df_type == "estimates":
-        return total_records, outstanding_amount
-    elif df_type == "sales_orders":
-        return total_records, outstanding_amount
-
-# Fetch and filter data
-def fetch_and_filter_data(saved_search_id, progress_value):
-    progress_bar.progress(progress_value)
-    
+# Cache the data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_and_filter_data(saved_search_id):
     # Fetch data from RESTlet
     df = fetch_restlet_data(saved_search_id)
     
@@ -59,30 +42,40 @@ def fetch_and_filter_data(saved_search_id, progress_value):
     if selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
     
-    progress_bar.progress(progress_value + 25)
     return df
 
-# Fetch data for both estimates and sales orders
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Sales rep filter initialization
 estimate_data = fetch_restlet_data("customsearch5127")
 sales_order_data = fetch_restlet_data("customsearch5122")
-
-# Extract unique sales reps from both datasets for the filter
 unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).dropna().unique()
-
-# Sales rep filter in the sidebar
 selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=[])
 
-# Now apply the filtering after getting sales reps
-estimate_data = fetch_and_filter_data("customsearch5127", 25)
-sales_order_data = fetch_and_filter_data("customsearch5122", 50)
+# Progress bar
+progress_bar = st.progress(0)
+
+# Fetch data for both estimates and sales orders with caching
+estimate_data = fetch_and_filter_data("customsearch5127")
+progress_bar.progress(50)
+sales_order_data = fetch_and_filter_data("customsearch5122")
+progress_bar.progress(100)
 
 # Remove progress bar once the data is loaded
 progress_bar.empty()
 
+# Function to calculate key metrics
+def calculate_metrics(df, df_type):
+    total_records = df.shape[0]
+    outstanding_amount = df['Amount Remaining'].astype(float).sum()
+    
+    return total_records, outstanding_amount
+
 # Main top section with key metrics
-st.header("Key Metrics")
+st.header("Order Management Hub")
 with st.container():
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4, gap="medium")  # Add gap to ensure proper spacing
 
     estimates_count, estimates_outstanding = calculate_metrics(estimate_data, "estimates")
     sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data, "sales_orders")
@@ -95,11 +88,13 @@ with st.container():
         padding: 15px;
         border-radius: 5px;
         background-color: white;
+        text-align: center;
     }
     </style>
     """
     st.markdown(metric_box_style, unsafe_allow_html=True)
 
+    # Display the metrics with proper box layout
     with col1:
         st.markdown('<div class="metric-box">', unsafe_allow_html=True)
         st.metric("Total Estimates Open", estimates_count)
