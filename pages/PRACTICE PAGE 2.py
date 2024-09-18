@@ -87,6 +87,7 @@ if not show_untasked:
 
 # Main dashboard
 st.title("Shipping Report")
+st.write("You have access to this page.")
 
 # Summary metrics
 total_open_orders = merged_data.shape[0]
@@ -110,18 +111,18 @@ st.line_chart(line_chart_data.set_index('Ship Date')['Order Number'])
 # Pie chart for tasked vs untasked orders
 st.subheader("Tasked vs Untasked Orders")
 
-# Create the pie chart data
-pie_chart_data = pd.Series(
-    [tasked_orders, untasked_orders], 
-    index=['Tasked Orders', 'Untasked Orders']
-)
+# Check for empty data and format it correctly before plotting
+if tasked_orders > 0 or untasked_orders > 0:
+    pie_chart_data = pd.Series(
+        [tasked_orders, untasked_orders], 
+        index=['Tasked Orders', 'Untasked Orders']
+    ).astype(int)  # Ensure it's an integer type
 
-# Debug: Display the pie chart data before plotting
-st.write("Pie chart data:", pie_chart_data)
+    # Plot the pie chart
+    st.pie_chart(pie_chart_data)
+else:
+    st.write("No data available for pie chart.")
 
-# Plot the pie chart
-st.pie_chart(pie_chart_data)
-    
 # Expandable section for the raw dataframe
 with st.expander("View Data Table"):
     st.dataframe(merged_data)
