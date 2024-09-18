@@ -95,24 +95,24 @@ tasked_orders = merged_data[~merged_data['Task ID'].isna()].shape[0]
 untasked_orders = merged_data[merged_data['Task ID'].isna()].shape[0]
 successful_task_percentage = (tasked_orders / total_open_orders) * 100 if total_open_orders > 0 else 0
 
-# Metrics display
-st.metric("Total Open Orders", total_open_orders)
-st.metric("Tasked Orders", tasked_orders)
-st.metric("Untasked Orders", untasked_orders)
-st.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
+# 4 Columns for displaying metrics
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("Total Open Orders", total_open_orders)
+col2.metric("Tasked Orders", tasked_orders)
+col3.metric("Untasked Orders", untasked_orders)
+col4.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
 
 # Line chart for open sales orders by ship date
 st.subheader("Open Sales Orders by Ship Date")
 line_chart_data = merged_data.groupby('Ship Date')['Order Number'].count().reset_index()
-st.line_chart(line_chart_data, x='Ship Date', y='Order Number')
+st.line_chart(line_chart_data.set_index('Ship Date')['Order Number'])
 
 # Pie chart for tasked vs untasked orders
 st.subheader("Tasked vs Untasked Orders")
-pie_chart_data = pd.DataFrame({
-    'Orders': ['Tasked Orders', 'Untasked Orders'],
-    'Count': [tasked_orders, untasked_orders]
-})
-st.pie_chart(pie_chart_data.set_index('Orders')['Count'])
+# Creating the correct data format for the pie chart
+pie_chart_data = pd.Series([tasked_orders, untasked_orders], index=['Tasked Orders', 'Untasked Orders'])
+st.pie_chart(pie_chart_data)
 
 # Expandable section for the raw dataframe
 with st.expander("View Data Table"):
