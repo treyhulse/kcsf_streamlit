@@ -87,25 +87,37 @@ def main():
     with tab1:
         st.header("Shipping Report")
         
-        # Fetch Data using the new RESTlet method
+        # Fetch primary saved search data
         with st.spinner("Fetching Open Sales Orders..."):
             df_open_so = fetch_restlet_data("customsearch5065")
 
+        # Fetch secondary saved search data (for Task ID)
+        with st.spinner("Fetching RF Pick Data..."):
+            df_rf_pick = fetch_restlet_data("customsearch5066")
+
+        # Ensure both DataFrames have the 'Sales Order' and 'Task ID' columns
+        if 'Sales Order' in df_rf_pick.columns and 'Task ID' in df_rf_pick.columns:
+            # Merge dataframes based on 'Sales Order'
+            df_merged = pd.merge(df_open_so, df_rf_pick[['Task ID', 'Sales Order']], on='Sales Order', how='left')
+        else:
+            st.error("The secondary data does not contain the expected 'Sales Order' or 'Task ID' columns.")
+            return
+
         # Display charts
-        if not df_open_so.empty:
+        if not df_merged.empty:
             col_chart, col_pie = st.columns([2, 1])
 
             # Line Chart: Open Sales Orders by Ship Date
             with col_chart:
-                df_open_so['Ship Date'] = pd.to_datetime(df_open_so['Ship Date'])
-                ship_date_counts = df_open_so['Ship Date'].value_counts().sort_index()
+                df_merged['Ship Date'] = pd.to_datetime(df_merged['Ship Date'])
+                ship_date_counts = df_merged['Ship Date'].value_counts().sort_index()
                 fig = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
                 st.plotly_chart(fig, use_container_width=True)
 
             # Pie Chart: Tasked vs Untasked Orders
             with col_pie:
-                matched_orders = df_open_so['Task ID'].notna().sum()
-                unmatched_orders = df_open_so['Task ID'].isna().sum()
+                matched_orders = df_merged['Task ID'].notna().sum()
+                unmatched_orders = df_merged['Task ID'].isna().sum()
                 pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
                 fig = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
                 st.plotly_chart(fig, use_container_width=True)
@@ -113,9 +125,9 @@ def main():
             st.write("No data available for the selected filters.")
 
         # Display metrics and data
-        total_orders = len(df_open_so)
-        matched_orders = df_open_so['Task ID'].notna().sum()
-        unmatched_orders = df_open_so['Task ID'].isna().sum()
+        total_orders = len(df_merged)
+        matched_orders = df_merged['Task ID'].notna().sum()
+        unmatched_orders = df_merged['Task ID'].isna().sum()
         successful_task_percentage = (matched_orders / total_orders) * 100 if total_orders > 0 else 0
 
         col1, col2, col3, col4 = st.columns(4)
@@ -130,9 +142,9 @@ def main():
 
         # Data table and download option
         with st.expander("View Data Table"):
-            st.write(f"Total records after filtering: {len(df_open_so)}")
-            st.dataframe(df_open_so, height=400)
-            csv = df_open_so.to_csv(index=False)
+            st.write(f"Total records after filtering: {len(df_merged)}")
+            st.dataframe(df_merged, height=400)
+            csv = df_merged.to_csv(index=False)
             st.download_button(label="Download filtered data as CSV", data=csv, file_name="filtered_sales_orders.csv", mime="text/csv")
 
     # Tab 2: Shipping Calendar
