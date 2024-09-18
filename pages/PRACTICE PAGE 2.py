@@ -30,6 +30,7 @@ st.write(f"You have access to this page.")
 
 from utils.restlet import fetch_restlet_data
 import pandas as pd
+import streamlit as st
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -45,11 +46,18 @@ st.sidebar.header("Filters")
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Merge the dataframes on the 'Sales Order' column
-# Assuming the column that holds the sales order number is named 'Sales Order' in both dataframes
-merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
-                       on='Order Number', how='left')
+# Debugging: Check the column names to ensure they match
+st.write("Estimate Data Columns:", estimate_data_raw.columns)
+st.write("Sales Order Data Columns:", sales_order_data_raw.columns)
 
-# Display the raw data
-st.subheader("Merged Order and Pick Task Data")
-st.dataframe(merged_data)
+# Assuming the correct column name is 'Order Number'
+# Update with the correct column names as observed in the output above
+try:
+    merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
+                           on='Order Number', how='left')
+
+    # Display the merged data
+    st.subheader("Merged Order and Pick Task Data")
+    st.dataframe(merged_data)
+except KeyError as e:
+    st.error(f"Column not found: {e}")
