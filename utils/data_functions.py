@@ -58,7 +58,6 @@ def fetch_all_data_csv(url, max_retries=3):
                     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
                 time.sleep(2 ** attempt)  # Exponential backoff
 
-# For Sales Dashboard: JSON Data Handling
 def fetch_all_data_json(url, max_retries=3):
     """Fetch all data from a NetSuite RESTlet endpoint that returns JSON data."""
     all_data = []
@@ -70,7 +69,11 @@ def fetch_all_data_json(url, max_retries=3):
             try:
                 logger.info(f"Fetching page {page} from {url}")
                 response = requests.get(f"{url}&page={page}", auth=auth)
-                response.raise_for_status()
+                response.raise_for_status()  # This will raise an error for non-200 status codes
+
+                # Log the response status
+                logger.info(f"Response Status Code: {response.status_code}")
+                logger.info(f"Response Content: {response.content}")
 
                 # Assuming the response is in JSON format
                 data = response.json()
@@ -88,8 +91,10 @@ def fetch_all_data_json(url, max_retries=3):
 
                 page += 1
                 break  # Success, move to next page
-            except Exception as e:
-                logger.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request error: {e}")
+                logger.error(f"Response content: {response.content if response else 'No response content'}")
+                st.error(f"Failed to fetch data on attempt {attempt + 1}: {str(e)}")
                 if attempt == max_retries - 1:
                     st.error(f"Failed to fetch data after {max_retries} attempts.")
                     return pd.DataFrame(all_data) if all_data else pd.DataFrame()
