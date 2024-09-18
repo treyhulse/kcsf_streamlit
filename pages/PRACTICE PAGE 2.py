@@ -28,14 +28,9 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-from utils.data_functions import process_netsuite_data_json
+from utils.data_functions import fetch_all_data_json
 
-# Set up sales rep mapping (if needed for the 'salesrep' column)
-sales_rep_mapping = {
-    # Add mappings if necessary (e.g., '1': 'John Doe')
-}
-
-# External RESTlet URL (without savedSearchId)
+# External RESTlet URL (without pagination, since that was causing issues)
 restlet_url_base = "https://3429264.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1718&deploy=1"
 
 # Create tabs for Estimates and Sales Orders
@@ -49,7 +44,7 @@ with tab1:
     estimate_url = f"{restlet_url_base}&savedSearchId=customsearch5127"
     
     # Fetch and display Estimate data
-    estimate_data = process_netsuite_data_json(estimate_url, sales_rep_mapping)
+    estimate_data = fetch_all_data_json(estimate_url)
     if not estimate_data.empty:
         st.dataframe(estimate_data)
     else:
@@ -63,7 +58,7 @@ with tab2:
     sales_order_url = f"{restlet_url_base}&savedSearchId=customsearch5122"
     
     # Fetch and display Sales Order data
-    sales_order_data = process_netsuite_data_json(sales_order_url, sales_rep_mapping)
+    sales_order_data = fetch_all_data_json(sales_order_url)
     if not sales_order_data.empty:
         st.dataframe(sales_order_data)
     else:
