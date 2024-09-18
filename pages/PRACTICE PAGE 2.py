@@ -31,8 +31,6 @@ st.write(f"You have access to this page.")
 import streamlit as st
 from utils.restlet import fetch_restlet_data
 
-# Set up RESTlet URL base
-restlet_url_base = "https://3429264.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=1718&deploy=1"
 
 # Create tabs for Estimates and Sales Orders
 tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
@@ -41,12 +39,8 @@ tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
 with tab1:
     st.header("Estimate Management")
     
-    # Build the URL for the estimates saved search
-    estimate_url = f"{restlet_url_base}&savedSearchId=customsearch5127"
-    
     # Fetch and display Estimate data
-    st.info(f"Fetching data from: {estimate_url}")
-    estimate_data = fetch_restlet_data(estimate_url)
+    estimate_data = fetch_restlet_data("customsearch5127")
     
     if not estimate_data.empty:
         # Display the DataFrame
@@ -58,12 +52,8 @@ with tab1:
 with tab2:
     st.header("Sales Order Management")
     
-    # Build the URL for the sales order saved search
-    sales_order_url = f"{restlet_url_base}&savedSearchId=customsearch5122"
-    
     # Fetch and display Sales Order data
-    st.info(f"Fetching data from: {sales_order_url}")
-    sales_order_data = fetch_restlet_data(sales_order_url)
+    sales_order_data = fetch_restlet_data("customsearch5122")
     
     if not sales_order_data.empty:
         # Display the DataFrame
