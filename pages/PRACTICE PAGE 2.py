@@ -80,12 +80,13 @@ def calculate_metrics(df, df_type):
 # Main top section with key metrics
 st.header("Order Management")
 with st.container():
-    col1, col2, col3, col4 = st.columns(4, gap="medium")  # Add gap to ensure proper spacing
+    # Increase column size and adjust layout
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 1], gap="medium")
 
     estimates_count, estimates_outstanding = calculate_metrics(estimate_data, "estimates")
     sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data, "sales_orders")
     
-    # Add drop shadow effect to metric boxes
+    # Add better layout to metric boxes
     metric_box_style = """
     <style>
     .metric-box {
@@ -94,13 +95,17 @@ with st.container():
         border-radius: 5px;
         background-color: white;
         text-align: center;
-        margin-bottom: 10px;
+        height: 150px;  /* Fixed height */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;  /* Adjusted font size */
     }
     </style>
     """
     st.markdown(metric_box_style, unsafe_allow_html=True)
 
-    # Display the metrics with proper box layout
+    # Display the metrics with adjusted layout
     with col1:
         st.markdown('<div class="metric-box">', unsafe_allow_html=True)
         st.metric("Total Estimates Open", estimates_count)
