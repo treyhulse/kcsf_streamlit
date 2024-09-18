@@ -87,10 +87,10 @@ tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
 untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
 
 # Apply Ship Date filter
-today = datetime.today().date()
+today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
 
 if ship_date_filter == 'Today':
-    merged_df = merged_df[merged_df['Ship Date'] == today]
+    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
 elif ship_date_filter == 'Past':
     merged_df = merged_df[merged_df['Ship Date'] <= today]
 elif ship_date_filter == 'Future':
