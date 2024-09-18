@@ -28,9 +28,9 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-import pandas as pd
 from utils.restlet import fetch_restlet_data
+import pandas as pd
+import streamlit as st
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -46,83 +46,18 @@ st.sidebar.header("Filters")
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Merge the dataframes on 'Order Number'
-merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
-                       on='Order Number', how='left')
+# Debugging: Check the column names to ensure they match
+st.write("Estimate Data Columns:", estimate_data_raw.columns)
+st.write("Sales Order Data Columns:", sales_order_data_raw.columns)
 
-# Add a checkbox to select all Sales Reps
-all_sales_reps = st.sidebar.checkbox("Select All Sales Reps", value=True)
-if all_sales_reps:
-    # Select all sales reps if "Select All" is checked
-    sales_rep_filter = merged_data['Sales Rep'].unique()
-else:
-    # Allow individual selection of sales reps
-    sales_rep_filter = st.sidebar.multiselect("Select Sales Reps", options=merged_data['Sales Rep'].unique())
+# Assuming the correct column name is 'Order Number'
+# Update with the correct column names as observed in the output above
+try:
+    merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
+                           on='Order Number', how='left')
 
-# Filter Ship Via (without default 'All')
-ship_via_filter = st.sidebar.multiselect("Select Ship Via", options=merged_data['Ship Via'].unique())
-
-# Custom date range filter
-date_range_filter = st.sidebar.date_input("Select custom date range", [])
-
-# Filter by Task ID options
-show_tasked = st.sidebar.checkbox("Show rows with Task ID", value=True)
-show_untasked = st.sidebar.checkbox("Show rows without Task ID", value=True)
-
-# Apply filters
-
-# Apply sales rep filter only if sales_rep_filter is not empty or 'Select All' is checked
-if all_sales_reps or sales_rep_filter:
-    merged_data = merged_data[merged_data['Sales Rep'].isin(sales_rep_filter)]
-
-# Apply Ship Via filter
-if ship_via_filter:
-    merged_data = merged_data[merged_data['Ship Via'].isin(ship_via_filter)]
-
-# Filter data based on Task ID
-if not show_tasked:
-    merged_data = merged_data[merged_data['Task ID'].isna()]
-if not show_untasked:
-    merged_data = merged_data[~merged_data['Task ID'].isna()]
-
-# Main dashboard
-st.title("Shipping Report")
-st.write("You have access to this page.")
-
-# Summary metrics
-total_open_orders = merged_data.shape[0]
-tasked_orders = merged_data[~merged_data['Task ID'].isna()].shape[0]
-untasked_orders = merged_data[merged_data['Task ID'].isna()].shape[0]
-successful_task_percentage = (tasked_orders / total_open_orders) * 100 if total_open_orders > 0 else 0
-
-# 4 Columns for displaying metrics
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric("Total Open Orders", total_open_orders)
-col2.metric("Tasked Orders", tasked_orders)
-col3.metric("Untasked Orders", untasked_orders)
-col4.metric("Successful Task Percentage", f"{successful_task_percentage:.2f}%")
-
-# Line chart for open sales orders by ship date
-st.subheader("Open Sales Orders by Ship Date")
-line_chart_data = merged_data.groupby('Ship Date')['Order Number'].count().reset_index()
-st.line_chart(line_chart_data.set_index('Ship Date')['Order Number'])
-
-# Pie chart for tasked vs untasked orders
-st.subheader("Tasked vs Untasked Orders")
-
-# Check for empty data and format it correctly before plotting
-if tasked_orders > 0 or untasked_orders > 0:
-    pie_chart_data = pd.Series(
-        [tasked_orders, untasked_orders], 
-        index=['Tasked Orders', 'Untasked Orders']
-    ).astype(int)  # Ensure it's an integer type
-
-    # Plot the pie chart
-    st.pie_chart(pie_chart_data)
-else:
-    st.write("No data available for pie chart.")
-
-# Expandable section for the raw dataframe
-with st.expander("View Data Table"):
+    # Display the merged data
+    st.subheader("Merged Order and Pick Task Data")
     st.dataframe(merged_data)
+except KeyError as e:
+    st.error(f"Column not found: {e}")
