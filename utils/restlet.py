@@ -21,7 +21,7 @@ def get_authentication():
 
 # Function to fetch JSON data from RESTlet and convert it to a DataFrame
 def fetch_restlet_data(saved_search_id):
-    url = f"{st.secrets['restlet_url']}&savedSearchId={saved_search_id}"
+    url = f"{st.secrets['url_restlet']}&savedSearchId={saved_search_id}"
     auth = get_authentication()
     
     try:
