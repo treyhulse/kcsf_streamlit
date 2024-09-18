@@ -30,7 +30,6 @@ st.write(f"You have access to this page.")
 
 from utils.restlet import fetch_restlet_data
 import pandas as pd
-import streamlit as st
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -42,18 +41,23 @@ def fetch_raw_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Fetch raw data for open orders and pick tasks
+# Fetch raw data for both estimates and sales orders
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Assuming the correct column name is 'Order Number'
-# Update with the correct column names as observed in the output above
-try:
-    merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Order Number', 'Task ID']], 
-                           on='Order Number', how='left')
+# Extract unique sales reps from both datasets and add 'All' option
+unique_sales_reps = pd.concat([estimate_data_raw['Sales Rep'], sales_order_data_raw['Sales Rep']]).dropna().unique()
+unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
 
-    # Display the merged data
-    st.subheader("Merged Order and Pick Task Data")
-    st.dataframe(merged_data)
-except KeyError as e:
-    st.error(f"Column not found: {e}")
+# Sales rep filter in the sidebar
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
+
+# Apply the filter dynamically (not cached) to both datasets
+def apply_filters(df):
+    if selected_sales_reps and 'All' not in selected_sales_reps:
+        df = df[df['Sales Rep'].isin(selected_sales_reps)]
+    return df
+
+estimate_data = apply_filters(estimate_data_raw)
+sales_order_data = apply_filters(sales_order_data_raw)
+
