@@ -32,6 +32,7 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -120,18 +121,22 @@ col1, col2, col3, col4 = st.columns(4)
 col1.metric("Total Open Orders", total_orders)
 col2.metric("Tasked Orders", tasked_orders_count)
 col3.metric("Untasked Orders", untasked_orders_count)
-col4.metric("Task Percentage", f"{task_percentage:.2f}%")
+col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
 
 # Visualization section
 col5, col6 = st.columns([2, 1])
 
 # Line chart: y-axis = amount of orders, x-axis = ship date
 with col5:
+    st.subheader("Open Sales Orders by Ship Date")
     orders_by_date = merged_df.groupby(merged_df['Ship Date'].dt.date).size()
     st.line_chart(orders_by_date)
 
 # Pie chart: tasked vs. untasked orders
 with col6:
+    st.subheader("Tasked vs Untasked Orders")
     pie_data = pd.Series([tasked_orders_count, untasked_orders_count], index=["Tasked Orders", "Untasked Orders"])
-    st.write(pie_data.plot.pie(autopct='%1.1f%%', figsize=(5, 5), startangle=90))
-    st.pyplot()  # Render the pie chart
+    fig, ax = plt.subplots()
+    ax.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%', startangle=90, colors=["#ADD8E6", "#4169E1"])
+    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    st.pyplot(fig)
