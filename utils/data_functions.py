@@ -58,6 +58,7 @@ def fetch_all_data_csv(url, max_retries=3):
                     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
                 time.sleep(2 ** attempt)  # Exponential backoff
 
+# For Sales Dashboard: JSON Data Handling
 def fetch_all_data_json(url, max_retries=3):
     """Fetch all data from a NetSuite RESTlet endpoint that returns JSON data."""
     all_data = []
@@ -68,38 +69,31 @@ def fetch_all_data_json(url, max_retries=3):
         for attempt in range(max_retries):
             try:
                 logger.info(f"Fetching page {page} from {url}")
-                
-                # Make GET request to the RESTlet
-                response = requests.get(f"{url}&page={page}", auth=auth, headers={"Accept": "application/json"})
-                response.raise_for_status()  # Raise error for bad status codes
+                response = requests.get(f"{url}&page={page}", auth=auth)
+                response.raise_for_status()
 
-                # Parse the JSON response
+                # Assuming the response is in JSON format
                 data = response.json()
 
                 if not data or len(data) == 0:
                     logger.info("Received empty data. Assuming end of data.")
                     return pd.DataFrame(all_data) if all_data else pd.DataFrame()
 
-                # Log the number of records fetched
-                logger.info(f"Successfully fetched {len(data['data'])} records from page {page}")
+                all_data.extend(data)
+                logger.info(f"Successfully fetched {len(data)} records from page {page}")
 
-                all_data.extend(data['data'])  # Add the fetched data to the list
-
-                # If fewer than 1000 records are returned, assume this is the last page
-                if len(data['data']) < 1000:
+                if len(data) < 1000:  # Assuming 1000 is the max page size
                     logger.info("Received less than 1000 records. Assuming last page.")
                     return pd.DataFrame(all_data)
 
-                page += 1  # Move to the next page
-                break  # Exit the retry loop
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching data on attempt {attempt + 1}: {e}")
-                st.error(f"Failed to fetch data on attempt {attempt + 1}: {e}")
+                page += 1
+                break  # Success, move to next page
+            except Exception as e:
+                logger.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")
                 if attempt == max_retries - 1:
                     st.error(f"Failed to fetch data after {max_retries} attempts.")
                     return pd.DataFrame(all_data) if all_data else pd.DataFrame()
-                time.sleep(2 ** attempt)  # Exponential backoff for retries
-                
+                time.sleep(2 ** attempt)  # Exponential backoff
 
 def replace_ids_with_display_values(df, mapping_dict):
     """Replace internal IDs with their corresponding display values using a provided mapping."""
