@@ -74,7 +74,7 @@ def main():
 
     # Tab 1: Open Sales Orders Analysis
     with tab1:
-        st.header("Open Sales Orders Analysis")
+        st.header("Shipping Report")
         
         # Fetch Data
         with st.spinner("Fetching Open Sales Orders..."):
