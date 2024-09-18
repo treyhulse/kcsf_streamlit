@@ -99,6 +99,14 @@ chart = alt.Chart(combined_data_grouped).mark_bar().encode(
 # Display the chart
 st.altair_chart(chart)
 
+# Function to apply conditional formatting to the 'Sales Order' column only
+def highlight_conditions_column(s):
+    if s['Payment Status'] == 'Needs Payment':
+        return ['color: red' if col == 'Sales Order' else '' for col in s.index]
+    elif s['Stock Status'] == 'Back Ordered':
+        return ['color: orange' if col == 'Sales Order' else '' for col in s.index]
+    return [''] * len(s)  # No formatting otherwise
+
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
 tab1, tab2 = st.tabs(["Sales Orders", "Estimates"])
