@@ -54,7 +54,7 @@ merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='le
 # Convert 'Ship Date' to datetime format
 merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
 
-# Sidebar filters
+# Sidebar filters (global for both tabs)
 st.sidebar.header('Filters')
 
 # Sales Rep filter with 'All' option
@@ -78,7 +78,7 @@ ship_via_filter = st.sidebar.multiselect(
 )
 
 # Ship Date filter with custom range option
-date_filter_options = ['Today', 'Past (including today)', 'Future', 'Custom Range']
+date_filter_options = ['Today', 'Past', 'Future', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
     'Ship Date',
     options=date_filter_options
@@ -102,7 +102,7 @@ today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
 
 if ship_date_filter == 'Today':
     merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
-elif ship_date_filter == 'Past (including today)':
+elif ship_date_filter == 'Past':
     merged_df = merged_df[merged_df['Ship Date'] <= today]
 elif ship_date_filter == 'Future':
     merged_df = merged_df[merged_df['Ship Date'] > today]
@@ -120,7 +120,7 @@ if tasked_orders and not untasked_orders:
 elif untasked_orders and not tasked_orders:
     merged_df = merged_df[merged_df['Task ID'].isna()]
 
-# Tab layout
+# Create tabs for Shipping Report and Shipping Calendar
 tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
 
 # Tab 1: Shipping Report
@@ -162,6 +162,24 @@ with tab1:
 
 # Tab 2: Shipping Calendar
 with tab2:
-    st.write("Shipping Calendar View")
-    # Display the merged DataFrame
-    st.write(merged_df)
+    st.header("Shipping Calendar")
+
+    # Group orders by week and day
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
+    merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
+
+    # Get the unique weeks from the dataset
+    unique_weeks = merged_df['Week'].unique()
+
+    for week in unique_weeks:
+        st.subheader(f"Week {week}")
+        # Create 5 columns representing Monday to Friday
+        col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
+        
+        # Filter data by day for each column
+        for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
+            day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
+            with col:
+                with st.expander(f"{day} ({len(day_orders)} Orders)"):
+                    st.write(day_orders[['Order Number', 'Sales Rep', 'Ship Date']])
