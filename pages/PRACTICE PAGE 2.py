@@ -62,77 +62,54 @@ def apply_filters(df):
 estimate_data = apply_filters(estimate_data_raw)
 sales_order_data = apply_filters(sales_order_data_raw)
 
-# Function to calculate key metrics
+# Function to calculate metrics for orders or estimates
 def calculate_metrics(df):
     total_records = df.shape[0]
-    outstanding_amount = df['Amount Remaining'].astype(float).sum()
-    return total_records, outstanding_amount
-
-# Main top section with key metrics
-st.header("Order Management")
-with st.container():
-    # Define column sizes and ensure proper layout
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 1], gap="small")
-
-    estimates_count, estimates_outstanding = calculate_metrics(estimate_data)
-    sales_orders_count, sales_orders_outstanding = calculate_metrics(sales_order_data)
-    
-    # Refine the layout and size for the metric boxes
-    metric_box_style = """
-    <style>
-    .metric-box {
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 10px;
-        border-radius: 8px;
-        background-color: white;
-        text-align: center;
-        height: 120px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;  /* Adjusted font size */
-    }
-    </style>
-    """
-    st.markdown(metric_box_style, unsafe_allow_html=True)
-
-    # Display the metrics with proper layout and fit inside the boxes
-    with col1:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("Total Estimates Open", estimates_count)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col2:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("$ Outstanding from Estimates", f"${estimates_outstanding:,.2f}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col3:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("Total Sales Orders Open", sales_orders_count)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    with col4:
-        st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-        st.metric("$ Outstanding from Sales Orders", f"${sales_orders_outstanding:,.2f}")
-        st.markdown('</div>', unsafe_allow_html=True)
+    ready_records = df[(df['Payment Status'].isin(['Paid', 'Terms'])) & (df['Stock Status'] == 'In Stock')].shape[0]
+    not_ready_records = total_records - ready_records
+    outstanding_revenue = df['Amount Remaining'].astype(float).sum()
+    return total_records, ready_records, not_ready_records, outstanding_revenue
 
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
-tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
-
-# Estimates tab
-with tab1:
-    st.subheader("Estimates")
-    if not estimate_data.empty:
-        st.dataframe(estimate_data)
-    else:
-        st.write("No data available for Estimates.")
+tab1, tab2 = st.tabs(["Sales Orders", "Estimates"])
 
 # Sales Orders tab
-with tab2:
+with tab1:
     st.subheader("Sales Orders")
+
+    # Calculate metrics for sales orders
+    total_orders, ready_orders, not_ready_orders, outstanding_revenue_orders = calculate_metrics(sales_order_data)
+
+    # Display the metrics for Sales Orders
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Orders", total_orders)
+    col2.metric("Total Orders Ready", ready_orders)
+    col3.metric("Total Orders Not Ready", not_ready_orders)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
+
+    # Display the sales orders dataframe
     if not sales_order_data.empty:
         st.dataframe(sales_order_data)
     else:
         st.write("No data available for Sales Orders.")
+
+# Estimates tab
+with tab2:
+    st.subheader("Estimates")
+
+    # Calculate metrics for estimates
+    total_estimates, ready_estimates, not_ready_estimates, outstanding_revenue_estimates = calculate_metrics(estimate_data)
+
+    # Display the metrics for Estimates
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Estimates", total_estimates)
+    col2.metric("Total Estimates Ready", ready_estimates)
+    col3.metric("Total Estimates Not Ready", not_ready_estimates)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
+
+    # Display the estimates dataframe
+    if not estimate_data.empty:
+        st.dataframe(estimate_data)
+    else:
+        st.write("No data available for Estimates.")
