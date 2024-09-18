@@ -32,7 +32,7 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
+import plotly.express as px
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -123,20 +123,24 @@ col2.metric("Tasked Orders", tasked_orders_count)
 col3.metric("Untasked Orders", untasked_orders_count)
 col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
 
-# Visualization section
-col5, col6 = st.columns([2, 1])
+# Display charts using Plotly
+if not merged_df.empty:
+    col_chart, col_pie = st.columns([2, 1])
+    with col_chart:
+        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+        ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
+        fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+        st.plotly_chart(fig_line, use_container_width=True)
+    
+    with col_pie:
+        matched_orders = merged_df['Task ID'].notna().sum()
+        unmatched_orders = merged_df['Task ID'].isna().sum()
+        pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
+        fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
+        st.plotly_chart(fig_pie, use_container_width=True)
+else:
+    st.write("No data available for the selected filters.")
 
-# Line chart: y-axis = amount of orders, x-axis = ship date
-with col5:
-    st.subheader("Open Sales Orders by Ship Date")
-    orders_by_date = merged_df.groupby(merged_df['Ship Date'].dt.date).size()
-    st.line_chart(orders_by_date)
-
-# Pie chart: tasked vs. untasked orders
-with col6:
-    st.subheader("Tasked vs Untasked Orders")
-    pie_data = pd.Series([tasked_orders_count, untasked_orders_count], index=["Tasked Orders", "Untasked Orders"])
-    fig, ax = plt.subplots()
-    ax.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%', startangle=90, colors=["#ADD8E6", "#4169E1"])
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-    st.pyplot(fig)
+# Display filtered DataFrame in an expander
+with st.expander("View Filtered Data Table"):
+    st.write(merged_df)
