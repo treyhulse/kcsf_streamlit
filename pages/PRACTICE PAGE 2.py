@@ -45,19 +45,9 @@ st.sidebar.header("Filters")
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Extract unique sales reps from both datasets and add 'All' option
-unique_sales_reps = pd.concat([estimate_data_raw['Sales Rep'], sales_order_data_raw['Sales Rep']]).dropna().unique()
-unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
+# Display the raw data for estimates and sales orders
+st.subheader("Estimate Data")
+st.dataframe(estimate_data_raw)
 
-# Sales rep filter in the sidebar
-selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
-
-# Apply the filter dynamically (not cached) to both datasets
-def apply_filters(df):
-    if selected_sales_reps and 'All' not in selected_sales_reps:
-        df = df[df['Sales Rep'].isin(selected_sales_reps)]
-    return df
-
-estimate_data = apply_filters(estimate_data_raw)
-sales_order_data = apply_filters(sales_order_data_raw)
-
+st.subheader("Sales Order Data")
+st.dataframe(sales_order_data_raw)
