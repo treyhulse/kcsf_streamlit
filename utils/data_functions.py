@@ -100,6 +100,8 @@ def fetch_all_data_json(url, max_retries=3):
                     return pd.DataFrame(all_data) if all_data else pd.DataFrame()
                 time.sleep(2 ** attempt)  # Exponential backoff
 
+# data_functions.py
+
 def replace_ids_with_display_values(df, mapping_dict):
     """Replace internal IDs with their corresponding display values using a provided mapping."""
     if 'salesrep' in df.columns:
