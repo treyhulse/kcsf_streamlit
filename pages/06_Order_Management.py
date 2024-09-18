@@ -31,10 +31,8 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-import pandas as pd
-import altair as alt
 from utils.restlet import fetch_restlet_data
+import pandas as pd
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -73,33 +71,6 @@ def calculate_metrics(df):
     not_ready_records = total_records - ready_records
     outstanding_revenue = df['Amount Remaining'].astype(float).sum()
     return total_records, ready_records, not_ready_records, outstanding_revenue
-
-# Add 'Source' column to distinguish between sales orders and estimates
-estimate_data['Source'] = 'Estimates'
-sales_order_data['Source'] = 'Sales Orders'
-
-# Combine the data
-combined_data = pd.concat([estimate_data[['Date Created', 'Amount Remaining', 'Source']],
-                           sales_order_data[['Date Created', 'Amount Remaining', 'Source']]])
-
-# Create 'Year-Month' column for proper grouping by year and month
-combined_data['Year-Month'] = pd.to_datetime(combined_data['Date Created']).dt.to_period('M')
-
-# Group by 'Year-Month' and 'Source' to get the sum of 'Amount Remaining'
-combined_data_grouped = combined_data.groupby(['Year-Month', 'Source'], as_index=False)['Amount Remaining'].sum()
-
-# Create stacked bar chart using Altair
-chart = alt.Chart(combined_data_grouped).mark_bar().encode(
-    x=alt.X('Year-Month:T', title='Year-Month'),
-    y=alt.Y('sum(Amount Remaining):Q', title='Total Amount Remaining'),
-    color='Source:N'
-).properties(
-    height=400,
-    title="Revenue from Estimates and Sales Orders by Month and Year"
-)
-
-# Display the chart in full width
-st.altair_chart(chart, use_container_width=True)
 
 # Function to apply conditional formatting to the 'Sales Order' column only
 def highlight_conditions_column(s):
