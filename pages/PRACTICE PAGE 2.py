@@ -71,13 +71,13 @@ def calculate_metrics(df):
     return total_records, ready_records, not_ready_records, outstanding_revenue
 
 # Function to apply conditional formatting row by row
-def highlight_not_ready(s):
-    # Check if the row is 'Not Ready' (i.e. payment not made or not in stock)
-    payment_status_ready = s['Payment Status'] in ['Paid', 'Terms']
-    stock_status_ready = s['Stock Status'] == 'In Stock'
-    if not (payment_status_ready and stock_status_ready):
-        return ['color: red'] * len(s)  # Apply red formatting to the whole row
-    return [''] * len(s)  # No formatting if ready
+def highlight_conditions(s):
+    # Apply conditional formatting based on Payment Status and Stock Status
+    if s['Payment Status'] == 'Needs Payment':
+        return ['color: red'] * len(s)  # Red text for Needs Payment
+    elif s['Stock Status'] == 'Back Ordered':
+        return ['color: yellow'] * len(s)  # Yellow text for Back Ordered
+    return [''] * len(s)  # No formatting otherwise
 
 # Subtabs for Estimates and Sales Orders
 st.header("Order Management")
@@ -97,9 +97,9 @@ with tab1:
     col3.metric("Total Orders Not Ready", not_ready_orders)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
 
-    # Apply conditional formatting to sales orders that are not ready
+    # Apply conditional formatting to sales orders
     if not sales_order_data.empty:
-        styled_sales_order_data = sales_order_data.style.apply(highlight_not_ready, axis=1)
+        styled_sales_order_data = sales_order_data.style.apply(highlight_conditions, axis=1)
         st.dataframe(styled_sales_order_data)
     else:
         st.write("No data available for Sales Orders.")
@@ -118,9 +118,9 @@ with tab2:
     col3.metric("Total Estimates Not Ready", not_ready_estimates)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
 
-    # Apply conditional formatting to estimates that are not ready
+    # Apply conditional formatting to estimates
     if not estimate_data.empty:
-        styled_estimate_data = estimate_data.style.apply(highlight_not_ready, axis=1)
+        styled_estimate_data = estimate_data.style.apply(highlight_conditions, axis=1)
         st.dataframe(styled_estimate_data)
     else:
         st.write("No data available for Estimates.")
