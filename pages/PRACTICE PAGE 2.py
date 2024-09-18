@@ -67,6 +67,16 @@ sales_rep_filter = st.sidebar.multiselect(
     default='All'
 )
 
+# Ship Via filter with 'All' option
+ship_via_list = merged_df['Ship Via'].unique().tolist()
+ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
+
+ship_via_filter = st.sidebar.multiselect(
+    'Ship Via', 
+    options=ship_via_list, 
+    default='All'
+)
+
 # Ship Date filter with custom range option
 date_filter_options = ['Today', 'Past (including today)', 'Future', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
