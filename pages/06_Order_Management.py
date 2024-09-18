@@ -31,149 +31,88 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+import streamlit as st
+from utils.restlet import fetch_restlet_data
+import pandas as pd
 
-def apply_mappings(df):
-    """Apply mappings to the DataFrame columns."""
-    if 'Sales Rep' in df.columns:
-        df['Sales Rep'] = df['Sales Rep'].map(sales_rep_mapping).fillna(df['Sales Rep'])
-    
-    if 'Ship Via' in df.columns:
-        df['Ship Via'] = df['Ship Via'].map(ship_via_mapping).fillna(df['Ship Via'])
-    
-    if 'Terms' in df.columns:
-        df['Terms'] = df['Terms'].map(terms_mapping).fillna(df['Terms'])
-
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
     return df
 
-def format_dataframe(df):
-    """Format 'Order Number' as string, 'Amount Remaining' as currency, and convert 'Warehouse' to string."""
-    if 'Order Number' in df.columns:
-        df['Order Number'] = df['Order Number'].astype(str)
-    
-    if 'Amount Remaining' in df.columns:
-        df['Amount Remaining'] = df['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
-    
-    if 'Warehouse' in df.columns:
-        df['Warehouse'] = df['Warehouse'].astype(str)
-    
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Fetch raw data for both estimates and sales orders
+estimate_data_raw = fetch_raw_data("customsearch5127")
+sales_order_data_raw = fetch_raw_data("customsearch5122")
+
+# Extract unique sales reps from both datasets and add 'All' option
+unique_sales_reps = pd.concat([estimate_data_raw['Sales Rep'], sales_order_data_raw['Sales Rep']]).dropna().unique()
+unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
+
+# Sales rep filter in the sidebar
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
+
+# Apply the filter dynamically (not cached) to both datasets
+def apply_filters(df):
+    if selected_sales_reps and 'All' not in selected_sales_reps:
+        df = df[df['Sales Rep'].isin(selected_sales_reps)]
     return df
 
-def red_text_if_positive(df):
-    """Set text to red in rows where 'Amount Remaining' is greater than 0,
-    unless 'Ship Via' is 'Our Truck', 'Our Truck - Small', 'Our Truck - Large'
-    or 'Terms' is 'Net 30', 'Net 60', 'Net 45'."""
-    
-    def red_text(row):
-        # Check if 'Amount Remaining' is greater than 0
-        if float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0:
-            # Check for conditions to exclude rows from being red
-            if row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and \
-               row['Terms'] not in ['Net 30', 'is any of 1% 10 Net 30', '1% 10 Net 30 Firm', '1% 90 Net 91', '1%-10 Net 20', '1/2% 10 Net 11', '1/2% 10 Net 11 Firm', '2% 10 Net 30', '2% 10, Net 30 Firm', '2% 15 Net 30', 'Account Credit', 'Credit Card - Net 10', 'Credit Card - Net 30', 'Net 10', 'Net 10th', 'Net 15 Days NO CC', 'Net 15 Days YES CC', 'Net 28', 'Net 30', 'Net 45', 'Net 60', 'Net 7', 'Net 90', 'Net Invoice', 'Net Invoice - CC', 'Net-30 NO CC', 'Net-30 YES CC', 'No Charge', '2% 76 Net 77']:
-                return ['color: red'] * len(row)
-        return [''] * len(row)
+estimate_data = apply_filters(estimate_data_raw)
+sales_order_data = apply_filters(sales_order_data_raw)
 
-    return df.style.apply(red_text, axis=1)
+# Function to calculate metrics for orders or estimates
+def calculate_metrics(df):
+    total_records = df.shape[0]
+    ready_records = df[(df['Payment Status'].isin(['Paid', 'Terms'])) & (df['Stock Status'] == 'In Stock')].shape[0]
+    not_ready_records = total_records - ready_records
+    outstanding_revenue = df['Amount Remaining'].astype(float).sum()
+    return total_records, ready_records, not_ready_records, outstanding_revenue
 
-def get_date_ranges():
-    """Define preset date ranges."""
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday())  # Monday of the current week
-    start_of_month = today.replace(day=1)
-    end_of_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)  # Last day of the month
-    start_of_next_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1)
+# Subtabs for Estimates and Sales Orders
+st.header("Order Management")
+tab1, tab2 = st.tabs(["Sales Orders", "Estimates"])
 
-    date_options = {
-        'Today': (today, today),
-        'Last Week': (start_of_week - timedelta(days=7), start_of_week - timedelta(days=1)),
-        'This Month': (start_of_month, end_of_month),
-        'Next Month': (start_of_next_month, start_of_next_month + timedelta(days=32)),
-        'All Time': (None, None),  # No filter
-        'Custom': None  # Placeholder for custom date range
-    }
-    return date_options
+# Sales Orders tab
+with tab1:
+    st.subheader("Sales Orders")
 
-def calculate_kpis(filtered_df):
-    """Calculate metrics for the KPI boxes based on the filtered DataFrame."""
-    total_orders = len(filtered_df)
-    
-    # Total Orders Not Ready (those with red text from conditional formatting)
-    not_ready_orders = filtered_df.apply(lambda row: float(row['Amount Remaining'].replace('$', '').replace(',', '')) > 0 and 
-                                row['Ship Via'] not in ['Our Truck', 'Our Truck - Small', 'Our Truck - Large', 'Pickup 1', 'Pickup 2'] and 
-                                row['Terms'] not in ['Net 30', 'Net 60', 'Net 45'], axis=1)
-    total_orders_not_ready = not_ready_orders.sum()
+    # Calculate metrics for sales orders
+    total_orders, ready_orders, not_ready_orders, outstanding_revenue_orders = calculate_metrics(sales_order_data)
 
-    # Total Orders Ready (those not in red text)
-    total_orders_ready = total_orders - total_orders_not_ready
+    # Display the metrics for Sales Orders
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Orders", total_orders)
+    col2.metric("Total Orders Ready", ready_orders)
+    col3.metric("Total Orders Not Ready", not_ready_orders)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
 
-    # Total Revenue Outstanding for orders not ready
-    total_revenue_outstanding = filtered_df[not_ready_orders]['Amount Remaining'].apply(lambda x: float(x.replace('$', '').replace(',', ''))).sum()
+    # Display the sales orders dataframe
+    if not sales_order_data.empty:
+        st.dataframe(sales_order_data)
+    else:
+        st.write("No data available for Sales Orders.")
 
-    return total_orders, total_orders_ready, total_orders_not_ready, total_revenue_outstanding
+# Estimates tab
+with tab2:
+    st.subheader("Estimates")
 
-def main():
-    st.title("Order Management")
+    # Calculate metrics for estimates
+    total_estimates, ready_estimates, not_ready_estimates, outstanding_revenue_estimates = calculate_metrics(estimate_data)
 
-    try:
-        # Fetch Data from the RESTlet URL in Streamlit secrets
-        df = process_netsuite_data_csv(st.secrets["url_open_so"])
-        
-        if df is None or df.empty:
-            st.warning("No data retrieved from the NetSuite RESTlet.")
-        else:
-            # Apply the mappings (Sales Rep, Ship Via, Terms) to the DataFrame
-            df = apply_mappings(df)
-            
-            # Format 'Order Number', 'Amount Remaining' columns, and convert 'Warehouse' to string
-            df = format_dataframe(df)
+    # Display the metrics for Estimates
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Estimates", total_estimates)
+    col2.metric("Total Estimates Ready", ready_estimates)
+    col3.metric("Total Estimates Not Ready", not_ready_estimates)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
 
-            # Sidebar filters
-            st.sidebar.title("Filters")
-
-            # Sales Rep Multiselect Filter
-            sales_reps = df['Sales Rep'].unique().tolist()
-            selected_sales_reps = st.sidebar.multiselect("Select Sales Rep(s)", ['All'] + sales_reps, default=['All'])
-            if 'All' not in selected_sales_reps:
-                df = df[df['Sales Rep'].isin(selected_sales_reps)]
-
-            # Ship Date Filter with Preset Ranges
-            date_options = get_date_ranges()
-            date_selection = st.sidebar.selectbox("Select Ship Date Range", list(date_options.keys()), index=4)  # Default to 'All Time'
-
-            if date_selection == 'Custom':
-                custom_range = st.sidebar.date_input("Select Custom Date Range", [datetime.today(), datetime.today()])
-                if len(custom_range) == 2:
-                    df = df[(pd.to_datetime(df['Ship Date']) >= pd.to_datetime(custom_range[0])) &
-                            (pd.to_datetime(df['Ship Date']) <= pd.to_datetime(custom_range[1]))]
-            else:
-                start_date, end_date = date_options[date_selection]
-                if start_date and end_date:
-                    df = df[(pd.to_datetime(df['Ship Date']) >= start_date) &
-                            (pd.to_datetime(df['Ship Date']) <= end_date)]
-
-            # After filters are applied, recalculate KPI metrics
-            total_orders, total_orders_ready, total_orders_not_ready, total_revenue_outstanding = calculate_kpis(df)
-
-            # Display KPI metric boxes
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Total Orders", total_orders)
-            col2.metric("Total Orders Ready", total_orders_ready)
-            col3.metric("Total Orders Not Ready", total_orders_not_ready)
-            col4.metric("Total Revenue Outstanding", f"${total_revenue_outstanding:,.2f}")
-
-            st.write(f"{len(df)} records.")
-            
-            # Apply conditional formatting to make rows with positive 'Amount Remaining' red text
-            styled_df = red_text_if_positive(df)
-            st.dataframe(styled_df)  # Display the styled DataFrame
-
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-        logger.error(f"Exception occurred: {str(e)}")
-        logger.error(traceback.format_exc())
-        st.error("Please check the logs for more details.")
-
-if __name__ == "__main__":
-    main()
+    # Display the estimates dataframe
+    if not estimate_data.empty:
+        st.dataframe(estimate_data)
+    else:
+        st.write("No data available for Estimates.")
