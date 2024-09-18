@@ -41,13 +41,15 @@ def fetch_raw_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Fetch raw data for both estimates and sales orders
+# Fetch raw data for open orders and pick tasks
 estimate_data_raw = fetch_raw_data("customsearch5065")
 sales_order_data_raw = fetch_raw_data("customsearch5066")
 
-# Display the raw data for estimates and sales orders
-st.subheader("Order Data")
-st.dataframe(estimate_data_raw)
+# Merge the dataframes on the 'Sales Order' column
+# Assuming the column that holds the sales order number is named 'Sales Order' in both dataframes
+merged_data = pd.merge(estimate_data_raw, sales_order_data_raw[['Sales Order', 'Task ID']], 
+                       on='Sales Order', how='left')
 
-st.subheader("Pick Task Data")
-st.dataframe(sales_order_data_raw)
+# Display the raw data
+st.subheader("Merged Order and Pick Task Data")
+st.dataframe(merged_data)
