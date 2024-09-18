@@ -70,7 +70,7 @@ def get_date_range(preset):
 # Main function
 def main():
     # Define tabs
-    tab1, tab2 = st.tabs(["Open Sales Orders Analysis", "Shipping Calendar"])
+    tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
 
     # Tab 1: Open Sales Orders Analysis
     with tab1:
