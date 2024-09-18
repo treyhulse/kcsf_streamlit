@@ -96,21 +96,3 @@ with col2:
                 st.success(f"Loaded query: {query['title']}")
     else:
         st.write("No queries found.")
-
-from utils.restlet import fetch_restlet_data
-
-# Create tabs for Estimates and Sales Orders
-tab1, tab2 = st.tabs(["Estimates", "Sales Orders"])
-
-# Tab for Estimates
-with tab1:
-    st.header("Estimate Management")
-    
-    # Fetch and display Estimate data
-    estimate_data = fetch_restlet_data("customsearch5066")
-    
-    if not estimate_data.empty:
-        # Display the DataFrame
-        st.dataframe(estimate_data)
-    else:
-        st.write("No data available for Estimates.")
