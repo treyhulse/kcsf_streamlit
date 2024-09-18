@@ -38,8 +38,8 @@ def fetch_and_filter_data(saved_search_id):
     # Fetch data from RESTlet
     df = fetch_restlet_data(saved_search_id)
     
-    # Apply sales rep filter if selected
-    if selected_sales_reps:
+    # Apply sales rep filter if selected and not 'All'
+    if selected_sales_reps and 'All' not in selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
     
     return df
@@ -47,11 +47,16 @@ def fetch_and_filter_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Sales rep filter initialization
+# Fetch raw data for initializing sales rep filter
 estimate_data = fetch_restlet_data("customsearch5127")
 sales_order_data = fetch_restlet_data("customsearch5122")
+
+# Extract unique sales reps from both datasets and add 'All' option
 unique_sales_reps = pd.concat([estimate_data['Sales Rep'], sales_order_data['Sales Rep']]).dropna().unique()
-selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=[])
+unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
+
+# Sales rep filter in the sidebar
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
 
 # Progress bar
 progress_bar = st.progress(0)
@@ -73,7 +78,7 @@ def calculate_metrics(df, df_type):
     return total_records, outstanding_amount
 
 # Main top section with key metrics
-st.header("Order Management Hub")
+st.header("Order Management")
 with st.container():
     col1, col2, col3, col4 = st.columns(4, gap="medium")  # Add gap to ensure proper spacing
 
@@ -89,6 +94,7 @@ with st.container():
         border-radius: 5px;
         background-color: white;
         text-align: center;
+        margin-bottom: 10px;
     }
     </style>
     """
