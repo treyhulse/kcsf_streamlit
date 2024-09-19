@@ -10,7 +10,7 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = 'Product Sync'  # Adjust this based on the current page
+page_name = 'Distributor Management'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
@@ -65,19 +65,20 @@ if not customsearch5135_data_raw.empty:
         formatted_aggregated_data['Amount'] = formatted_aggregated_data['Amount'].apply(lambda x: "${:,.2f}".format(x))
 
         # Create a layout with columns
-        col1, col2, col3 = st.columns([2, 2, 1])
+        col1, col2 = st.columns([2, 1])
 
-        # Bar chart in the first two columns (col1 and col2)
+        # Pie chart in the first column (col1)
         with col1:
-            st.write("Sales by Distributor (Bar Chart)")
-            bar_chart = alt.Chart(aggregated_data).mark_bar().encode(
-                x=alt.X('Distributor', sort=None),
-                y='Amount'
+            st.write("Sales Distribution by Distributor (Pie Chart)")
+            pie_chart = alt.Chart(aggregated_data).mark_arc().encode(
+                theta=alt.Theta(field="Amount", type="quantitative"),
+                color=alt.Color(field="Distributor", type="nominal"),
+                tooltip=["Distributor", "Amount"]
             )
-            st.altair_chart(bar_chart, use_container_width=True)
+            st.altair_chart(pie_chart, use_container_width=True)
 
-        # Aggregated data table in the third column (col3)
-        with col3:
+        # Aggregated data table in the second column (col2)
+        with col2:
             st.write("Aggregated Sales by Distributor:")
             st.dataframe(formatted_aggregated_data)
 
