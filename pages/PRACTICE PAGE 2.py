@@ -28,11 +28,9 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
-from datetime import datetime, timedelta
-import plotly.express as px
+import streamlit as st
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -41,149 +39,138 @@ def fetch_raw_data(saved_search_id):
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Fetch raw data
-open_order_data = fetch_raw_data("customsearch5065") 
-pick_task_data = fetch_raw_data("customsearch5066") 
+# Sidebar filters
+st.sidebar.header("Filters")
 
-# Select only 'Order Number' and 'Task ID' from pick_task_data
-pick_task_data = pick_task_data[['Order Number', 'Task ID']]
+# Fetch raw data for estimates, sales orders, customsearch5128, and customsearch5129
+estimate_data_raw = fetch_raw_data("customsearch5127")
+sales_order_data_raw = fetch_raw_data("customsearch5122")
+customsearch5128_data_raw = fetch_raw_data("customsearch5128")
+customsearch5129_data_raw = fetch_raw_data("customsearch5129")
 
-# Merge the two dataframes on 'Order Number', keeping all rows from open_order_data
-merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='left')
+# Extract unique sales reps from all datasets and add 'All' option
+unique_sales_reps = pd.concat([
+    estimate_data_raw['Sales Rep'], 
+    sales_order_data_raw['Sales Rep'],
+    customsearch5128_data_raw['Sales Rep'],
+    customsearch5129_data_raw['Sales Rep']
+]).dropna().unique()
+unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
 
-# Convert 'Ship Date' to datetime format
-merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
+# Sales rep filter in the sidebar
+selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
 
-# Sidebar filters (global for both tabs)
-st.sidebar.header('Filters')
+# Apply the filter dynamically (not cached) to all datasets
+def apply_filters(df):
+    if selected_sales_reps and 'All' not in selected_sales_reps:
+        df = df[df['Sales Rep'].isin(selected_sales_reps)]
+    return df
 
-# Sales Rep filter with 'All' option
-sales_rep_list = merged_df['Sales Rep'].unique().tolist()
-sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
+estimate_data = apply_filters(estimate_data_raw)
+sales_order_data = apply_filters(sales_order_data_raw)
+customsearch5128_data = apply_filters(customsearch5128_data_raw)
+customsearch5129_data = apply_filters(customsearch5129_data_raw)
 
-sales_rep_filter = st.sidebar.multiselect(
-    'Sales Rep', 
-    options=sales_rep_list, 
-    default='All'
-)
+# Function to calculate metrics for orders or estimates
+def calculate_metrics(df):
+    total_records = df.shape[0]
+    ready_records = df[(df['Payment Status'].isin(['Paid', 'Terms'])) & (df['Stock Status'] == 'In Stock')].shape[0]
+    not_ready_records = total_records - ready_records
+    outstanding_revenue = df['Amount Remaining'].astype(float).sum()
+    return total_records, ready_records, not_ready_records, outstanding_revenue
 
-# Ship Via filter with 'All' option
-ship_via_list = merged_df['Ship Via'].unique().tolist()
-ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
+# Function to apply conditional formatting to the 'Sales Order' column only
+def highlight_conditions_column(s):
+    if s['Payment Status'] == 'Needs Payment':
+        return ['color: red' if col == 'Sales Order' else '' for col in s.index]
+    elif s['Stock Status'] == 'Back Ordered':
+        return ['color: orange' if col == 'Sales Order' else '' for col in s.index]
+    return [''] * len(s)  # No formatting otherwise
 
-ship_via_filter = st.sidebar.multiselect(
-    'Ship Via', 
-    options=ship_via_list, 
-    default='All'
-)
+# Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
+st.header("Order Management")
+tab1, tab2, tab3, tab4 = st.tabs(["Sales Orders", "Estimates", "Customsearch 5128", "Customsearch 5129"])
 
-# Ship Date filter with custom range option
-date_filter_options = ['Today', 'Past (including today)', 'Future (including today)', 'Custom Range']
-ship_date_filter = st.sidebar.selectbox(
-    'Ship Date',
-    options=date_filter_options
-)
-
-if ship_date_filter == 'Custom Range':
-    start_date = st.sidebar.date_input('Start Date', datetime.today() - timedelta(days=7))
-    end_date = st.sidebar.date_input('End Date', datetime.today())
-else:
-    start_date = None
-    end_date = None
-
-# Tasked Orders checkbox
-tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
-
-# Untasked Orders checkbox
-untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
-
-# Apply Ship Date filter
-today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
-
-if ship_date_filter == 'Today':
-    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
-elif ship_date_filter == 'Past (including today)':
-    merged_df = merged_df[merged_df['Ship Date'] <= today]
-elif ship_date_filter == 'Future (including today)':
-    merged_df = merged_df[merged_df['Ship Date'] >= today]
-elif ship_date_filter == 'Custom Range' and start_date and end_date:
-    merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
-                          (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
-
-# Apply Sales Rep filter
-if 'All' not in sales_rep_filter:
-    merged_df = merged_df[merged_df['Sales Rep'].isin(sales_rep_filter)]
-
-# Apply Ship Via filter
-if 'All' not in ship_via_filter:
-    merged_df = merged_df[merged_df['Ship Via'].isin(ship_via_filter)]
-
-# Apply Tasked/Untasked Orders filter
-if tasked_orders and not untasked_orders:
-    merged_df = merged_df[merged_df['Task ID'].notna()]
-elif untasked_orders and not tasked_orders:
-    merged_df = merged_df[merged_df['Task ID'].isna()]
-
-# Create tabs for Shipping Report and Shipping Calendar
-tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
-
-# Tab 1: Shipping Report
+# Sales Orders tab
 with tab1:
-    # Metrics
-    total_orders = len(merged_df)
-    tasked_orders_count = merged_df['Task ID'].notna().sum()
-    untasked_orders_count = merged_df['Task ID'].isna().sum()
-    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
+    st.subheader("Sales Orders")
 
-    # Display metrics
+    # Calculate metrics for sales orders
+    total_orders, ready_orders, not_ready_orders, outstanding_revenue_orders = calculate_metrics(sales_order_data)
+
+    # Display the metrics for Sales Orders
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Open Orders", total_orders)
-    col2.metric("Tasked Orders", tasked_orders_count)
-    col3.metric("Untasked Orders", untasked_orders_count)
-    col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
+    col1.metric("Total Orders", total_orders)
+    col2.metric("Total Orders Ready", ready_orders)
+    col3.metric("Total Orders Not Ready", not_ready_orders)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
 
-    # Display charts using Plotly
-    if not merged_df.empty:
-        col_chart, col_pie = st.columns([2, 1])
-        with col_chart:
-            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
-            ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
-            fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
-            st.plotly_chart(fig_line, use_container_width=True)
-        
-        with col_pie:
-            matched_orders = merged_df['Task ID'].notna().sum()
-            unmatched_orders = merged_df['Task ID'].isna().sum()
-            pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
-            fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
-            st.plotly_chart(fig_pie, use_container_width=True)
+    # Apply conditional formatting to the 'Sales Order' column only
+    if not sales_order_data.empty:
+        styled_sales_order_data = sales_order_data.style.apply(highlight_conditions_column, axis=1)
+        st.dataframe(styled_sales_order_data)
     else:
-        st.write("No data available for the selected filters.")
+        st.write("No data available for Sales Orders.")
 
-    # Display filtered DataFrame in an expander
-    with st.expander("View Filtered Data Table"):
-        st.write(merged_df)
-
-# Tab 2: Shipping Calendar
+# Estimates tab
 with tab2:
-    st.header("Shipping Calendar")
+    st.subheader("Estimates")
 
-    # Group orders by week and day
-    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
-    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
-    merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
+    # Calculate metrics for estimates
+    total_estimates, ready_estimates, not_ready_estimates, outstanding_revenue_estimates = calculate_metrics(estimate_data)
 
-    # Get the unique weeks from the dataset
-    unique_weeks = merged_df['Week'].unique()
+    # Display the metrics for Estimates
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Estimates", total_estimates)
+    col2.metric("Total Estimates Ready", ready_estimates)
+    col3.metric("Total Estimates Not Ready", not_ready_estimates)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
 
-    for week in unique_weeks:
-        st.subheader(f"Week {week}")
-        # Create 5 columns representing Monday to Friday
-        col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
-        
-        # Filter data by day for each column
-        for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
-            day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
-            with col:
-                with st.expander(f"{day} ({len(day_orders)} Orders)"):
-                    st.write(day_orders)
+    # Apply conditional formatting to the 'Sales Order' column only
+    if not estimate_data.empty:
+        styled_estimate_data = estimate_data.style.apply(highlight_conditions_column, axis=1)
+        st.dataframe(styled_estimate_data)
+    else:
+        st.write("No data available for Estimates.")
+
+# Customsearch 5128 tab
+with tab3:
+    st.subheader("Customsearch 5128")
+
+    # Calculate metrics for customsearch 5128 data
+    total_customsearch5128, ready_customsearch5128, not_ready_customsearch5128, outstanding_revenue_customsearch5128 = calculate_metrics(customsearch5128_data)
+
+    # Display the metrics for customsearch 5128 data
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Customsearch 5128", total_customsearch5128)
+    col2.metric("Total Customsearch 5128 Ready", ready_customsearch5128)
+    col3.metric("Total Customsearch 5128 Not Ready", not_ready_customsearch5128)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5128:,.2f}")
+
+    # Apply conditional formatting to the 'Sales Order' column only
+    if not customsearch5128_data.empty:
+        styled_customsearch5128_data = customsearch5128_data.style.apply(highlight_conditions_column, axis=1)
+        st.dataframe(styled_customsearch5128_data)
+    else:
+        st.write("No data available for Customsearch 5128.")
+
+# Customsearch 5129 tab
+with tab4:
+    st.subheader("Customsearch 5129")
+
+    # Calculate metrics for customsearch 5129 data
+    total_customsearch5129, ready_customsearch5129, not_ready_customsearch5129, outstanding_revenue_customsearch5129 = calculate_metrics(customsearch5129_data)
+
+    # Display the metrics for customsearch 5129 data
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Customsearch 5129", total_customsearch5129)
+    col2.metric("Total Customsearch 5129 Ready", ready_customsearch5129)
+    col3.metric("Total Customsearch 5129 Not Ready", not_ready_customsearch5129)
+    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5129:,.2f}")
+
+    # Apply conditional formatting to the 'Sales Order' column only
+    if not customsearch5129_data.empty:
+        styled_customsearch5129_data = customsearch5129_data.style.apply(highlight_conditions_column, axis=1)
+        st.dataframe(styled_customsearch5129_data)
+    else:
+        st.write("No data available for Customsearch 5129.")
