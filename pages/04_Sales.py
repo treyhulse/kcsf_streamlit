@@ -130,7 +130,7 @@ def apply_global_filters(df):
             "Filter by Date", 
             ["Custom", "This Month", "Today", "Tomorrow", "This Week", "Last Week", "Last Month", 
              "First Quarter", "Second Quarter", "Third Quarter", "Fourth Quarter", "Next Month"],
-            index=0  # Default to "Custom"
+            index=6  # Default to "Custom"
         )
 
         today = datetime.today().date()
