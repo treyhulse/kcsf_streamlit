@@ -142,16 +142,6 @@ with tab2:
 with tab3:
     st.subheader("Customsearch 5128")
 
-    # Calculate metrics for customsearch 5128 data
-    total_customsearch5128, ready_customsearch5128, not_ready_customsearch5128, outstanding_revenue_customsearch5128 = calculate_metrics(customsearch5128_data)
-
-    # Display the metrics for customsearch 5128 data
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Customsearch 5128", total_customsearch5128)
-    col2.metric("Total Customsearch 5128 Ready", ready_customsearch5128)
-    col3.metric("Total Customsearch 5128 Not Ready", not_ready_customsearch5128)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5128:,.2f}")
-
     # Apply conditional formatting to the 'Sales Order' column only
     if not customsearch5128_data.empty:
         styled_customsearch5128_data = customsearch5128_data.style.apply(highlight_conditions_column, axis=1)
@@ -162,16 +152,6 @@ with tab3:
 # Customsearch 5129 tab
 with tab4:
     st.subheader("Customsearch 5129")
-
-    # Calculate metrics for customsearch 5129 data
-    total_customsearch5129, ready_customsearch5129, not_ready_customsearch5129, outstanding_revenue_customsearch5129 = calculate_metrics(customsearch5129_data)
-
-    # Display the metrics for customsearch 5129 data
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Customsearch 5129", total_customsearch5129)
-    col2.metric("Total Customsearch 5129 Ready", ready_customsearch5129)
-    col3.metric("Total Customsearch 5129 Not Ready", not_ready_customsearch5129)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5129:,.2f}")
 
     # Apply conditional formatting to the 'Sales Order' column only
     if not customsearch5129_data.empty:
