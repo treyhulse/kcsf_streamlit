@@ -30,6 +30,9 @@ import pandas as pd
 import altair as alt
 from utils.restlet import fetch_restlet_data
 
+# Set the title of the page
+st.title("Distributor Management")
+
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data_with_progress(saved_search_id):
