@@ -30,10 +30,17 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_raw_data
+from utils.restlet import fetch_restlet_data
 from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price
 
 st.title("NetSuite & Shopify Product Sync")
+
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
 
 # Fetch NetSuite product data for customsearch0413
 netsuite_products_raw = fetch_raw_data("customsearch0413")
@@ -50,7 +57,7 @@ tabs = st.tabs([
 with tabs[0]:
     st.subheader("NetSuite Products Marked for Shopify")
     
-    # Display the products
+    # Display the products from the saved search customsearch0413
     if not netsuite_products_raw.empty:
         st.dataframe(netsuite_products_raw)
     else:
@@ -105,7 +112,6 @@ with tabs[2]:
 with tabs[3]:
     st.subheader("Sync Inventory & Price between NetSuite and Shopify")
     
-    # Fetch Shopify products for updating
     if not shopify_products.empty:
         selected_shopify_product = st.selectbox("Select Shopify Product to Update", shopify_products['title'])
         
