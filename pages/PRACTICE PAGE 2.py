@@ -34,7 +34,7 @@ import pandas as pd
 from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
 from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
 from utils.apis import get_shopify_products
-from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify
+from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify, get_synced_products_from_shopify
 
 
 st.title("NetSuite & Shopify Product Sync")
@@ -123,12 +123,23 @@ with tabs[2]:
         st.error("No inventory data available from SuiteQL.")
 
 
-# Tab 4: Post Products to Shopify (Enhanced with Shopify Connection)
+# Tab 4: Post Products to Shopify (Enhanced with Shopify Comparison)
 with tabs[3]:
     st.subheader("Post Products from NetSuite to Shopify")
     
     # Fetch data from customsearch5131
     customsearch5131_data = fetch_customsearch5131_data()
+
+    # Fetch all products from Shopify
+    shopify_products = get_synced_products_from_shopify()
+
+    # Extract all SKUs from Shopify products
+    shopify_skus = []
+    if shopify_products:
+        for product in shopify_products:
+            for variant in product.get('variants', []):
+                shopify_skus.append(variant.get('sku', ''))
+        shopify_skus = [sku for sku in shopify_skus if sku]  # Filter out empty SKUs
 
     if not customsearch5131_data.empty:
         # Select a product to post based on SKU
@@ -143,8 +154,8 @@ with tabs[3]:
         st.write(f"Description: {selected_row['Description']}")
         st.write(f"Price: {selected_row['Price']}")
         
-        # Check if SKU already exists on Shopify
-        if sku_exists_on_shopify(selected_row['SKU']):
+        # Check if the SKU exists in the Shopify SKUs list
+        if selected_row['SKU'] in shopify_skus:
             st.warning(f"Product with SKU {selected_row['SKU']} already exists on Shopify.")
         else:
             # Prepare product data for Shopify
