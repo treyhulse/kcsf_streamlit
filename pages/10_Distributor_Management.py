@@ -24,14 +24,10 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import streamlit as st
 import pandas as pd
 import altair as alt
 from utils.restlet import fetch_restlet_data
-
-# Set the title of the page
-st.title("Distributor Management")
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -50,6 +46,7 @@ def fetch_raw_data_with_progress(saved_search_id):
     return df
 
 # Fetch raw data for customsearch5135 with progress bar
+st.write("Loading data with progress bar...")
 customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 
 # Check if the data is not empty
@@ -63,11 +60,34 @@ if not customsearch5135_data_raw.empty:
 
     # Convert the 'Date Created' column to datetime
     customsearch5135_data_raw['Date Created'] = pd.to_datetime(customsearch5135_data_raw['Date Created'])
-    customsearch5135_data_raw['Date Created'] = pd.to_datetime(customsearch5135_data_raw['Date Created'])
+
+    # Define quarter ranges for 2024
+    def assign_quarter(date):
+        if date >= pd.Timestamp("2024-01-01") and date <= pd.Timestamp("2024-03-31"):
+            return 'Q1'
+        elif date >= pd.Timestamp("2024-04-01") and date <= pd.Timestamp("2024-06-30"):
+            return 'Q2'
+        elif date >= pd.Timestamp("2024-07-01") and date <= pd.Timestamp("2024-09-30"):
+            return 'Q3'
+        else:
+            return 'Q4'
+
+    # Apply the quarter assignment based on 'Date Created'
+    customsearch5135_data_raw['Quarter'] = customsearch5135_data_raw['Date Created'].apply(assign_quarter)
+
+    # Sidebar filter for Quarter
+    selected_quarter = st.sidebar.multiselect(
+        "Filter by Quarter (Date Created)",
+        options=['Q1', 'Q2', 'Q3', 'Q4'],
+        default=['Q1', 'Q2', 'Q3', 'Q4']
+    )
+
+    # Filter the DataFrame based on the selected quarter
+    filtered_data = customsearch5135_data_raw[customsearch5135_data_raw['Quarter'].isin(selected_quarter)]
 
     # Aggregate sales via the 'Amount' column by 'Distributor' column
     if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
-        aggregated_data = customsearch5135_data_raw.groupby('Distributor').agg(
+        aggregated_data = filtered_data.groupby('Distributor').agg(
             total_sales=('Amount', 'sum'),
             unique_sales_orders=('Sales Order', 'nunique')
         ).reset_index()
@@ -95,10 +115,7 @@ if not customsearch5135_data_raw.empty:
             st.dataframe(formatted_aggregated_data)
 
         # Stacked bar chart: Group data by Distributor and Quarter
-        customsearch5135_data_raw['quarter'] = customsearch5135_data_raw['Date Created'].dt.to_period('Q')
-
-        # Create a stacked bar chart by Distributor and Quarter
-        sales_by_quarter = customsearch5135_data_raw.groupby(['Distributor', 'quarter']).agg(
+        sales_by_quarter = filtered_data.groupby(['Distributor', 'Quarter']).agg(
             total_sales=('Amount', 'sum')
         ).reset_index()
 
@@ -106,8 +123,8 @@ if not customsearch5135_data_raw.empty:
         stacked_bar_chart = alt.Chart(sales_by_quarter).mark_bar().encode(
             x='Distributor',
             y='total_sales',
-            color='quarter',
-            tooltip=['Distributor', 'quarter', 'total_sales']
+            color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])),
+            tooltip=['Distributor', 'Quarter', 'total_sales']
         ).properties(
             height=400
         )
