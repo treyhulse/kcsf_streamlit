@@ -162,7 +162,7 @@ with tab1:
 
     # Display filtered DataFrame in an expander
     with st.expander("View Filtered Data Table"):
-        st.write(merged_df.drop_duplicates())
+        st.write(merged_df)
 
 # Tab 2: Shipping Calendar
 with tab2:
