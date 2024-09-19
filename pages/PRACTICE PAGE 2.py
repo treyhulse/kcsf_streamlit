@@ -30,10 +30,13 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_restlet_data
+from utils.restlet import fetch_raw_data
 from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price
 
 st.title("NetSuite & Shopify Product Sync")
+
+# Fetch NetSuite product data for customsearch0413
+netsuite_products_raw = fetch_raw_data("customsearch0413")
 
 # Create the 4 tabs
 tabs = st.tabs([
@@ -47,11 +50,9 @@ tabs = st.tabs([
 with tabs[0]:
     st.subheader("NetSuite Products Marked for Shopify")
     
-    # Fetch NetSuite products marked for Shopify (saved search: customsearch0413)
-    netsuite_products = fetch_restlet_data("customsearch0413")
-    
-    if not netsuite_products.empty:
-        st.dataframe(netsuite_products)
+    # Display the products
+    if not netsuite_products_raw.empty:
+        st.dataframe(netsuite_products_raw)
     else:
         st.error("No products available from NetSuite.")
 
@@ -71,11 +72,11 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("Post Products from NetSuite to Shopify")
     
-    if not netsuite_products.empty:
-        selected_product = st.selectbox("Select Product to Post", netsuite_products['itemId'])
+    if not netsuite_products_raw.empty:
+        selected_product = st.selectbox("Select Product to Post", netsuite_products_raw['itemId'])
         
         # Get the necessary product details
-        product_data = netsuite_products.loc[netsuite_products['itemId'] == selected_product].to_dict(orient="records")[0]
+        product_data = netsuite_products_raw.loc[netsuite_products_raw['itemId'] == selected_product].to_dict(orient="records")[0]
         
         if st.button("Post to Shopify"):
             # Prepare product data for Shopify
@@ -104,6 +105,7 @@ with tabs[2]:
 with tabs[3]:
     st.subheader("Sync Inventory & Price between NetSuite and Shopify")
     
+    # Fetch Shopify products for updating
     if not shopify_products.empty:
         selected_shopify_product = st.selectbox("Select Shopify Product to Update", shopify_products['title'])
         
