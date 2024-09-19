@@ -30,83 +30,64 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_netsuite_inventory
+from utils.restlet import fetch_raw_data  # Pulls data from RESTlet for customsearch
+from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
 from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
 
-# Helper function to extract SKUs from the Shopify variants
-def extract_shopify_skus(shopify_products):
-    shopify_skus = []
-    
-    for index, row in shopify_products.iterrows():
-        variants = row['variants']  # 'variants' is a list of dictionaries
-        if variants:
-            for variant in variants:
-                sku = variant.get('sku', None)
-                if sku:
-                    shopify_skus.append({
-                        'id': row['id'],  # Shopify Product ID
-                        'sku': sku,
-                        'title': row['title']  # Add other fields as necessary
-                    })
-                    
-    return pd.DataFrame(shopify_skus)
+# Fetch data from customsearch5131 using the RESTlet method
+@st.cache_data(ttl=900)
+def fetch_customsearch5131_data():
+    return fetch_raw_data("customsearch5131")  # Assuming RESTlet handles custom search IDs
 
-# Helper function to match NetSuite inventory and Shopify products by item_id and SKU
-def match_netsuite_shopify():
+# Helper function to match NetSuite inventory and Shopify products by name/title
+def match_netsuite_shopify_by_title():
     # Fetch inventory data from NetSuite (SuiteQL)
     netsuite_inventory = fetch_netsuite_inventory()
     
     # Fetch product data from Shopify
     shopify_products = pd.DataFrame(get_shopify_products())
     
-    # Extract SKUs from Shopify products (from the variants field)
-    if 'variants' in shopify_products.columns:
-        shopify_skus = extract_shopify_skus(shopify_products)
-    else:
-        st.error("Shopify data does not contain 'variants' field.")
-        return
-    
     if netsuite_inventory.empty:
         st.error("No inventory data available from NetSuite.")
         return
     
-    if shopify_skus.empty:
-        st.error("No SKU data available from Shopify products.")
+    if shopify_products.empty:
+        st.error("No products available from Shopify.")
         return
     
-    # Merge inventory and Shopify data on item_id (NetSuite) and sku (Shopify)
+    # Merge inventory and Shopify data on item_name (NetSuite) and title (Shopify)
     matched_data = pd.merge(
-        netsuite_inventory, shopify_skus, 
-        left_on='item_id', right_on='sku', 
+        netsuite_inventory, shopify_products, 
+        left_on='item_name', right_on='title', 
         how='inner'
     )
     
     if not matched_data.empty:
-        st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
+        st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify by title.")
         st.dataframe(matched_data)
     else:
-        st.error("No matches found between NetSuite and Shopify products based on SKU.")
+        st.error("No matches found between NetSuite and Shopify products based on title.")
 
 # Create the 4 tabs
 tabs = st.tabs([
-    "View NetSuite Products", 
+    "View NetSuite Products (Custom Search 5131)", 
     "View Shopify Products", 
-    "Post Products to Shopify", 
-    "Inventory & Shopify SKU Match"
+    "Inventory Sync (SuiteQL)", 
+    "Post Products to Shopify"
 ])
 
-# Tab 1: View NetSuite Products (Example, you can modify as needed)
+# Tab 1: View NetSuite Products (Custom Search 5131)
 with tabs[0]:
-    st.subheader("NetSuite Products Marked for Shopify")
-    netsuite_inventory = fetch_netsuite_inventory()
-    if not netsuite_inventory.empty:
-        st.dataframe(netsuite_inventory)
+    st.subheader("NetSuite Products - Custom Search 5131")
+    customsearch5131_data = fetch_customsearch5131_data()
+    if not customsearch5131_data.empty:
+        st.dataframe(customsearch5131_data)
     else:
-        st.error("No NetSuite products available.")
+        st.error("No data available from customsearch5131.")
 
-# Tab 2: View Shopify Products (Example, you can modify as needed)
+# Tab 2: View Shopify Products
 with tabs[1]:
     st.subheader("Shopify Products")
     shopify_products = pd.DataFrame(get_shopify_products())
@@ -115,18 +96,18 @@ with tabs[1]:
     else:
         st.error("No products available from Shopify.")
 
-# Tab 3: Post Products to Shopify (Example, you can modify as needed)
+# Tab 3: Inventory Sync (SuiteQL)
 with tabs[2]:
+    st.subheader("Inventory Sync - NetSuite and Shopify by Title")
+    match_netsuite_shopify_by_title()
+
+# Tab 4: Post Products to Shopify (Unchanged for now)
+with tabs[3]:
     st.subheader("Post Products from NetSuite to Shopify")
-    if not netsuite_inventory.empty:
-        selected_product = st.selectbox("Select Product to Post", netsuite_inventory['item_name'])
+    if not customsearch5131_data.empty:
+        selected_product = st.selectbox("Select Product to Post", customsearch5131_data['item_name'])
         if st.button("Post to Shopify"):
             # Logic for posting to Shopify would go here
             st.success(f"Product {selected_product} posted to Shopify.")
     else:
         st.error("No products available from NetSuite to post.")
-
-# Tab 4: Match NetSuite and Shopify inventory
-with tabs[3]:
-    st.subheader("Match NetSuite Inventory with Shopify Products by SKU")
-    match_netsuite_shopify()
