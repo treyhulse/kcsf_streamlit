@@ -119,6 +119,9 @@ if tasked_orders and not untasked_orders:
 elif untasked_orders and not tasked_orders:
     merged_df = merged_df[merged_df['Task ID'].isna()]
 
+# **Remove duplicate Order Numbers**
+merged_df = merged_df.drop_duplicates(subset=['Order Number'])
+
 # Create tabs for Shipping Report and Shipping Calendar
 tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
 
