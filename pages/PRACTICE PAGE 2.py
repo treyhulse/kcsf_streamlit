@@ -162,7 +162,7 @@ with tabs[2]:
                         "product": {
                             "variants": [
                                 {
-                                    "sku": row['sku'],
+                                    "title": row['title'],
                                     "inventory_quantity": row['quantity_available']  # Use NetSuite inventory quantity
                                 }
                             ]
@@ -170,7 +170,7 @@ with tabs[2]:
                     }
 
                     # Call the function to update inventory on Shopify
-                    update_product_on_shopify(row['sku'], update_data)
+                    update_product_on_shopify(row['title'], update_data)
 
                 st.success("Inventory sync complete!")
     else:
