@@ -29,11 +29,13 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from utils.apis import get_netsuite_products_via_restlet, get_shopify_products, post_product_to_shopify, update_inventory_and_price
+import pandas as pd
+from utils.restlet import fetch_restlet_data
+from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price
 
 st.title("NetSuite & Shopify Product Sync")
 
-# Define tabs for each functionality
+# Create the 4 tabs
 tabs = st.tabs([
     "View NetSuite Products", 
     "View Shopify Products", 
@@ -45,11 +47,10 @@ tabs = st.tabs([
 with tabs[0]:
     st.subheader("NetSuite Products Marked for Shopify")
     
-    # Fetch NetSuite products marked for Shopify
-    netsuite_products = get_netsuite_products_via_restlet("customsearch0413")
+    # Fetch NetSuite products marked for Shopify (saved search: customsearch0413)
+    netsuite_products = fetch_restlet_data("customsearch0413")
     
-    # Display the products
-    if netsuite_products and not netsuite_products.empty:
+    if not netsuite_products.empty:
         st.dataframe(netsuite_products)
     else:
         st.error("No products available from NetSuite.")
@@ -59,10 +60,9 @@ with tabs[1]:
     st.subheader("Shopify Products")
     
     # Fetch Shopify products
-    shopify_products = get_shopify_products()
+    shopify_products = pd.DataFrame(get_shopify_products())
     
-    # Display Shopify products
-    if shopify_products and not shopify_products.empty:
+    if not shopify_products.empty:
         st.dataframe(shopify_products)
     else:
         st.error("No products available from Shopify.")
@@ -71,25 +71,27 @@ with tabs[1]:
 with tabs[2]:
     st.subheader("Post Products from NetSuite to Shopify")
     
-    # Display NetSuite products for selection
-    if netsuite_products and not netsuite_products.empty:
+    if not netsuite_products.empty:
         selected_product = st.selectbox("Select Product to Post", netsuite_products['itemId'])
         
+        # Get the necessary product details
+        product_data = netsuite_products.loc[netsuite_products['itemId'] == selected_product].to_dict(orient="records")[0]
+        
         if st.button("Post to Shopify"):
-            # Prepare the data for Shopify
-            product_data = {
+            # Prepare product data for Shopify
+            shopify_product_data = {
                 "product": {
-                    "title": selected_product,
-                    "body_html": netsuite_products.loc[netsuite_products['itemId'] == selected_product, 'description'].values[0],
+                    "title": product_data['itemId'],
+                    "body_html": product_data['description'],
                     "variants": [
                         {
-                            "price": netsuite_products.loc[netsuite_products['itemId'] == selected_product, 'price'].values[0],
-                            "sku": netsuite_products.loc[netsuite_products['itemId'] == selected_product, 'sku'].values[0]
+                            "price": product_data['price'],
+                            "sku": product_data['sku']
                         }
                     ]
                 }
             }
-            status_code, response = post_product_to_shopify(product_data)
+            status_code, response = post_product_to_shopify(shopify_product_data)
             
             if status_code == 201:
                 st.success("Product posted successfully!")
@@ -102,8 +104,7 @@ with tabs[2]:
 with tabs[3]:
     st.subheader("Sync Inventory & Price between NetSuite and Shopify")
     
-    # Display Shopify products for selection
-    if shopify_products and not shopify_products.empty:
+    if not shopify_products.empty:
         selected_shopify_product = st.selectbox("Select Shopify Product to Update", shopify_products['title'])
         
         # Input fields for new price and inventory quantity
@@ -111,7 +112,10 @@ with tabs[3]:
         new_inventory = st.number_input("New Inventory Quantity", min_value=0)
         
         if st.button("Update Product"):
+            # Get the product ID from Shopify
             product_id = shopify_products.loc[shopify_products['title'] == selected_shopify_product, 'id'].values[0]
+            
+            # Update inventory and price
             status_code, response = update_inventory_and_price(product_id, new_inventory, new_price)
             
             if status_code == 200:
