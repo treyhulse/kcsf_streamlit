@@ -89,8 +89,8 @@ if not customsearch5135_data_raw.empty:
             st.dataframe(formatted_aggregated_data)
 
         # Stacked bar chart: Group data by Distributor and Quarter
-        customsearch5135_data_raw['trandate'] = pd.to_datetime(customsearch5135_data_raw['trandate'])
-        customsearch5135_data_raw['quarter'] = customsearch5135_data_raw['trandate'].dt.to_period('Q')
+        customsearch5135_data_raw['Date'] = pd.to_datetime(customsearch5135_data_raw['Date'])
+        customsearch5135_data_raw['quarter'] = customsearch5135_data_raw['Date'].dt.to_period('Q')
 
         # Create a stacked bar chart by Distributor and Quarter
         sales_by_quarter = customsearch5135_data_raw.groupby(['Distributor', 'quarter']).agg(
