@@ -34,6 +34,8 @@ import pandas as pd
 from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
 from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
 from utils.apis import get_shopify_products
+from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify
+
 
 st.title("NetSuite & Shopify Product Sync")
 
@@ -121,13 +123,40 @@ with tabs[2]:
         st.error("No inventory data available from SuiteQL.")
 
 
-# Tab 4: Post Products to Shopify (Unchanged for now)
+# Tab 4: Post Products to Shopify (Enhanced with Shopify Connection)
 with tabs[3]:
     st.subheader("Post Products from NetSuite to Shopify")
+    
+    # Fetch data from customsearch5131
+    customsearch5131_data = fetch_customsearch5131_data()
+
     if not customsearch5131_data.empty:
+        # Select a product to post based on SKU
         selected_product = st.selectbox("Select Product to Post", customsearch5131_data['Title'])
-        if st.button("Post to Shopify"):
-            # Logic for posting to Shopify would go here
-            st.success(f"Product {selected_product} posted to Shopify.")
+        
+        # Get the row data for the selected product
+        selected_row = customsearch5131_data[customsearch5131_data['Title'] == selected_product].iloc[0]
+        
+        # Display selected product details
+        st.write("Selected Product Details:")
+        st.write(f"SKU: {selected_row['SKU']}")
+        st.write(f"Description: {selected_row['Description']}")
+        st.write(f"Price: {selected_row['Price']}")
+        
+        # Check if SKU already exists on Shopify
+        if sku_exists_on_shopify(selected_row['SKU']):
+            st.warning(f"Product with SKU {selected_row['SKU']} already exists on Shopify.")
+        else:
+            # Prepare product data for Shopify
+            product_data = prepare_product_data(
+                item_name=selected_row['Title'],
+                description=selected_row['Description'],
+                price=selected_row['Price'],
+                sku=selected_row['SKU']
+            )
+
+            # Post the product to Shopify
+            if st.button("Post to Shopify"):
+                post_product_to_shopify(product_data)
     else:
         st.error("No products available from NetSuite to post.")
