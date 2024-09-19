@@ -30,6 +30,9 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 
+# Display the user's email
+st.write(f"User Email: {user_email}")
+
 # Initialize session state if it doesn't exist
 if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
