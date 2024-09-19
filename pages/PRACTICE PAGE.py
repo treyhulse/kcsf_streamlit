@@ -45,7 +45,7 @@ def fetch_open_sales_orders(customer_id):
     FROM 
         transaction
     WHERE 
-        entity = 4168611
+        entity = {customer_id}
     ORDER BY 
         trandate DESC;
     """
