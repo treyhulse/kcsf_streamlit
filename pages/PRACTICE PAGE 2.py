@@ -48,7 +48,7 @@ sales_order_data_raw = fetch_raw_data("customsearch5122")
 customsearch5128_data_raw = fetch_raw_data("customsearch5128")
 customsearch5129_data_raw = fetch_raw_data("customsearch5129")
 
-# Extract unique sales reps from all datasets and add 'All' option
+# Extract unique sales reps from both datasets and add 'All' option
 unique_sales_reps = pd.concat([
     estimate_data_raw['Sales Rep'], 
     sales_order_data_raw['Sales Rep'],
@@ -60,7 +60,7 @@ unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the firs
 # Sales rep filter in the sidebar
 selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
 
-# Apply the filter dynamically (not cached) to all datasets
+# Apply the filter dynamically (not cached) to both datasets
 def apply_filters(df):
     if selected_sales_reps and 'All' not in selected_sales_reps:
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
@@ -83,7 +83,6 @@ def calculate_metrics(df):
     outstanding_revenue = df['Amount Remaining'].sum()
     return total_records, ready_records, not_ready_records, outstanding_revenue
 
-
 # Function to apply conditional formatting to the 'Sales Order' column only
 def highlight_conditions_column(s):
     if s['Payment Status'] == 'Needs Payment':
@@ -94,9 +93,9 @@ def highlight_conditions_column(s):
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
 st.header("Order Management")
-tab1, tab2, tab3, tab4 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Transfer Orders"])
+tab1, tab2, tab3, tab4 = st.tabs(["Sales Orders", "Estimates", "Customsearch 5128", "Customsearch 5129"])
 
-# Sales Orders tab
+# Sales Orders tab (with metrics)
 with tab1:
     st.subheader("Sales Orders")
 
@@ -117,7 +116,7 @@ with tab1:
     else:
         st.write("No data available for Sales Orders.")
 
-# Estimates tab
+# Estimates tab (with metrics)
 with tab2:
     st.subheader("Estimates")
 
@@ -138,44 +137,20 @@ with tab2:
     else:
         st.write("No data available for Estimates.")
 
-# Customsearch 5128 tab
+# Customsearch 5128 tab (no metrics)
 with tab3:
-    st.subheader("Customsearch 5128")
+    st.subheader("Purchase Orders")
 
-    # Calculate metrics for customsearch 5128 data
-    total_customsearch5128, ready_customsearch5128, not_ready_customsearch5128, outstanding_revenue_customsearch5128 = calculate_metrics(customsearch5128_data)
-
-    # Display the metrics for customsearch 5128 data
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Customsearch 5128", total_customsearch5128)
-    col2.metric("Total Customsearch 5128 Ready", ready_customsearch5128)
-    col3.metric("Total Customsearch 5128 Not Ready", not_ready_customsearch5128)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5128:,.2f}")
-
-    # Apply conditional formatting to the 'Sales Order' column only
     if not customsearch5128_data.empty:
-        styled_customsearch5128_data = customsearch5128_data.style.apply(highlight_conditions_column, axis=1)
-        st.dataframe(styled_customsearch5128_data)
+        st.dataframe(customsearch5128_data)
     else:
         st.write("No data available for Customsearch 5128.")
 
-# Customsearch 5129 tab
+# Customsearch 5129 tab (no metrics)
 with tab4:
-    st.subheader("Customsearch 5129")
+    st.subheader("Transfer Orders")
 
-    # Calculate metrics for customsearch 5129 data
-    total_customsearch5129, ready_customsearch5129, not_ready_customsearch5129, outstanding_revenue_customsearch5129 = calculate_metrics(customsearch5129_data)
-
-    # Display the metrics for customsearch 5129 data
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Customsearch 5129", total_customsearch5129)
-    col2.metric("Total Customsearch 5129 Ready", ready_customsearch5129)
-    col3.metric("Total Customsearch 5129 Not Ready", not_ready_customsearch5129)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_customsearch5129:,.2f}")
-
-    # Apply conditional formatting to the 'Sales Order' column only
     if not customsearch5129_data.empty:
-        styled_customsearch5129_data = customsearch5129_data.style.apply(highlight_conditions_column, axis=1)
-        st.dataframe(styled_customsearch5129_data)
+        st.dataframe(customsearch5129_data)
     else:
         st.write("No data available for Customsearch 5129.")
