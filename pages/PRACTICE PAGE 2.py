@@ -43,6 +43,10 @@ def match_netsuite_shopify():
     # Fetch product data from Shopify
     shopify_products = pd.DataFrame(get_shopify_products())
     
+    # Debug: Print the column names of both dataframes
+    st.write("NetSuite Inventory Columns:", netsuite_inventory.columns.tolist())
+    st.write("Shopify Products Columns:", shopify_products.columns.tolist())
+    
     if netsuite_inventory.empty:
         st.error("No inventory data available from NetSuite.")
         return
@@ -52,18 +56,20 @@ def match_netsuite_shopify():
         return
     
     # Merge inventory and Shopify data on item_id (NetSuite) and sku (Shopify)
-    matched_data = pd.merge(
-        netsuite_inventory, shopify_products, 
-        left_on='item_id', right_on='sku', 
-        how='inner'
-    )
-    
-    if not matched_data.empty:
-        st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
-        st.dataframe(matched_data)
-    else:
-        st.error("No matches found between NetSuite and Shopify products based on SKU.")
-    
+    try:
+        matched_data = pd.merge(
+            netsuite_inventory, shopify_products, 
+            left_on='item_id', right_on='sku', 
+            how='inner'
+        )
+        
+        if not matched_data.empty:
+            st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
+            st.dataframe(matched_data)
+        else:
+            st.error("No matches found between NetSuite and Shopify products based on SKU.")
+    except KeyError as e:
+        st.error(f"KeyError: {str(e)}")
 
 # Create the 4 tabs
 tabs = st.tabs([
