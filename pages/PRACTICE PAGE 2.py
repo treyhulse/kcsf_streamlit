@@ -44,12 +44,6 @@ def fetch_raw_data(saved_search_id):
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Fetch raw data for estimates, sales orders, customsearch5128, and customsearch5129
-shopify_items_data = fetch_raw_data("customsearch5131")
-
 # Fetch data from customsearch5131 using the RESTlet method
 @st.cache_data(ttl=900)
 def fetch_customsearch5131_data():
@@ -96,6 +90,10 @@ tabs = st.tabs([
 with tabs[0]:
     st.subheader("NetSuite Products - Custom Search 5131")
     customsearch5131_data = fetch_customsearch5131_data()
+    
+    # Print column names for debugging
+    st.write("Custom Search 5131 Columns:", customsearch5131_data.columns.tolist())
+    
     if not customsearch5131_data.empty:
         st.dataframe(customsearch5131_data)
     else:
@@ -118,6 +116,10 @@ with tabs[2]:
 # Tab 4: Post Products to Shopify (Unchanged for now)
 with tabs[3]:
     st.subheader("Post Products from NetSuite to Shopify")
+    
+    # Print column names for debugging
+    st.write("Custom Search 5131 Columns (for posting):", customsearch5131_data.columns.tolist())
+    
     if not customsearch5131_data.empty:
         selected_product = st.selectbox("Select Product to Post", customsearch5131_data['item_name'])
         if st.button("Post to Shopify"):
