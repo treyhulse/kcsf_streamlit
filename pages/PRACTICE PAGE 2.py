@@ -34,7 +34,7 @@ import pandas as pd
 from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
 from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
 from utils.apis import get_shopify_products
-from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify, get_synced_products_from_shopify
+from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify, get_synced_products_from_shopify, update_product_on_shopify
 
 
 st.title("NetSuite & Shopify Product Sync")
@@ -109,18 +109,72 @@ with tabs[1]:
     else:
         st.error("No products available from Shopify.")
 
-# Tab 3: Inventory Sync (SuiteQL with Item Type and Assembly Items)
+# Tab 3: Inventory Sync (Mass Sync Inventory Data to Shopify)
 with tabs[2]:
-    st.subheader("Inventory Sync (SuiteQL with Item Type and Assembly Items)")
-    
-    # Fetch SuiteQL data with item_type and assembly items included in the query
-    suiteql_inventory = fetch_suiteql_data()  # Ensure the SuiteQL query includes 'item_type' and assembly items
+    st.subheader("Inventory Sync (Mass Sync Inventory Data to Shopify)")
 
-    if not suiteql_inventory.empty:
-        # Display the SuiteQL data including item_type
-        st.dataframe(suiteql_inventory)
+    # Fetch SuiteQL data with inventory levels
+    suiteql_inventory = fetch_suiteql_data()
+
+    # Fetch all products from Shopify
+    shopify_products = get_synced_products_from_shopify()
+
+    # Extract relevant data from Shopify (Product ID and SKU)
+    shopify_inventory_data = []
+    if shopify_products:
+        for product in shopify_products:
+            for variant in product.get('variants', []):
+                shopify_inventory_data.append({
+                    'product_id': product['id'],
+                    'sku': variant.get('sku'),
+                    'shopify_inventory_quantity': variant.get('inventory_quantity', 0)  # Current Shopify inventory
+                })
+
+    # Convert Shopify inventory data to a DataFrame
+    shopify_inventory_df = pd.DataFrame(shopify_inventory_data)
+
+    # Ensure the SKUs are strings for proper matching
+    shopify_inventory_df['sku'] = shopify_inventory_df['sku'].astype(str)
+    suiteql_inventory['item_id'] = suiteql_inventory['item_id'].astype(str)
+
+    if not shopify_inventory_df.empty and not suiteql_inventory.empty:
+        # Perform a left join between Shopify and NetSuite data using SKU and item_id
+        merged_inventory_data = pd.merge(
+            shopify_inventory_df, suiteql_inventory,
+            left_on='sku', right_on='item_id',
+            how='inner'
+        )
+
+        # Show the merged data in the app
+        st.write("Matched Shopify Products and NetSuite Inventory Levels:")
+        st.dataframe(merged_inventory_data)
+
+        # Prepare data for mass sync
+        if not merged_inventory_data.empty:
+            st.write(f"Found {len(merged_inventory_data)} matching products between Shopify and NetSuite.")
+            
+            # Add a button to trigger the mass sync
+            if st.button("Sync Inventory to Shopify"):
+                # Iterate over the merged data and update Shopify inventory
+                for _, row in merged_inventory_data.iterrows():
+                    # Prepare update data for each product
+                    update_data = {
+                        "product": {
+                            "variants": [
+                                {
+                                    "sku": row['sku'],
+                                    "inventory_quantity": row['quantity_available']  # Use NetSuite inventory quantity
+                                }
+                            ]
+                        }
+                    }
+
+                    # Call the function to update inventory on Shopify
+                    update_product_on_shopify(row['sku'], update_data)
+
+                st.success("Inventory sync complete!")
     else:
-        st.error("No inventory data available from SuiteQL.")
+        st.error("No matching inventory data found between Shopify and NetSuite.")
 
 
 # Tab 4: Post Products to Shopify (Enhanced with Shopify Comparison)
