@@ -26,25 +26,43 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from utils.restlet import fetch_restlet_data
 import pandas as pd
+from utils.restlet import fetch_restlet_data
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
+def fetch_raw_data_with_progress(saved_search_id):
+    # Initialize progress bar
+    progress_bar = st.progress(0)
+    
+    # Simulating the process in steps (adjust according to your actual fetching time)
+    progress_bar.progress(10)  # 10% done
     df = fetch_restlet_data(saved_search_id)
+    progress_bar.progress(50)  # 50% done
+    
+    # Finalize loading
+    progress_bar.progress(100)  # 100% done
+    progress_bar.empty()  # Remove progress bar when done
     return df
 
-# Sidebar filters (if needed for future extension)
-st.sidebar.header("Filters")
+# Fetch raw data for customsearch5135 with progress bar
+st.write("Loading data with progress bar...")
+customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 
-# Fetch raw data for customsearch4966
-customsearch4966_data_raw = fetch_raw_data("customsearch5135")
+# Check if the data is not empty
+if not customsearch5135_data_raw.empty:
+    
+    # Aggregate sales via the 'Amount' column by 'Distributor' column
+    aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
+    
+    # Display the aggregated data
+    st.write("Aggregated Sales by Distributor:")
+    st.dataframe(aggregated_data)
+    
+    # Place the original DataFrame in an expander at the bottom of the page
+    with st.expander("View Raw Data"):
+        st.write("Original Data:")
+        st.dataframe(customsearch5135_data_raw)
 
-# Display data
-if not customsearch4966_data_raw.empty:
-    st.write("Displaying data for customsearch5135:")
-    st.dataframe(customsearch4966_data_raw)
 else:
     st.write("No data available for customsearch5135.")
