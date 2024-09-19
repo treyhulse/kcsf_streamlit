@@ -30,11 +30,25 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_raw_data  # Pulls data from RESTlet for customsearch
+from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
 from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
 from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
+
+
+
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
+
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Fetch raw data for estimates, sales orders, customsearch5128, and customsearch5129
+shopify_items_data = fetch_raw_data("customsearch5131")
 
 # Fetch data from customsearch5131 using the RESTlet method
 @st.cache_data(ttl=900)
