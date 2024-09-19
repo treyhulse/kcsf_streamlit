@@ -15,7 +15,7 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 
-st.write(f"Welcome, {user_email}. You have access to this page.")
+st.write(f"Welcome, {user_email}. You have access to this page. This will show you all orders for this customer. I chose 90261 Spirit Halloween as your customer for example. We can adjust this mapping.")
 
 ################################################################################################
 
@@ -111,7 +111,7 @@ customer_id = get_customer_id_from_email(user_email)
 
 # Tab structure for the different views
 if customer_id:
-    st.write(f"Fetching data for Customer ID: {customer_id}. This will show you all orders for this customer. I chose 90261 Spirit Halloween as your customer for example. We can adjust this mapping.")
+    st.write(f"Fetching data for Customer ID: {customer_id}.")
     
     # Create tabs for different views
     tabs = st.tabs(["All Orders", "Open Orders", "Open Estimates", "Returns"])
