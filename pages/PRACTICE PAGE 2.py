@@ -65,14 +65,14 @@ with tabs[0]:
 
     # Check if data is available for both
     if not customsearch5131_data.empty and not suiteql_inventory.empty:
-        # Convert SuiteQL `displayname` to string to match with `Title` from saved search
-        suiteql_inventory['displayname'] = suiteql_inventory['displayname'].astype(str)
+        # Convert SuiteQL `display_name` to string to match with `Title` from saved search
+        suiteql_inventory['display_name'] = suiteql_inventory['display_name'].astype(str)
         customsearch5131_data['Title'] = customsearch5131_data['Title'].astype(str)
 
-        # Perform the join on displayname (SuiteQL) and Title (saved search)
+        # Perform the join on display_name (SuiteQL) and Title (saved search)
         joined_data = pd.merge(
             suiteql_inventory, customsearch5131_data, 
-            left_on='displayname', right_on='Title', 
+            left_on='display_name', right_on='Title', 
             how='inner'
         )
         
