@@ -29,7 +29,8 @@ from utils.suiteql import fetch_suiteql_data
 # Function to map the user's email to a customer ID
 def get_customer_id_from_email(email):
     customer_map = {
-        "treyhulse3@gmail.com": 4168611,  # Example mapping, adjust as needed
+        "treyhulse3@gmail.com": 12762,  # Example mapping, adjust as needed
+        "gina.bliss@kcstorefixtures.com": 12762,
         # Add more email-to-customer mappings here
     }
     return customer_map.get(email, None)
@@ -108,7 +109,7 @@ customer_id = get_customer_id_from_email(user_email)
 
 # Tab structure for the different views
 if customer_id:
-    st.write(f"Fetching data for Customer ID: {customer_id}")
+    st.write(f"Fetching data for Customer ID: {customer_id}. This will show you all orders for this customer.")
     
     # Create tabs for different views
     tabs = st.tabs(["All Orders", "Open Orders", "Open Estimates", "Returns"])
