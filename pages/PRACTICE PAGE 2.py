@@ -35,7 +35,7 @@ from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
 
-# Helper function to match NetSuite inventory and Shopify products by SKU
+# Helper function to match NetSuite inventory and Shopify products by item_id and SKU
 def match_netsuite_shopify():
     # Fetch inventory data from NetSuite (SuiteQL)
     netsuite_inventory = fetch_netsuite_inventory()
@@ -51,10 +51,10 @@ def match_netsuite_shopify():
         st.error("No products available from Shopify.")
         return
     
-    # Merge inventory and Shopify data on SKU/itemid
+    # Merge inventory and Shopify data on item_id (NetSuite) and sku (Shopify)
     matched_data = pd.merge(
         netsuite_inventory, shopify_products, 
-        left_on='item_name', right_on='sku', 
+        left_on='item_id', right_on='sku', 
         how='inner'
     )
     
