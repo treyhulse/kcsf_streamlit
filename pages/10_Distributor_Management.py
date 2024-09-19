@@ -59,6 +59,9 @@ if not customsearch5135_data_raw.empty:
     # Ensure 'Sales Order' is treated as a categorical or string column
     customsearch5135_data_raw['Sales Order'] = customsearch5135_data_raw['Sales Order'].astype(str)
 
+    # Convert the 'Date' column to datetime
+    customsearch5135_data_raw['Date'] = pd.to_datetime(customsearch5135_data_raw['Date'])
+
     # Aggregate sales via the 'Amount' column by 'Distributor' column
     if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
         aggregated_data = customsearch5135_data_raw.groupby('Distributor').agg(
@@ -89,7 +92,6 @@ if not customsearch5135_data_raw.empty:
             st.dataframe(formatted_aggregated_data)
 
         # Stacked bar chart: Group data by Distributor and Quarter
-        customsearch5135_data_raw['Date'] = pd.to_datetime(customsearch5135_data_raw['Date'])
         customsearch5135_data_raw['quarter'] = customsearch5135_data_raw['Date'].dt.to_period('Q')
 
         # Create a stacked bar chart by Distributor and Quarter
