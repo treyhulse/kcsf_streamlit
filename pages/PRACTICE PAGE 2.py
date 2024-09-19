@@ -55,9 +55,9 @@ tabs = st.tabs([
     "Post Products to Shopify"
 ])
 
-# Tab 1: View NetSuite Products (Custom Search 5131 + SuiteQL Join)
+# Tab 1: View NetSuite Products (Custom Search 5131 + SuiteQL Join with Aggregated Inventory)
 with tabs[0]:
-    st.subheader("NetSuite Products - Custom Search 5131 & Inventory Sync")
+    st.subheader("NetSuite Products - Custom Search 5131 & Aggregated Inventory Sync")
 
     # Fetch data from SuiteQL and the custom search
     customsearch5131_data = fetch_customsearch5131_data()
@@ -75,13 +75,22 @@ with tabs[0]:
             left_on='display_name', right_on='Title', 
             how='inner'
         )
-        
-        # Display the joined data
-        if not joined_data.empty:
-            st.write(f"Joined {len(joined_data)} products between SuiteQL and customsearch5131.")
-            st.dataframe(joined_data)
+
+        # Aggregate by display_name/Title and sum the quantity_available
+        aggregated_data = joined_data.groupby(['display_name', 'Title']).agg({
+            'quantity_available': 'sum',  # Sum the quantity_available for each item
+            # Add other columns you want to keep, e.g., taking the first instance of description or price
+            'Description': 'first', 
+            'Price': 'first',
+            # Add more fields as needed
+        }).reset_index()
+
+        # Display the aggregated data
+        if not aggregated_data.empty:
+            st.write(f"Aggregated {len(aggregated_data)} products with total inventory from SuiteQL and customsearch5131.")
+            st.dataframe(aggregated_data)
         else:
-            st.error("No matches found between SuiteQL and customsearch5131 based on displayname and Title.")
+            st.error("No matches found after aggregation.")
     else:
         st.error("No data available for either SuiteQL or customsearch5131.")
 
