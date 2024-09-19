@@ -111,8 +111,9 @@ with tab1:
     col3.metric("Total Orders Not Ready", not_ready_orders)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
 
-    # Apply conditional formatting to the 'Sales Order' column only
+    # Apply conditional formatting and format 'Amount Remaining' as currency
     if not sales_order_data.empty:
+        sales_order_data['Amount Remaining'] = sales_order_data['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
         styled_sales_order_data = sales_order_data.style.apply(highlight_conditions_column, axis=1)
         st.dataframe(styled_sales_order_data)
     else:
@@ -132,12 +133,14 @@ with tab2:
     col3.metric("Total Estimates Not Ready", not_ready_estimates)
     col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
 
-    # Apply conditional formatting to the 'Sales Order' column only
+    # Apply conditional formatting and format 'Amount Remaining' as currency
     if not estimate_data.empty:
+        estimate_data['Amount Remaining'] = estimate_data['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
         styled_estimate_data = estimate_data.style.apply(highlight_conditions_column, axis=1)
         st.dataframe(styled_estimate_data)
     else:
         st.write("No data available for Estimates.")
+
 
 # Customsearch 5128 tab (no metrics)
 with tab3:
