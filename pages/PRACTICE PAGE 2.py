@@ -30,20 +30,20 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 
-# Function to get user's name (You can replace this with actual user logic)
-def get_user_name():
-    # For example, this could be fetched from a database or authentication system
-    return "User"
+# Check if st.experimental_user is available
+if st.experimental_user is not None:
+    # Get the user's email from st.experimental_user
+    user_email = st.experimental_user['email']
+else:
+    # Default message if experimental_user is not available
+    user_email = "guest"
 
 # Initialize session state if it doesn't exist
 if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
 
-# Get user name
-st.experimental_user = get_user_name()
-
 # Welcome Message
-st.title(f"Welcome, {st.experimental_user}!")
+st.title(f"Welcome, {user_email}!")
 st.write("This is your file management page. You can upload multiple files, view their content, and manage them effectively within this app. Feel free to drag and drop your files below.")
 
 # File uploader
