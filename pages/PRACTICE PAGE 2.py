@@ -33,6 +33,7 @@ import pandas as pd
 import requests
 from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price
 from requests_oauthlib import OAuth1
+from utils.suiteql import fetch_suiteql_data, fetch_netsuite_inventory
 
 # Helper function to authenticate with NetSuite
 def get_authentication():
@@ -96,38 +97,48 @@ with tabs[1]:
     else:
         st.error("No products available from Shopify.")
 
-# Tab 3: Post Products to Shopify
-with tabs[2]:
-    st.subheader("Post Products from NetSuite to Shopify")
-
-    if not inventory_data.empty:
-        selected_product = st.selectbox("Select Product to Post", inventory_data['sku'])
-
-        # Get the necessary product details
-        product_data = inventory_data.loc[inventory_data['sku'] == selected_product].to_dict(orient="records")[0]
-
-        if st.button("Post to Shopify"):
-            # Prepare product data for Shopify
-            shopify_product_data = {
-                "product": {
-                    "title": product_data['sku'],
-                    "body_html": product_data['description'],
-                    "variants": [
-                        {
-                            "price": product_data['price'],
-                            "sku": product_data['sku']
-                        }
-                    ]
-                }
-            }
-            status_code, response = post_product_to_shopify(shopify_product_data)
-
-            if status_code == 201:
-                st.success("Product posted successfully!")
-            else:
-                st.error(f"Failed to post product. Response: {response}")
+# Tab 3: Inventory & Shopify SKU Match
+def match_netsuite_shopify():
+    # Fetch inventory data from NetSuite (SuiteQL)
+    netsuite_inventory = fetch_netsuite_inventory()
+    
+    # Fetch product data from Shopify
+    shopify_products = pd.DataFrame(get_shopify_products())
+    
+    if netsuite_inventory.empty:
+        st.error("No inventory data available from NetSuite.")
+        return
+    
+    if shopify_products.empty:
+        st.error("No products available from Shopify.")
+        return
+    
+    # Merge inventory and Shopify data on SKU/itemid
+    matched_data = pd.merge(
+        netsuite_inventory, shopify_products, 
+        left_on='item_name', right_on='sku', 
+        how='inner'
+    )
+    
+    if not matched_data.empty:
+        st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
+        st.dataframe(matched_data)
     else:
-        st.error("No NetSuite products available to post.")
+        st.error("No matches found between NetSuite and Shopify products based on SKU.")
+    
+
+# Create the 4 tabs
+tabs = st.tabs([
+    "View NetSuite Products", 
+    "View Shopify Products", 
+    "Post Products to Shopify", 
+    "Inventory & Shopify SKU Match"
+])
+
+# Tab 3: Match NetSuite and Shopify inventory
+with tabs[2]:
+    st.subheader("Match NetSuite Inventory with Shopify Products by SKU")
+    match_netsuite_shopify()
 
 # Tab 4: Sync Inventory & Price
 with tabs[3]:

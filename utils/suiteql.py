@@ -149,3 +149,24 @@ def fetch_suiteql_data_with_date_pagination(query_template, start_date, end_date
 
     return all_data  # Return the combined DataFrame
 
+# SuiteQL query to fetch inventory balance
+suiteql_inventory_query = """
+SELECT 
+    item.id AS item_id,
+    item.itemid AS item_name,
+    balance.location AS location_name,
+    balance.quantityonhand AS quantity_on_hand,
+    balance.quantityavailable AS quantity_available
+FROM 
+    item
+JOIN 
+    inventorybalance AS balance ON item.id = balance.item
+WHERE 
+    item.isinactive = 'F'
+ORDER BY 
+    item_name ASC;
+"""
+
+@st.cache_data(ttl=900)
+def fetch_netsuite_inventory():
+    return fetch_suiteql_data(suiteql_inventory_query)
