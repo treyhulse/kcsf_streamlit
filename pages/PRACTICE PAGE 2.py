@@ -64,7 +64,7 @@ with tabs[0]:
 
     # Check if data is available for both
     if not customsearch5131_data.empty and not suiteql_inventory.empty:
-        # Perform the join on item_id (SuiteQL) and SKU (saved search)
+        # Perform the join on item_id (SuiteQL) and Title (saved search)
         joined_data = pd.merge(
             suiteql_inventory, customsearch5131_data, 
             left_on='item_id', right_on='Title', 
@@ -76,7 +76,7 @@ with tabs[0]:
             st.write(f"Joined {len(joined_data)} products between SuiteQL and customsearch5131.")
             st.dataframe(joined_data)
         else:
-            st.error("No matches found between SuiteQL and customsearch5131 based on item_id and SKU.")
+            st.error("No matches found between SuiteQL and customsearch5131 based on item_id and Title.")
     else:
         st.error("No data available for either SuiteQL or customsearch5131.")
 
