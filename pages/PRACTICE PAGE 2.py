@@ -30,14 +30,6 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 
-# Check if st.experimental_user is available
-if st.experimental_user is not None:
-    # Get the user's email from st.experimental_user
-    user_email = st.experimental_user['email']
-else:
-    # Default message if experimental_user is not available
-    user_email = "guest"
-
 # Initialize session state if it doesn't exist
 if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
