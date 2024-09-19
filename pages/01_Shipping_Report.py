@@ -5,6 +5,8 @@ st.set_page_config(page_title="Shipping Report",
                    page_icon="🚚",
                    layout="wide")
 
+st.title("Shipping Report")
+
 # Capture the user's email
 user_email = capture_user_email()
 if user_email is None:
@@ -124,10 +126,10 @@ elif untasked_orders and not tasked_orders:
 # **Remove duplicate Order Numbers**
 merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
-# Create tabs for Shipping Report and Shipping Calendar
-tab1, tab2 = st.tabs(["Shipping Report", "Shipping Calendar"])
+# Create tabs for Open Orders and Shipping Calendar
+tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
 
-# Tab 1: Shipping Report
+# Tab 1: Open Orders
 with tab1:
     # Metrics
     total_orders = len(merged_df)
