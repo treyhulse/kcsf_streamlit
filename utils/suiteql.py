@@ -78,6 +78,7 @@ def fetch_netsuite_inventory():
     SELECT 
         item.id AS item_id,
         item.itemid AS item_name,
+        item.displayname AS display_name,
         balance.location AS location_name,
         balance.quantityonhand AS quantity_on_hand,
         balance.quantityavailable AS quantity_available
