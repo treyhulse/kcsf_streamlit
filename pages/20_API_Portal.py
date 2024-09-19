@@ -24,248 +24,200 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+# Import necessary libraries and functions
+import streamlit as st
 import pandas as pd
-from pymongo import MongoClient
-import utils.shopify_connection as shopify
-from bson import Decimal128
+from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
+from utils.suiteql import fetch_netsuite_inventory  # For SuiteQL inventory sync
+from utils.apis import get_shopify_products
+from utils.shopify_connection import sku_exists_on_shopify, prepare_product_data, post_product_to_shopify, get_synced_products_from_shopify, update_product_on_shopify
 
 
-# MongoDB connection with increased timeout values
-def get_mongo_client():
-    connection_string = st.secrets["mongo_connection_string"] + "?retryWrites=true&w=majority"
-    client = MongoClient(
-        connection_string,
-        ssl=True,
-        serverSelectionTimeoutMS=60000,
-        connectTimeoutMS=60000,
-        socketTimeoutMS=60000
-    )
-    return client
+st.title("NetSuite & Shopify Product Sync")
 
-# Function to load 'items' collection and join it with the 'Available' inventory data using 'Internal ID'
-@st.cache_data
-def load_items_with_inventory():
-    client = get_mongo_client()
-    db = client['netsuite']
-    items_collection = db['items']
-    inventory_collection = db['inventory']
-    
-    # Load 'items' collection
-    items_data = list(items_collection.find({}))
-    items_df = pd.DataFrame(items_data)
-    
-    # Load 'inventory' collection
-    inventory_data = list(inventory_collection.find({}))
-    
-    # Check if inventory data is empty
-    if len(inventory_data) == 0:
-        st.error("Inventory data is empty. Please check your MongoDB 'inventory' collection.")
-        return pd.DataFrame()  # Return an empty DataFrame if no inventory data
+# Fetch data from customsearch5131 using the RESTlet method
+@st.cache_data(ttl=900)
+def fetch_customsearch5131_data():
+    return fetch_restlet_data("customsearch5131")  # Using the saved search ID
 
-    # Convert inventory data to DataFrame
-    inventory_df = pd.DataFrame(inventory_data)
+# Fetch SuiteQL inventory data
+@st.cache_data(ttl=900)
+def fetch_suiteql_data():
+    return fetch_netsuite_inventory()
 
-    # Ensure 'Internal ID' is present in both DataFrames and is a string
-    if 'Internal ID' in items_df.columns and 'Internal ID' in inventory_df.columns:
-        # Convert 'Internal ID' to string in both DataFrames
-        items_df['Internal ID'] = items_df['Internal ID'].astype(str)
-        inventory_df['Internal ID'] = inventory_df['Internal ID'].astype(str)
-        
-        # Perform the merge
-        merged_df = pd.merge(items_df, inventory_df[['Internal ID', 'Available']], on='Internal ID')
-    else:
-        st.error("'Internal ID' is missing from one of the DataFrames.")
-        return pd.DataFrame()  # Return an empty DataFrame if the join can't be performed
+# Create the 4 tabs
+tabs = st.tabs([
+    "View NetSuite Products (Custom Search 5131)", 
+    "View Shopify Products", 
+    "Inventory Sync (SuiteQL)", 
+    "Post Products to Shopify"
+])
 
-    # Convert 'Available' column from Decimal128 to float
-    def decimal128_to_float(value):
-        if isinstance(value, Decimal128):
-            return float(value.to_decimal())
+# Tab 1: View NetSuite Products (Custom Search 5131 + SuiteQL Join with Aggregated Inventory)
+with tabs[0]:
+    st.subheader("NetSuite Products - Custom Search 5131 & Aggregated Inventory Sync")
+
+    # Fetch data from SuiteQL and the custom search
+    customsearch5131_data = fetch_customsearch5131_data()
+    suiteql_inventory = fetch_suiteql_data()
+
+    # Check if data is available for both
+    if not customsearch5131_data.empty and not suiteql_inventory.empty:
+        # Convert SuiteQL `display_name` to string to match with `Title` from saved search
+        suiteql_inventory['display_name'] = suiteql_inventory['display_name'].astype(str)
+        customsearch5131_data['Title'] = customsearch5131_data['Title'].astype(str)
+
+        # Convert `quantity_available` to numeric to allow aggregation
+        suiteql_inventory['quantity_available'] = pd.to_numeric(suiteql_inventory['quantity_available'], errors='coerce')
+
+        # Perform the join on display_name (SuiteQL) and Title (saved search)
+        joined_data = pd.merge(
+            suiteql_inventory, customsearch5131_data, 
+            left_on='display_name', right_on='Title', 
+            how='inner'
+        )
+
+        # Aggregate by display_name/Title and sum the quantity_available
+        aggregated_data = joined_data.groupby(['display_name', 'Title']).agg({
+            'quantity_available': 'sum',  # Sum the numeric quantity_available for each item
+            'Description': 'first', 
+            'Price': 'first',
+            # Add more fields as needed
+        }).reset_index()
+
+        # Display the aggregated data
+        if not aggregated_data.empty:
+            st.write(f"Aggregated {len(aggregated_data)} products with total inventory from SuiteQL and customsearch5131.")
+            st.dataframe(aggregated_data)
         else:
-            return float(value)
-    
-    # Apply the conversion function to the 'Available' column
-    merged_df['Available'] = merged_df['Available'].apply(decimal128_to_float)
+            st.error("No matches found after aggregation.")
+    else:
+        st.error("No data available for either SuiteQL or customsearch5131.")
 
-    # Filter out rows where 'Available' is 0 or NaN
-    merged_df = merged_df[merged_df['Available'] > 0]
 
-    # Drop unnecessary '_id' column
-    if '_id' in merged_df.columns:
-        merged_df.drop(columns=['_id'], inplace=True)
-    
-    return merged_df
 
-# Function to post or update products on Shopify
-def post_or_update_products():
-    st.header("Post or Update Products to Shopify")
-    
-    # Load the joined items with inventory
-    items_df = load_items_with_inventory()
-    
-    # Debugging: Print the column names to check what fields are available
-    st.write("Items DataFrame Columns:", items_df.columns)
-    
-    if not items_df.empty:
-        # Filter the data
-        types = items_df['Type'].unique().tolist()
-        selected_types = st.multiselect("Select Product Types", types, default=types)
-        if selected_types:
-            items_df = items_df[items_df['Type'].isin(selected_types)]
+# Tab 2: View Shopify Products
+with tabs[1]:
+    st.subheader("Shopify Products")
+    shopify_products = pd.DataFrame(get_shopify_products())
+    if not shopify_products.empty:
+        st.dataframe(shopify_products)
+    else:
+        st.error("No products available from Shopify.")
 
-        if 'Cart Flag Field' in items_df.columns:
-            cart_flags = items_df['Cart Flag Field'].unique().tolist()
-            selected_cart_flags = st.multiselect("Select Cart Flag Field", cart_flags, default=cart_flags)
-            if selected_cart_flags:
-                items_df = items_df[items_df['Cart Flag Field'].isin(selected_cart_flags)]
+# Tab 3: Inventory Sync (Mass Sync Inventory Data to Shopify)
+with tabs[2]:
+    st.subheader("Inventory Sync (Mass Sync Inventory Data to Shopify)")
 
-        if 'Amazon Flag Field' in items_df.columns:
-            amazon_flags = items_df['Amazon Flag Field'].unique().tolist()
-            selected_amazon_flags = st.multiselect("Select Amazon Flag Field", amazon_flags, default=amazon_flags)
-            if selected_amazon_flags:
-                items_df = items_df[items_df['Amazon Flag Field'].isin(selected_amazon_flags)]
+    # Fetch SuiteQL data with inventory levels
+    suiteql_inventory = fetch_suiteql_data()
 
-        # Display filtered data
-        st.write(f"Showing {len(items_df)} records after applying filters.")
-        st.dataframe(items_df)
-        
-        if st.button("Post/Update Filtered Products to Shopify"):
-            for _, row in items_df.iterrows():
-                sku = row['Name']  # Use 'Name' for SKU
-                item_name = row['Display Name']  # Product name
-                price = row['Base Price']  # Use 'Base Price' for price
-                description = row['Description']
+    # Fetch all products from Shopify
+    shopify_products = get_synced_products_from_shopify()
 
-                # Prepare product data for Shopify API
-                product_data = {
-                    "product": {
-                        "title": item_name,
-                        "body_html": f"<strong>{description}</strong>",
-                        "vendor": "Your Vendor",
-                        "product_type": row['Type'],
-                        "status": "draft",  # You can set this to "active" if ready for publishing
-                        "variants": [{
-                            "price": str(price),  # Convert price to string format
-                            "sku": sku,
-                            "inventory_policy": "deny",  # Inventory policy, either 'deny' or 'continue'
-                            "taxable": True,
-                            "requires_shipping": True,
-                            "inventory_quantity": 0  # Inventory to be updated separately
-                        }]
+    # Extract relevant data from Shopify (Product ID and title)
+    shopify_inventory_data = []
+    if shopify_products:
+        for product in shopify_products:
+            for variant in product.get('variants', []):
+                shopify_inventory_data.append({
+                    'product_id': product['id'],
+                    'title': product.get('title'),
+                    'shopify_inventory_quantity': variant.get('inventory_quantity', 0)  # Current Shopify inventory
+                })
+
+    # Convert Shopify inventory data to a DataFrame
+    shopify_inventory_df = pd.DataFrame(shopify_inventory_data)
+
+    # Ensure the 'title' and 'display_name' fields are strings for proper matching
+    shopify_inventory_df['title'] = shopify_inventory_df['title'].astype(str)
+    suiteql_inventory['display_name'] = suiteql_inventory['display_name'].astype(str)
+
+    if not shopify_inventory_df.empty and not suiteql_inventory.empty:
+        # Perform a left join between Shopify and NetSuite data using title (Shopify) and display_name (NetSuite)
+        merged_inventory_data = pd.merge(
+            shopify_inventory_df, suiteql_inventory,
+            left_on='title', right_on='display_name',
+            how='inner'
+        )
+
+        # Show the merged data in the app
+        st.write("Matched Shopify Products and NetSuite Inventory Levels:")
+        st.dataframe(merged_inventory_data)
+
+        # Prepare data for mass sync
+        if not merged_inventory_data.empty:
+            st.write(f"Found {len(merged_inventory_data)} matching products between Shopify and NetSuite.")
+            
+            # Add a button to trigger the mass sync
+            if st.button("Sync Inventory to Shopify"):
+                # Iterate over the merged data and update Shopify inventory
+                for _, row in merged_inventory_data.iterrows():
+                    # Prepare update data for each product
+                    update_data = {
+                        "product": {
+                            "variants": [
+                                {
+                                    "sku": row['title'],  # Use title from Shopify to match
+                                    "inventory_quantity": row['quantity_available']  # Use NetSuite inventory quantity
+                                }
+                            ]
+                        }
                     }
-                }
 
-                # Debugging: Print the data being sent to Shopify
-                st.write(f"Preparing to post/update product: {sku}")
-                st.write(product_data)
+                    # Call the function to update inventory on Shopify
+                    update_product_on_shopify(row['title'], update_data)
 
-                # Check if SKU exists on Shopify
-                if shopify.sku_exists_on_shopify(sku):
-                    # Update the existing product
-                    st.write(f"Updating product on Shopify: {product_data}")
-                    response = shopify.update_product_on_shopify(sku, product_data)
-                    
-                    if response:
-                        st.success(f"Updated {item_name} (SKU: {sku}) on Shopify.")
-                    else:
-                        st.error(f"Failed to update {item_name} (SKU: {sku}) on Shopify.")
-                else:
-                    # Post new product
-                    st.write(f"Posting product to Shopify: {product_data}")
-                    response = shopify.post_product_to_shopify(product_data)
-                    
-                    if response:
-                        st.success(f"Posted {item_name} (SKU: {sku}) to Shopify.")
-                    else:
-                        st.error(f"Failed to post {item_name} (SKU: {sku}) to Shopify.")
+                st.success("Inventory sync complete!")
     else:
-        st.warning("No products with available inventory.")
+        st.error("No matching inventory data found between Shopify and NetSuite.")
 
 
-
-# Function to retrieve synced products from Shopify
-def retrieve_synced_products():
-    st.header("Synced Products from Shopify")
+# Tab 4: Post Products to Shopify (Enhanced with Shopify Comparison)
+with tabs[3]:
+    st.subheader("Post Products from NetSuite to Shopify")
     
-    # Fetch products from Shopify
-    products = shopify.get_synced_products_from_shopify()
-    
-    if products:
-        products_df = pd.DataFrame(products)
-        st.write(f"Showing {len(products_df)} synced products from Shopify.")
-        st.dataframe(products_df)
-    else:
-        st.warning("No synced products found.")
+    # Fetch data from customsearch5131
+    customsearch5131_data = fetch_customsearch5131_data()
 
+    # Fetch all products from Shopify
+    shopify_products = get_synced_products_from_shopify()
 
-# Function to match items between MongoDB and Shopify platforms
-def match_items_between_platforms():
-    st.header("Match Items for Pricing and Inventory Management")
-    
-    # Load 'items' from MongoDB and synced products from Shopify
-    items_df = load_items_with_inventory()
-    shopify_products = shopify.get_synced_products_from_shopify()
-    
-    if not items_df.empty and shopify_products:
-        shopify_df = pd.DataFrame(shopify_products)
+    # Extract all SKUs from Shopify products
+    shopify_skus = []
+    if shopify_products:
+        for product in shopify_products:
+            for variant in product.get('variants', []):
+                shopify_skus.append(variant.get('sku', ''))
+        shopify_skus = [sku for sku in shopify_skus if sku]  # Filter out empty SKUs
+
+    if not customsearch5131_data.empty:
+        # Select a product to post based on SKU
+        selected_product = st.selectbox("Select Product to Post", customsearch5131_data['Title'])
         
-        # Debugging: Print the columns from both DataFrames
-        st.write("Items DataFrame Columns:", items_df.columns)
-        st.write("Shopify DataFrame Columns:", shopify_df.columns)
+        # Get the row data for the selected product
+        selected_row = customsearch5131_data[customsearch5131_data['Title'] == selected_product].iloc[0]
         
-        # Check if 'Name' exists in both DataFrames
-        if 'Name' in items_df.columns and 'Name' in shopify_df.columns:
-            # Merge based on 'Name'
-            merged_df = pd.merge(items_df, shopify_df, on='Name', suffixes=('_mongo', '_shopify'))
-        elif 'SKU' in items_df.columns and 'SKU' in shopify_df.columns:
-            # If 'Name' doesn't exist, try merging on 'SKU'
-            merged_df = pd.merge(items_df, shopify_df, on='SKU', suffixes=('_mongo', '_shopify'))
+        # Display selected product details
+        st.write("Selected Product Details:")
+        st.write(f"SKU: {selected_row['SKU']}")
+        st.write(f"Description: {selected_row['Description']}")
+        st.write(f"Price: {selected_row['Price']}")
+        
+        # Check if the SKU exists in the Shopify SKUs list
+        if selected_row['SKU'] in shopify_skus:
+            st.warning(f"Product with SKU {selected_row['SKU']} already exists on Shopify.")
         else:
-            st.error("'Name' or 'SKU' is missing from one of the DataFrames.")
-            return
-        
-        # Display comparison of pricing and inventory
-        st.write("Matched Products Between MongoDB and Shopify:")
-        st.dataframe(merged_df[['SKU', 'Price_mongo', 'Price_shopify', 'Available_mongo', 'Available_shopify']])
-        
-        if st.button("Sync Inventory and Pricing"):
-            for _, row in merged_df.iterrows():
-                # Update Shopify product with MongoDB data
-                sku = row['SKU']
-                new_price = row['Price_mongo']
-                new_inventory = row['Available_mongo']
-                
-                update_data = {
-                    "variant": {
-                        "price": new_price,
-                        "inventory_quantity": new_inventory
-                    }
-                }
-                
-                response = shopify.update_product_on_shopify(sku, update_data)
-                
-                if response:
-                    st.success(f"Synced SKU {sku} with new price and inventory.")
-                else:
-                    st.error(f"Failed to sync SKU {sku}.")
+            # Prepare product data for Shopify
+            product_data = prepare_product_data(
+                item_name=selected_row['Title'],
+                description=selected_row['Description'],
+                price=selected_row['Price'],
+                sku=selected_row['SKU']
+            )
+
+            # Post the product to Shopify
+            if st.button("Post to Shopify"):
+                post_product_to_shopify(product_data)
     else:
-        st.warning("No matching products found or no data available.")
-
-# Main function to render the Streamlit page
-def main():
-    st.title("API Portal - Shopify Integration")
-    
-    # Tabs for navigation
-    tab1, tab2, tab3 = st.tabs(["Post/Update Products", "Retrieve Synced Products", "Manage Pricing/Inventory"])
-    
-    with tab1:
-        post_or_update_products()
-
-    with tab2:
-        retrieve_synced_products()
-
-    with tab3:
-        match_items_between_platforms()
-
-if __name__ == "__main__":
-    main()
+        st.error("No products available from NetSuite to post.")
