@@ -67,7 +67,7 @@ with tabs[0]:
         # Perform the join on item_id (SuiteQL) and SKU (saved search)
         joined_data = pd.merge(
             suiteql_inventory, customsearch5131_data, 
-            left_on='item_id', right_on='SKU', 
+            left_on='item_id', right_on='Title', 
             how='inner'
         )
         
