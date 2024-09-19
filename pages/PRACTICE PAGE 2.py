@@ -69,6 +69,9 @@ with tabs[0]:
         suiteql_inventory['display_name'] = suiteql_inventory['display_name'].astype(str)
         customsearch5131_data['Title'] = customsearch5131_data['Title'].astype(str)
 
+        # Convert `quantity_available` to numeric to allow aggregation
+        suiteql_inventory['quantity_available'] = pd.to_numeric(suiteql_inventory['quantity_available'], errors='coerce')
+
         # Perform the join on display_name (SuiteQL) and Title (saved search)
         joined_data = pd.merge(
             suiteql_inventory, customsearch5131_data, 
@@ -78,8 +81,7 @@ with tabs[0]:
 
         # Aggregate by display_name/Title and sum the quantity_available
         aggregated_data = joined_data.groupby(['display_name', 'Title']).agg({
-            'quantity_available': 'sum',  # Sum the quantity_available for each item
-            # Add other columns you want to keep, e.g., taking the first instance of description or price
+            'quantity_available': 'sum',  # Sum the numeric quantity_available for each item
             'Description': 'first', 
             'Price': 'first',
             # Add more fields as needed
@@ -93,6 +95,7 @@ with tabs[0]:
             st.error("No matches found after aggregation.")
     else:
         st.error("No data available for either SuiteQL or customsearch5131.")
+
 
 
 # Tab 2: View Shopify Products
