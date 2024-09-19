@@ -53,16 +53,22 @@ customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 # Check if the data is not empty
 if not customsearch5135_data_raw.empty:
     
-    # Convert 'Amount' column to numeric if needed
+    # Convert 'Amount' and 'Sales Order' columns to appropriate types
     customsearch5135_data_raw['Amount'] = pd.to_numeric(customsearch5135_data_raw['Amount'], errors='coerce')
+    
+    # Ensure 'Sales Order' is treated as a categorical or string column
+    customsearch5135_data_raw['Sales Order'] = customsearch5135_data_raw['Sales Order'].astype(str)
 
     # Aggregate sales via the 'Amount' column by 'Distributor' column
     if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
-        aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
+        aggregated_data = customsearch5135_data_raw.groupby('Distributor').agg(
+            total_sales=('Amount', 'sum'),
+            unique_sales_orders=('Sales Order', 'nunique')
+        ).reset_index()
 
-        # Format the 'Amount' column to currency format in the aggregated DataFrame for display purposes
+        # Format the 'total_sales' column to currency format in the aggregated DataFrame for display purposes
         formatted_aggregated_data = aggregated_data.copy()
-        formatted_aggregated_data['Amount'] = formatted_aggregated_data['Amount'].apply(lambda x: "${:,.2f}".format(x))
+        formatted_aggregated_data['total_sales'] = formatted_aggregated_data['total_sales'].apply(lambda x: "${:,.2f}".format(x))
 
         # Create a layout with columns
         col1, col2 = st.columns([2, 1])
@@ -71,9 +77,9 @@ if not customsearch5135_data_raw.empty:
         with col1:
             st.write("Sales Distribution by Distributor (Pie Chart)")
             pie_chart = alt.Chart(aggregated_data).mark_arc().encode(
-                theta=alt.Theta(field="Amount", type="quantitative"),
+                theta=alt.Theta(field="total_sales", type="quantitative"),
                 color=alt.Color(field="Distributor", type="nominal"),
-                tooltip=["Distributor", "Amount"]
+                tooltip=["Distributor", "total_sales"]
             )
             st.altair_chart(pie_chart, use_container_width=True)
 
@@ -81,6 +87,28 @@ if not customsearch5135_data_raw.empty:
         with col2:
             st.write("Aggregated Sales by Distributor:")
             st.dataframe(formatted_aggregated_data)
+
+        # Stacked bar chart: Group data by Distributor and Quarter
+        customsearch5135_data_raw['trandate'] = pd.to_datetime(customsearch5135_data_raw['trandate'])
+        customsearch5135_data_raw['quarter'] = customsearch5135_data_raw['trandate'].dt.to_period('Q')
+
+        # Create a stacked bar chart by Distributor and Quarter
+        sales_by_quarter = customsearch5135_data_raw.groupby(['Distributor', 'quarter']).agg(
+            total_sales=('Amount', 'sum')
+        ).reset_index()
+
+        st.write("Sales by Distributor and Quarter (Stacked Bar Chart)")
+        stacked_bar_chart = alt.Chart(sales_by_quarter).mark_bar().encode(
+            x='Distributor',
+            y='total_sales',
+            color='quarter',
+            tooltip=['Distributor', 'quarter', 'total_sales']
+        ).properties(
+            height=400
+        )
+
+        # Display the stacked bar chart below the pie chart and aggregated dataframe
+        st.altair_chart(stacked_bar_chart, use_container_width=True)
 
     else:
         st.error("Required columns 'Distributor' or 'Amount' not found in the data.")
