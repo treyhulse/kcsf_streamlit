@@ -94,7 +94,7 @@ def highlight_conditions_column(s):
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
 st.header("Order Management")
-tab1, tab2, tab3, tab4 = st.tabs(["Sales Orders", "Estimates", "Customsearch 5128", "Customsearch 5129"])
+tab1, tab2, tab3, tab4 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Transfer Orders"])
 
 # Sales Orders tab
 with tab1:
