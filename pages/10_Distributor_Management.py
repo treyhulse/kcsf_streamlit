@@ -27,6 +27,7 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
+import altair as alt
 from utils.restlet import fetch_restlet_data
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
@@ -59,18 +60,33 @@ if not customsearch5135_data_raw.empty:
     if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
         aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
 
-        # Format the 'Amount' column to currency format in the aggregated DataFrame
-        aggregated_data['Amount'] = aggregated_data['Amount'].apply(lambda x: "${:,.2f}".format(x))
+        # Format the 'Amount' column to currency format in the aggregated DataFrame for display purposes
+        formatted_aggregated_data = aggregated_data.copy()
+        formatted_aggregated_data['Amount'] = formatted_aggregated_data['Amount'].apply(lambda x: "${:,.2f}".format(x))
 
-        # Display the aggregated data
-        st.write("Aggregated Sales by Distributor:")
-        st.dataframe(aggregated_data)
+        # Create a layout with columns
+        col1, col2, col3 = st.columns([2, 2, 1])
+
+        # Bar chart in the first two columns (col1 and col2)
+        with col1:
+            st.write("Sales by Distributor (Bar Chart)")
+            bar_chart = alt.Chart(aggregated_data).mark_bar().encode(
+                x=alt.X('Distributor', sort=None),
+                y='Amount'
+            )
+            st.altair_chart(bar_chart, use_container_width=True)
+
+        # Aggregated data table in the third column (col3)
+        with col3:
+            st.write("Aggregated Sales by Distributor:")
+            st.dataframe(formatted_aggregated_data)
+
     else:
         st.error("Required columns 'Distributor' or 'Amount' not found in the data.")
     
     # Place the original DataFrame in an expander at the bottom of the page
     with st.expander("View Raw Data"):
-        # Format the 'Amount' column to currency format in the original DataFrame
+        # Format the 'Amount' column to currency format in the original DataFrame for display purposes
         customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
         st.write("Original Data:")
         st.dataframe(customsearch5135_data_raw)
