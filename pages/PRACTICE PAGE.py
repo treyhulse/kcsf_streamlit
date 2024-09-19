@@ -36,18 +36,18 @@ def get_customer_id_from_email(email):
 # Function to fetch open sales orders using SuiteQL
 def fetch_open_sales_orders(customer_id):
     query = f"""
-    SELECT
-        tranid AS order_number,
-        entity AS customer_id,
-        trandate AS order_date,
-        total AS order_total,
-        status AS order_status
+    SELECT 
+        tranid,
+        type,
+        entity,
+        trandate,
+        status
     FROM 
         transaction
     WHERE 
-        entity = {customer_id} AND status = 'Open' 
+        entity = 4168611
     ORDER BY 
-        trandate DESC
+        trandate DESC;
     """
     
     return fetch_suiteql_data(query)
