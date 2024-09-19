@@ -74,7 +74,7 @@ estimate_data = apply_filters(estimate_data_raw)
 sales_order_data = apply_filters(sales_order_data_raw)
 customsearch5128_data = apply_filters(customsearch5128_data_raw)
 customsearch5129_data = apply_filters(customsearch5129_data_raw)
-customsearch83_data = apply_filters(customsearch83_data_raw)
+customsearch83_data = (customsearch83_data_raw)
 
 # Function to calculate metrics for orders or estimates
 def calculate_metrics(df):
