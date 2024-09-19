@@ -23,28 +23,18 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-import pandas as pd
-from utils.suiteql import fetch_suiteql_data, get_authentication
+from utils.suiteql import fetch_suiteql_data
 
-# A mock function to simulate customer ID retrieval based on email
-def get_customer_id_from_email(user_email):
+# Function to map the user's email to a customer ID
+def get_customer_id_from_email(email):
     customer_map = {
-        "treyhulse3@gmail.com": 4168611,  # Example customer ID
+        "treyhulse3@gmail.com": 4168611,  # Example mapping, adjust as needed
         # Add more email-to-customer mappings here
     }
-    return customer_map.get(user_email, None)
+    return customer_map.get(email, None)
 
+# Function to fetch open sales orders using SuiteQL
 def fetch_open_sales_orders(customer_id):
-    """
-    Fetches open sales orders for a specific customer using SuiteQL.
-    
-    Args:
-        customer_id (int): The internal customer ID.
-    
-    Returns:
-        pd.DataFrame: DataFrame containing the open sales orders.
-    """
     query = f"""
     SELECT
         tranid AS order_number,
@@ -62,27 +52,19 @@ def fetch_open_sales_orders(customer_id):
     
     return fetch_suiteql_data(query)
 
-# Page logic starts here
-st.title("Customer Sales Orders")
+# Get the customer ID based on the logged-in email
+customer_id = get_customer_id_from_email(user_email)
 
-# Assuming you have the logged-in user's email
-logged_in_email = st.session_state.get('email', None)
-
-if logged_in_email:
-    customer_id = get_customer_id_from_email(logged_in_email)
+if customer_id:
+    st.write(f"Fetching open sales orders for Customer ID: {customer_id}")
     
-    if customer_id:
-        st.write(f"Fetching open sales orders for Customer ID: {customer_id}")
-        
-        # Fetch open sales orders for this customer
-        open_sales_orders = fetch_open_sales_orders(customer_id)
-        
-        if not open_sales_orders.empty:
-            st.write(f"Displaying open sales orders for {logged_in_email}:")
-            st.dataframe(open_sales_orders)
-        else:
-            st.write("No open sales orders found for this customer.")
+    # Fetch and display open sales orders
+    open_sales_orders = fetch_open_sales_orders(customer_id)
+    
+    if not open_sales_orders.empty:
+        st.write(f"Displaying open sales orders for {user_email}:")
+        st.dataframe(open_sales_orders)
     else:
-        st.error("Customer ID not found for this email.")
+        st.write("No open sales orders found for this customer.")
 else:
-    st.error("User is not logged in. Please log in to view your sales orders.")
+    st.error("Customer ID not found for this email.")
