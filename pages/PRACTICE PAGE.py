@@ -24,75 +24,65 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from utils.suiteql import fetch_suiteql_data
-import pymongo
+import pandas as pd
+from utils.suiteql import fetch_suiteql_data, get_authentication
 
-# MongoDB connection (updated to mongo_connection_string)
-client = pymongo.MongoClient(st.secrets["mongo_connection_string"])
-db = client['netsuite']
-collection = db['savedQueries']
+# A mock function to simulate customer ID retrieval based on email
+def get_customer_id_from_email(email):
+    customer_map = {
+        "treyhulse3@gmail.com": 4168611,  # Example customer ID
+        # Add more email-to-customer mappings here
+    }
+    return customer_map.get(email, None)
 
-# Page Title
-st.title("Query Builder and Saved Queries")
+def fetch_open_sales_orders(customer_id):
+    """
+    Fetches open sales orders for a specific customer using SuiteQL.
+    
+    Args:
+        customer_id (int): The internal customer ID.
+    
+    Returns:
+        pd.DataFrame: DataFrame containing the open sales orders.
+    """
+    query = f"""
+    SELECT
+        tranid AS order_number,
+        entity AS customer_id,
+        trandate AS order_date,
+        total AS order_total,
+        status AS order_status
+    FROM 
+        transaction
+    WHERE 
+        entity = {customer_id} AND status = 'Open' 
+    ORDER BY 
+        trandate DESC
+    """
+    
+    return fetch_suiteql_data(query)
 
-# Two columns for layout
-col1, col2 = st.columns([2, 1])
+# Page logic starts here
+st.title("Customer Sales Orders")
 
-# Column 1: Query Input
-with col1:
-    st.subheader("Enter and Run Queries")
+# Assuming you have the logged-in user's email
+logged_in_email = st.session_state.get('email', None)
 
-    # Text area for entering user queries
-    user_query = st.text_area("Enter your SuiteQL query:", height=200)
-
-    # Run Query button
-    if st.button("Run Query"):
-        if user_query.strip() == "":
-            st.error("Please enter a valid query.")
+if logged_in_email:
+    customer_id = get_customer_id_from_email(logged_in_email)
+    
+    if customer_id:
+        st.write(f"Fetching open sales orders for Customer ID: {customer_id}")
+        
+        # Fetch open sales orders for this customer
+        open_sales_orders = fetch_open_sales_orders(customer_id)
+        
+        if not open_sales_orders.empty:
+            st.write(f"Displaying open sales orders for {logged_in_email}:")
+            st.dataframe(open_sales_orders)
         else:
-            # Execute the query
-            df = fetch_suiteql_data(user_query)
-            if not df.empty:
-                st.write("Query Results")
-                st.dataframe(df)
-                
-                # Option to save query
-                with st.expander("Save Query"):
-                    query_title = st.text_input("Title your query:")
-                    if st.button("Save Query"):
-                        if query_title.strip() == "":
-                            st.error("Please provide a title for your query.")
-                        else:
-                            # Save only the SuiteQL query text, not the response
-                            query_data = {
-                                "title": query_title,
-                                "query": user_query  # Only save the text of the query
-                            }
-                            collection.insert_one(query_data)
-                            st.success(f"Query '{query_title}' saved successfully!")
-            else:
-                st.error("No data found for your query.")
-
-# Column 2: Saved Queries
-with col2:
-    st.subheader("Saved Queries")
-    
-    # Search saved queries
-    search_term = st.text_input("Search for saved queries")
-    
-    if search_term.strip():
-        # Search the MongoDB collection for matching titles
-        saved_queries = list(collection.find({"title": {"$regex": search_term, "$options": "i"}}))
+            st.write("No open sales orders found for this customer.")
     else:
-        # Show all saved queries
-        saved_queries = list(collection.find())
-
-    if saved_queries:
-        # Display the saved queries
-        for query in saved_queries:
-            st.write(f"**{query['title']}**")
-            if st.button(f"Load Query: {query['title']}", key=query['_id']):
-                user_query = query['query']  # Load the saved query into the text area
-                st.success(f"Loaded query: {query['title']}")
-    else:
-        st.write("No queries found.")
+        st.error("Customer ID not found for this email.")
+else:
+    st.error("User is not logged in. Please log in to view your sales orders.")
