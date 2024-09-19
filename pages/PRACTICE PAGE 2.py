@@ -36,18 +36,10 @@ from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
 
-
-
-@st.cache_data(ttl=900)
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
-    df = fetch_restlet_data(saved_search_id)
-    return df
-
 # Fetch data from customsearch5131 using the RESTlet method
 @st.cache_data(ttl=900)
 def fetch_customsearch5131_data():
-    return fetch_raw_data("customsearch5131")  # Assuming RESTlet handles custom search IDs
+    return fetch_restlet_data("customsearch5131")  # Using the saved search ID
 
 # Helper function to match NetSuite inventory and Shopify products by name/title
 def match_netsuite_shopify_by_title():
@@ -65,10 +57,10 @@ def match_netsuite_shopify_by_title():
         st.error("No products available from Shopify.")
         return
     
-    # Merge inventory and Shopify data on item_name (NetSuite) and title (Shopify)
+    # Merge inventory and Shopify data on Title (NetSuite) and title (Shopify)
     matched_data = pd.merge(
         netsuite_inventory, shopify_products, 
-        left_on='item_name', right_on='title', 
+        left_on='Title', right_on='title', 
         how='inner'
     )
     
@@ -89,15 +81,15 @@ tabs = st.tabs([
 # Tab 1: View NetSuite Products (Custom Search 5131)
 with tabs[0]:
     st.subheader("NetSuite Products - Custom Search 5131")
-    customsearch5131_data = fetch_customsearch5131_data()
     
-    # Print column names for debugging
-    st.write("Custom Search 5131 Columns:", customsearch5131_data.columns.tolist())
+    # Fetch and display the customsearch5131 data
+    customsearch5131_data = fetch_customsearch5131_data()
     
     if not customsearch5131_data.empty:
         st.dataframe(customsearch5131_data)
     else:
         st.error("No data available from customsearch5131.")
+
 
 # Tab 2: View Shopify Products
 with tabs[1]:
@@ -116,12 +108,8 @@ with tabs[2]:
 # Tab 4: Post Products to Shopify (Unchanged for now)
 with tabs[3]:
     st.subheader("Post Products from NetSuite to Shopify")
-    
-    # Print column names for debugging
-    st.write("Custom Search 5131 Columns (for posting):", customsearch5131_data.columns.tolist())
-    
     if not customsearch5131_data.empty:
-        selected_product = st.selectbox("Select Product to Post", customsearch5131_data['item_name'])
+        selected_product = st.selectbox("Select Product to Post", customsearch5131_data['Title'])
         if st.button("Post to Shopify"):
             # Logic for posting to Shopify would go here
             st.success(f"Product {selected_product} posted to Shopify.")
