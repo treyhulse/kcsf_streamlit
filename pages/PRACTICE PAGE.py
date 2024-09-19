@@ -15,7 +15,7 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
 
-st.write(f"You have access to this page.")
+st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
