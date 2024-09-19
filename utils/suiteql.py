@@ -81,14 +81,12 @@ def fetch_netsuite_inventory():
         balance.location AS location_name,
         balance.quantityonhand AS quantity_on_hand,
         balance.quantityavailable AS quantity_available,
-        item.type AS item_type  -- Add this column for item type
     FROM 
         item
     JOIN 
         inventorybalance AS balance ON item.id = balance.item
     WHERE 
         item.isinactive = 'F'
-        AND item.type IN ('InvtPart', 'Assembly')  -- Include inventory and assembly items
     ORDER BY 
         item_name ASC;
     """
