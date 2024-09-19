@@ -30,11 +30,21 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 
+# Function to get user's name (You can replace this with actual user logic)
+def get_user_name():
+    # For example, this could be fetched from a database or authentication system
+    return "User"
+
 # Initialize session state if it doesn't exist
 if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
 
-st.title("File Upload with Drag-and-Drop")
+# Get user name
+user_name = get_user_name()
+
+# Welcome Message
+st.title(f"Welcome, {user_name}!")
+st.write("This is your file management page. You can upload multiple files, view their content, and manage them effectively within this app. Feel free to drag and drop your files below.")
 
 # File uploader
 uploaded_files = st.file_uploader(
