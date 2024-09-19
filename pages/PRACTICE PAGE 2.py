@@ -107,13 +107,19 @@ with tabs[1]:
     else:
         st.error("No products available from Shopify.")
 
-# Tab 3: Inventory Sync (SuiteQL)
+# Tab 3: Inventory Sync (SuiteQL with Item Type and Assembly Items)
 with tabs[2]:
-    st.subheader("Inventory Sync (SuiteQL)")
+    st.subheader("Inventory Sync (SuiteQL with Item Type and Assembly Items)")
+    
+    # Fetch SuiteQL data with item_type and assembly items included in the query
+    suiteql_inventory = fetch_suiteql_data()  # Ensure the SuiteQL query includes 'item_type' and assembly items
+
     if not suiteql_inventory.empty:
+        # Display the SuiteQL data including item_type
         st.dataframe(suiteql_inventory)
     else:
         st.error("No inventory data available from SuiteQL.")
+
 
 # Tab 4: Post Products to Shopify (Unchanged for now)
 with tabs[3]:
