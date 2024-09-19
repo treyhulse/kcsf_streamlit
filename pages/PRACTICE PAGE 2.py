@@ -119,26 +119,26 @@ with tabs[2]:
     # Fetch all products from Shopify
     shopify_products = get_synced_products_from_shopify()
 
-    # Extract relevant data from Shopify (Product ID and SKU)
+    # Extract relevant data from Shopify (Product ID and title)
     shopify_inventory_data = []
     if shopify_products:
         for product in shopify_products:
             for variant in product.get('variants', []):
                 shopify_inventory_data.append({
                     'product_id': product['id'],
-                    'title': variant.get('title'),
+                    'title': product.get('title'),
                     'shopify_inventory_quantity': variant.get('inventory_quantity', 0)  # Current Shopify inventory
                 })
 
     # Convert Shopify inventory data to a DataFrame
     shopify_inventory_df = pd.DataFrame(shopify_inventory_data)
 
-    # Ensure the SKUs are strings for proper matching
+    # Ensure the 'title' and 'display_name' fields are strings for proper matching
     shopify_inventory_df['title'] = shopify_inventory_df['title'].astype(str)
     suiteql_inventory['display_name'] = suiteql_inventory['display_name'].astype(str)
 
     if not shopify_inventory_df.empty and not suiteql_inventory.empty:
-        # Perform a left join between Shopify and NetSuite data using SKU and item_id
+        # Perform a left join between Shopify and NetSuite data using title (Shopify) and display_name (NetSuite)
         merged_inventory_data = pd.merge(
             shopify_inventory_df, suiteql_inventory,
             left_on='title', right_on='display_name',
@@ -162,7 +162,7 @@ with tabs[2]:
                         "product": {
                             "variants": [
                                 {
-                                    "title": row['title'],
+                                    "sku": row['title'],  # Use title from Shopify to match
                                     "inventory_quantity": row['quantity_available']  # Use NetSuite inventory quantity
                                 }
                             ]
