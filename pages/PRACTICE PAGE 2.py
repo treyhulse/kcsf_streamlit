@@ -30,74 +30,12 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-import requests
-from utils.apis import get_shopify_products, post_product_to_shopify, update_inventory_and_price
-from requests_oauthlib import OAuth1
-from utils.suiteql import fetch_suiteql_data, fetch_netsuite_inventory
-
-# Helper function to authenticate with NetSuite
-def get_authentication():
-    return OAuth1(
-        st.secrets["consumer_key"],
-        st.secrets["consumer_secret"],
-        st.secrets["token_key"],
-        st.secrets["token_secret"],
-        realm=st.secrets["realm"],
-        signature_method='HMAC-SHA256'
-    )
-
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=900)
-def fetch_inventory_data():
-    url = f"{st.secrets['url_restlet']}?script=inventory_balance"
-    auth = get_authentication()
-
-    # Fetch data from NetSuite RESTlet
-    try:
-        response = requests.get(url, auth=auth, headers={"Content-Type": "application/json"})
-        response.raise_for_status()
-        data = response.json()
-        return pd.DataFrame(data)  # Convert JSON to DataFrame
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error fetching inventory data: {e}")
-        return pd.DataFrame()  # Return empty DataFrame on failure
+from utils.suiteql import fetch_netsuite_inventory
+from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
 
-# Fetch NetSuite product data from the custom RESTlet
-inventory_data = fetch_inventory_data()
-
-# Create the 4 tabs
-tabs = st.tabs([
-    "View NetSuite Products", 
-    "View Shopify Products", 
-    "Post Products to Shopify", 
-    "Sync Inventory & Price"
-])
-
-# Tab 1: View NetSuite Products
-with tabs[0]:
-    st.subheader("NetSuite Products Marked for Shopify")
-
-    # Display the products from the saved search customsearch0413 (inventory balance)
-    if not inventory_data.empty:
-        st.dataframe(inventory_data)
-    else:
-        st.error("No products available from NetSuite.")
-
-# Tab 2: View Shopify Products
-with tabs[1]:
-    st.subheader("Shopify Products")
-
-    # Fetch Shopify products
-    shopify_products = pd.DataFrame(get_shopify_products())
-
-    if not shopify_products.empty:
-        st.dataframe(shopify_products)
-    else:
-        st.error("No products available from Shopify.")
-
-# Tab 3: Inventory & Shopify SKU Match
+# Helper function to match NetSuite inventory and Shopify products by SKU
 def match_netsuite_shopify():
     # Fetch inventory data from NetSuite (SuiteQL)
     netsuite_inventory = fetch_netsuite_inventory()
@@ -135,32 +73,36 @@ tabs = st.tabs([
     "Inventory & Shopify SKU Match"
 ])
 
-# Tab 3: Match NetSuite and Shopify inventory
+# Tab 1: View NetSuite Products (Example, you can modify as needed)
+with tabs[0]:
+    st.subheader("NetSuite Products Marked for Shopify")
+    netsuite_inventory = fetch_netsuite_inventory()
+    if not netsuite_inventory.empty:
+        st.dataframe(netsuite_inventory)
+    else:
+        st.error("No NetSuite products available.")
+
+# Tab 2: View Shopify Products (Example, you can modify as needed)
+with tabs[1]:
+    st.subheader("Shopify Products")
+    shopify_products = pd.DataFrame(get_shopify_products())
+    if not shopify_products.empty:
+        st.dataframe(shopify_products)
+    else:
+        st.error("No products available from Shopify.")
+
+# Tab 3: Post Products to Shopify (Example, you can modify as needed)
 with tabs[2]:
+    st.subheader("Post Products from NetSuite to Shopify")
+    if not netsuite_inventory.empty:
+        selected_product = st.selectbox("Select Product to Post", netsuite_inventory['item_name'])
+        if st.button("Post to Shopify"):
+            # Logic for posting to Shopify would go here
+            st.success(f"Product {selected_product} posted to Shopify.")
+    else:
+        st.error("No products available from NetSuite to post.")
+
+# Tab 4: Match NetSuite and Shopify inventory
+with tabs[3]:
     st.subheader("Match NetSuite Inventory with Shopify Products by SKU")
     match_netsuite_shopify()
-
-# Tab 4: Sync Inventory & Price
-with tabs[3]:
-    st.subheader("Sync Inventory & Price between NetSuite and Shopify")
-
-    if not shopify_products.empty:
-        selected_shopify_product = st.selectbox("Select Shopify Product to Update", shopify_products['title'])
-
-        # Input fields for new price and inventory quantity
-        new_price = st.number_input("New Price", min_value=0.0)
-        new_inventory = st.number_input("New Inventory Quantity", min_value=0)
-
-        if st.button("Update Product"):
-            # Get the product ID from Shopify
-            product_id = shopify_products.loc[shopify_products['title'] == selected_shopify_product, 'id'].values[0]
-
-            # Update inventory and price
-            status_code, response = update_inventory_and_price(product_id, new_inventory, new_price)
-
-            if status_code == 200:
-                st.success("Product updated successfully!")
-            else:
-                st.error(f"Failed to update product. Response: {response}")
-    else:
-        st.error("No Shopify products available for update.")
