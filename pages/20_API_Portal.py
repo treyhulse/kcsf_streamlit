@@ -47,7 +47,7 @@ def fetch_suiteql_data():
 
 # Create the 4 tabs
 tabs = st.tabs([
-    "View NetSuite Products (Custom Search 5131)", 
+    "View NetSuite Products", 
     "View Shopify Products", 
     "Inventory Sync (SuiteQL)", 
     "Post Products to Shopify"
@@ -55,7 +55,7 @@ tabs = st.tabs([
 
 # Tab 1: View NetSuite Products (Custom Search 5131 + SuiteQL Join with Aggregated Inventory)
 with tabs[0]:
-    st.subheader("NetSuite Products - Custom Search 5131 & Aggregated Inventory Sync")
+    st.subheader("NetSuite Products - Aggregated Inventory Sync")
 
     # Fetch data from SuiteQL and the custom search
     customsearch5131_data = fetch_customsearch5131_data()
