@@ -30,24 +30,11 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 
-# Check if st.experimental_user is available and contains the email
-try:
-    if st.experimental_user is not None and 'email' in st.experimental_user:
-        user_email = st.experimental_user['email']
-    else:
-        user_email = "guest"  # Fallback if no user info is available
-except AttributeError as e:
-    # In case experimental_user is not accessible or there's an issue
-    st.error(f"Error accessing user info: {e}")
-    user_email = "guest"
-
 # Initialize session state if it doesn't exist
 if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
 
-# Welcome Message
-st.title(f"Welcome, {user_email}!")
-st.write("This is your file management page. You can upload multiple files, view their content, and manage them effectively within this app. Feel free to drag and drop your files below.")
+st.title("File Upload with Drag-and-Drop")
 
 # File uploader
 uploaded_files = st.file_uploader(
