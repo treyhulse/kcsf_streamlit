@@ -28,12 +28,12 @@ import pandas as pd
 from utils.suiteql import fetch_suiteql_data, get_authentication
 
 # A mock function to simulate customer ID retrieval based on email
-def get_customer_id_from_email(email):
+def get_customer_id_from_email(user_email):
     customer_map = {
         "treyhulse3@gmail.com": 4168611,  # Example customer ID
         # Add more email-to-customer mappings here
     }
-    return customer_map.get(email, None)
+    return customer_map.get(user_email, None)
 
 def fetch_open_sales_orders(customer_id):
     """
