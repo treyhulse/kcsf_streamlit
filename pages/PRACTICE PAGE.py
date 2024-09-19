@@ -23,6 +23,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
+import streamlit as st
 from utils.suiteql import fetch_suiteql_data
 
 # Function to map the user's email to a customer ID
@@ -33,8 +34,8 @@ def get_customer_id_from_email(email):
     }
     return customer_map.get(email, None)
 
-# Function to fetch open sales orders using SuiteQL
-def fetch_open_sales_orders(customer_id):
+# Functions to fetch data for different tabs using SuiteQL
+def fetch_all_orders(customer_id):
     query = f"""
     SELECT 
         tranid,
@@ -49,22 +50,103 @@ def fetch_open_sales_orders(customer_id):
     ORDER BY 
         trandate DESC;
     """
-    
+    return fetch_suiteql_data(query)
+
+def fetch_open_sales_orders(customer_id):
+    query = f"""
+    SELECT 
+        tranid,
+        type,
+        entity,
+        trandate,
+        status
+    FROM 
+        transaction
+    WHERE 
+        entity = {customer_id} AND status != 'Closed'
+    ORDER BY 
+        trandate DESC;
+    """
+    return fetch_suiteql_data(query)
+
+def fetch_open_estimates(customer_id):
+    query = f"""
+    SELECT 
+        tranid,
+        type,
+        entity,
+        trandate,
+        status
+    FROM 
+        transaction
+    WHERE 
+        entity = {customer_id} AND type = 'Estimate' AND status != 'Closed'
+    ORDER BY 
+        trandate DESC;
+    """
+    return fetch_suiteql_data(query)
+
+def fetch_returns(customer_id):
+    query = f"""
+    SELECT 
+        tranid,
+        type,
+        entity,
+        trandate,
+        status
+    FROM 
+        transaction
+    WHERE 
+        entity = {customer_id} AND type = 'Return Authorization'
+    ORDER BY 
+        trandate DESC;
+    """
     return fetch_suiteql_data(query)
 
 # Get the customer ID based on the logged-in email
 customer_id = get_customer_id_from_email(user_email)
 
+# Tab structure for the different views
 if customer_id:
-    st.write(f"Fetching open sales orders for Customer ID: {customer_id}")
+    st.write(f"Fetching data for Customer ID: {customer_id}")
     
-    # Fetch and display open sales orders
-    open_sales_orders = fetch_open_sales_orders(customer_id)
-    
-    if not open_sales_orders.empty:
+    # Create tabs for different views
+    tabs = st.tabs(["All Orders", "Open Orders", "Open Estimates", "Returns"])
+
+    with tabs[0]:
+        st.subheader("All Orders")
+        st.write(f"Displaying all orders for {user_email}:")
+        all_orders = fetch_all_orders(customer_id)
+        if not all_orders.empty:
+            st.dataframe(all_orders)
+        else:
+            st.write("No orders found for this customer.")
+
+    with tabs[1]:
+        st.subheader("Open Orders")
         st.write(f"Displaying open sales orders for {user_email}:")
-        st.dataframe(open_sales_orders)
-    else:
-        st.write("No open sales orders found for this customer.")
+        open_sales_orders = fetch_open_sales_orders(customer_id)
+        if not open_sales_orders.empty:
+            st.dataframe(open_sales_orders)
+        else:
+            st.write("No open sales orders found for this customer.")
+    
+    with tabs[2]:
+        st.subheader("Open Estimates")
+        st.write(f"Displaying open estimates for {user_email}:")
+        open_estimates = fetch_open_estimates(customer_id)
+        if not open_estimates.empty:
+            st.dataframe(open_estimates)
+        else:
+            st.write("No open estimates found for this customer.")
+    
+    with tabs[3]:
+        st.subheader("Returns")
+        st.write(f"Displaying return authorizations for {user_email}:")
+        returns = fetch_returns(customer_id)
+        if not returns.empty:
+            st.dataframe(returns)
+        else:
+            st.write("No returns found for this customer.")
 else:
     st.error("Customer ID not found for this email.")
