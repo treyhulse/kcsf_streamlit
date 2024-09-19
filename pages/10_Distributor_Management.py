@@ -49,7 +49,9 @@ if not customsearch5135_data_raw.empty:
     if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
         # Aggregate sales via the 'Amount' column by 'Distributor' column
         aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
-        
+        # Apply currency formatting to the 'Amount' column in the Streamlit app
+        customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
+
         # Display the aggregated data
         st.write("Aggregated Sales by Distributor:")
         st.dataframe(aggregated_data)
