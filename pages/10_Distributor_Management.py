@@ -31,33 +31,30 @@ from utils.restlet import fetch_restlet_data
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
-def fetch_raw_data_with_progress(saved_search_id):
-    # Initialize progress bar
-    progress_bar = st.progress(0)
-    
-    # Simulating the process in steps (adjust according to your actual fetching time)
-    progress_bar.progress(10)  # 10% done
+def fetch_raw_data(saved_search_id):
     df = fetch_restlet_data(saved_search_id)
-    progress_bar.progress(50)  # 50% done
-    
-    # Finalize loading
-    progress_bar.progress(100)  # 100% done
-    progress_bar.empty()  # Remove progress bar when done
     return df
 
-# Fetch raw data for customsearch5135 with progress bar
+# Fetch raw data for customsearch5135
 st.write("Loading data with progress bar...")
-customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
+customsearch5135_data_raw = fetch_raw_data("customsearch5135")
 
 # Check if the data is not empty
 if not customsearch5135_data_raw.empty:
     
-    # Aggregate sales via the 'Amount' column by 'Distributor' column
-    aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
+    # Debugging: Check the column names
+    st.write("Available columns:", customsearch5135_data_raw.columns)
     
-    # Display the aggregated data
-    st.write("Aggregated Sales by Distributor:")
-    st.dataframe(aggregated_data)
+    # Ensure the columns 'Distributor' and 'Amount' exist in the data
+    if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
+        # Aggregate sales via the 'Amount' column by 'Distributor' column
+        aggregated_data = customsearch5135_data_raw.groupby('Distributor')['Amount'].sum().reset_index()
+        
+        # Display the aggregated data
+        st.write("Aggregated Sales by Distributor:")
+        st.dataframe(aggregated_data)
+    else:
+        st.error("Required columns 'Distributor' or 'Amount' not found in the data.")
     
     # Place the original DataFrame in an expander at the bottom of the page
     with st.expander("View Raw Data"):
