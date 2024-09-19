@@ -76,8 +76,13 @@ def calculate_metrics(df):
     total_records = df.shape[0]
     ready_records = df[(df['Payment Status'].isin(['Paid', 'Terms'])) & (df['Stock Status'] == 'In Stock')].shape[0]
     not_ready_records = total_records - ready_records
-    outstanding_revenue = df['Amount Remaining'].astype(float).sum()
+    
+    # Safely convert 'Amount Remaining' to float, handling non-numeric values
+    df['Amount Remaining'] = pd.to_numeric(df['Amount Remaining'], errors='coerce').fillna(0)
+    
+    outstanding_revenue = df['Amount Remaining'].sum()
     return total_records, ready_records, not_ready_records, outstanding_revenue
+
 
 # Function to apply conditional formatting to the 'Sales Order' column only
 def highlight_conditions_column(s):
