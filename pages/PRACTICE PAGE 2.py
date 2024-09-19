@@ -35,6 +35,24 @@ from utils.apis import get_shopify_products
 
 st.title("NetSuite & Shopify Product Sync")
 
+# Helper function to extract SKUs from the Shopify variants
+def extract_shopify_skus(shopify_products):
+    shopify_skus = []
+    
+    for index, row in shopify_products.iterrows():
+        variants = row['variants']  # 'variants' is a list of dictionaries
+        if variants:
+            for variant in variants:
+                sku = variant.get('sku', None)
+                if sku:
+                    shopify_skus.append({
+                        'id': row['id'],  # Shopify Product ID
+                        'sku': sku,
+                        'title': row['title']  # Add other fields as necessary
+                    })
+                    
+    return pd.DataFrame(shopify_skus)
+
 # Helper function to match NetSuite inventory and Shopify products by item_id and SKU
 def match_netsuite_shopify():
     # Fetch inventory data from NetSuite (SuiteQL)
@@ -43,33 +61,33 @@ def match_netsuite_shopify():
     # Fetch product data from Shopify
     shopify_products = pd.DataFrame(get_shopify_products())
     
-    # Debug: Print the column names of both dataframes
-    st.write("NetSuite Inventory Columns:", netsuite_inventory.columns.tolist())
-    st.write("Shopify Products Columns:", shopify_products.columns.tolist())
+    # Extract SKUs from Shopify products (from the variants field)
+    if 'variants' in shopify_products.columns:
+        shopify_skus = extract_shopify_skus(shopify_products)
+    else:
+        st.error("Shopify data does not contain 'variants' field.")
+        return
     
     if netsuite_inventory.empty:
         st.error("No inventory data available from NetSuite.")
         return
     
-    if shopify_products.empty:
-        st.error("No products available from Shopify.")
+    if shopify_skus.empty:
+        st.error("No SKU data available from Shopify products.")
         return
     
     # Merge inventory and Shopify data on item_id (NetSuite) and sku (Shopify)
-    try:
-        matched_data = pd.merge(
-            netsuite_inventory, shopify_products, 
-            left_on='item_id', right_on='sku', 
-            how='inner'
-        )
-        
-        if not matched_data.empty:
-            st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
-            st.dataframe(matched_data)
-        else:
-            st.error("No matches found between NetSuite and Shopify products based on SKU.")
-    except KeyError as e:
-        st.error(f"KeyError: {str(e)}")
+    matched_data = pd.merge(
+        netsuite_inventory, shopify_skus, 
+        left_on='item_id', right_on='sku', 
+        how='inner'
+    )
+    
+    if not matched_data.empty:
+        st.write(f"Matched {len(matched_data)} products between NetSuite and Shopify.")
+        st.dataframe(matched_data)
+    else:
+        st.error("No matches found between NetSuite and Shopify products based on SKU.")
 
 # Create the 4 tabs
 tabs = st.tabs([
