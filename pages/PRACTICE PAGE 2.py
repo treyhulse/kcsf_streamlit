@@ -28,6 +28,7 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+# Import necessary libraries and functions
 import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data  # Pulls data from RESTlet for customsearch
@@ -64,10 +65,14 @@ with tabs[0]:
 
     # Check if data is available for both
     if not customsearch5131_data.empty and not suiteql_inventory.empty:
-        # Perform the join on item_id (SuiteQL) and Title (saved search)
+        # Convert SuiteQL `item_id` to string to match with `SKU` from saved search
+        suiteql_inventory['item_id'] = suiteql_inventory['item_id'].astype(str)
+        customsearch5131_data['SKU'] = customsearch5131_data['SKU'].astype(str)
+
+        # Perform the join on item_id (SuiteQL) and SKU (saved search)
         joined_data = pd.merge(
             suiteql_inventory, customsearch5131_data, 
-            left_on='item_id', right_on='Title', 
+            left_on='item_id', right_on='SKU', 
             how='inner'
         )
         
@@ -76,7 +81,7 @@ with tabs[0]:
             st.write(f"Joined {len(joined_data)} products between SuiteQL and customsearch5131.")
             st.dataframe(joined_data)
         else:
-            st.error("No matches found between SuiteQL and customsearch5131 based on item_id and Title.")
+            st.error("No matches found between SuiteQL and customsearch5131 based on item_id and SKU.")
     else:
         st.error("No data available for either SuiteQL or customsearch5131.")
 
