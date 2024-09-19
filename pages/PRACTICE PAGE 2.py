@@ -40,10 +40,10 @@ if 'uploaded_files' not in st.session_state:
     st.session_state['uploaded_files'] = []
 
 # Get user name
-user_name = get_user_name()
+st.experimental_user = get_user_name()
 
 # Welcome Message
-st.title(f"Welcome, {user_name}!")
+st.title(f"Welcome, {st.experimental_user}!")
 st.write("This is your file management page. You can upload multiple files, view their content, and manage them effectively within this app. Feel free to drag and drop your files below.")
 
 # File uploader
