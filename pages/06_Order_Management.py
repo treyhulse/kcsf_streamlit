@@ -123,12 +123,12 @@ def calculate_funnel_stages(estimates_df, sales_orders_df):
 # Get the counts for each funnel stage
 estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calculate_funnel_stages(estimate_data, sales_order_data)
 
-# Create a funnel chart using Plotly with vertical orientation and red color theme
+# Create a funnel chart using Plotly with left-to-right orientation and red color theme
 funnel_data = go.Funnel(
     y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
     x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
+    orientation='h',  # Set horizontal orientation for left-to-right flow
     textinfo="value+percent initial",
-    orientation='v',
     marker=dict(
         color='red',  # Set color to red
         line=dict(width=1, color='darkred')  # Optional: darker border for contrast
