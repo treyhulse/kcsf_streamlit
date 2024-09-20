@@ -228,6 +228,9 @@ if not customsearch5135_data_raw.empty:
                     </div>
                     """, unsafe_allow_html=True)
 
+            # Add a separation/gap between the two rows
+            st.markdown("<hr style='margin-top: 50px; margin-bottom: 50px;'>", unsafe_allow_html=True)
+
             # Second row: bar chart (left) and dataframe (right)
             left_col, right_col = st.columns(2)
 
@@ -253,9 +256,5 @@ if not customsearch5135_data_raw.empty:
                 st.subheader(f"Data for {selected_distributor}")
                 st.dataframe(distributor_data)
 
-    # Expander for raw data
-    with st.expander("View Raw Data"):
-        # Format the 'Amount' column to currency format in the original DataFrame for display purposes
-        customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
-        st.write("Original Data:")
-        st.dataframe(customsearch5135_data_raw)
+        else:
+            st.write("No data available for the selected distributor.")
