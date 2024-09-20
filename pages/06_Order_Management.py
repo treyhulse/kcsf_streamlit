@@ -127,7 +127,7 @@ funnel_data = go.Funnel(
     orientation='h',  # Set horizontal orientation
     textinfo="value+percent initial",
     marker=dict(
-        color='red',  # Set color to red
+        color='darkred',  # Set color to red
     )
 )
 
