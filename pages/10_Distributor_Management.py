@@ -159,7 +159,7 @@ if not customsearch5135_data_raw.empty:
             average_order_volume = distributor_data['Amount'].mean()
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display key metrics in individual boxes with drop shadows
+            # Display key metrics in separate boxes with a drop shadow
             st.markdown("""
             <style>
             .metrics-box {
@@ -174,10 +174,25 @@ if not customsearch5135_data_raw.empty:
 
             col1, col2, col3, col4 = st.columns(4)
 
-            col1.metric("Total Orders", total_orders, container_class="metrics-box")
-            col2.metric("Total Sales", f"${total_sales:,.2f}", container_class="metrics-box")
-            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}", container_class="metrics-box")
-            col4.metric("Sales Needed", f"${sales_needed:,.2f}", container_class="metrics-box")
+            with col1:
+                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
+                st.metric("Total Orders", total_orders)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with col2:
+                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
+                st.metric("Total Sales", f"${total_sales:,.2f}")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with col3:
+                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
+                st.metric("Average Order Volume", f"${average_order_volume:,.2f}")
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            with col4:
+                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
+                st.metric("Sales Needed", f"${sales_needed:,.2f}")
+                st.markdown('</div>', unsafe_allow_html=True)
 
             # Bar chart showing the distributor's sales across quarters
             distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
