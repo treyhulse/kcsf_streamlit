@@ -133,7 +133,8 @@ funnel_data['conversion'] = funnel_data['conversion'].apply(lambda x: round(x, 2
 
 # Funnel Chart using Plotly
 st.subheader("Sales Pipeline Funnel with Conversion Percentages")
-funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='conversion')
+funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='conversion',
+                         color_discrete_sequence=['red'])  # Set the color to red
 
 # Customize the appearance
 funnel_chart.update_traces(texttemplate='%{text}%')
@@ -141,6 +142,7 @@ funnel_chart.update_layout(title_text='Sales Pipeline Funnel', title_x=0.5)
 
 # Add the funnel chart to Streamlit
 st.plotly_chart(funnel_chart)
+
 ################################################################################################
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
