@@ -172,7 +172,22 @@ if not customsearch5135_data_raw.empty:
             average_order_volume = distributor_data['Amount'].mean()
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display key metrics in a box with a drop shadow
+            # Simulating percentage changes for demonstration purposes
+            # You can replace these with real calculations based on historical data
+            percentage_change_orders = 5  # Example change for orders
+            percentage_change_sales = 2.5  # Example change for sales
+            percentage_change_average = -3  # Example change for average order volume
+            percentage_change_needed = -15  # Example change for sales needed
+
+            # Display dynamic metric boxes with arrows and sub-numbers
+            metrics = [
+                {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+                {"label": "Total Sales", "value": f"${total_sales:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+                {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+                {"label": "Sales Needed", "value": f"${sales_needed:,.2f}", "change": percentage_change_needed, "positive": percentage_change_needed > 0},
+            ]
+
+            # Styling for the boxes
             st.markdown("""
             <style>
             .metrics-box {
@@ -180,37 +195,56 @@ if not customsearch5135_data_raw.empty:
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+            .metric-title {
+                margin: 0;
+                font-size: 20px;
+            }
+            .metric-value {
+                margin: 0;
+                font-size: 28px;
+                font-weight: bold;
+            }
+            .metric-change {
+                margin: 0;
+                font-size: 14px;
             }
             </style>
             """, unsafe_allow_html=True)
 
-            st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
 
-            col1.metric("Total Orders", total_orders)
-            col2.metric("Total Sales", f"${total_sales:,.2f}")
-            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}")
-            col4.metric("Sales Needed", f"${sales_needed:,.2f}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            for col, metric in zip([col1, col2, col3, col4], metrics):
+                arrow = "↑" if metric["positive"] else "↓"
+                color = "green" if metric["positive"] else "red"
 
-            # Bar chart showing the distributor's sales across quarters
-            distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
-                total_sales=('Amount', 'sum')
-            ).reset_index()
+                with col:
+                    st.markdown(f"""
+                    <div class="metrics-box">
+                        <h3 class="metric-title">{metric['label']}</h3>
+                        <p class="metric-value">{metric['value']}</p>
+                        <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
-            distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
-                x='Quarter',
-                y='total_sales',
-                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
-                tooltip=['Quarter', 'total_sales']
-            ).properties(
-                height=400
-            )
 
-            st.altair_chart(distributor_bar_chart, use_container_width=True)
+                    # Bar chart showing the distributor's sales across quarters
+                    distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
+                        total_sales=('Amount', 'sum')
+                    ).reset_index()
 
-        else:
-            st.write(f"No data available for {selected_distributor}.")
+                    distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
+                        x='Quarter',
+                        y='total_sales',
+                        color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
+                        tooltip=['Quarter', 'total_sales']
+                    ).properties(
+                        height=400
+                    )
+
+                    st.altair_chart(distributor_bar_chart, use_container_width=True)
+
 
     # Expander for raw data
     with st.expander("View Raw Data"):
