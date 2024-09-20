@@ -33,6 +33,8 @@ st.write(f"You have access to this page.")
 
 from utils.restlet import fetch_restlet_data
 import pandas as pd
+import plotly.graph_objects as go
+
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -95,6 +97,39 @@ def highlight_conditions_column(s):
     elif s['Stock Status'] == 'Back Ordered':
         return ['color: orange' if col == 'Sales Order' else '' for col in s.index]
     return [''] * len(s)  # No formatting otherwise
+
+st.header("Sales Pipeline Funnel")
+
+# Function to count the records for each funnel stage
+def calculate_funnel_stages(estimates_df, sales_orders_df):
+    # Count of Estimates Open
+    estimates_open = estimates_df.shape[0]
+
+    # Count of Sales Orders Pending Fulfillment
+    pending_fulfillment = sales_orders_df[sales_orders_df['Status'].isin(['Pending Fulfillment'])].shape[0]
+
+    # Count of Sales Orders Partially Fulfilled AND Pending Billing/Partially Fulfilled
+    partially_fulfilled = sales_orders_df[sales_orders_df['Status'].isin(['Partially Fulfilled', 'Pending Billing/Partially Fulfilled'])].shape[0]
+
+    # Count of Sales Orders Ready
+    ready_orders = sales_orders_df[sales_orders_df['Stock Status'] == 'In Stock'].shape[0]
+
+    return estimates_open, pending_fulfillment, partially_fulfilled, ready_orders
+
+# Get the counts for each funnel stage
+estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calculate_funnel_stages(estimate_data, sales_order_data)
+
+# Create a funnel chart using Plotly
+funnel_data = go.Funnel(
+    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
+    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
+    textinfo="value+percent initial"
+)
+
+fig = go.Figure(funnel_data)
+
+# Add the funnel chart to your Streamlit app
+st.plotly_chart(fig)
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
 st.header("Order Management")
