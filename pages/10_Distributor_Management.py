@@ -30,17 +30,23 @@ import pandas as pd
 import altair as alt
 from utils.restlet import fetch_restlet_data
 
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+# Cache the raw data fetching process with a 10-minute expiration
+@st.cache_data(ttl=600)
 def fetch_raw_data_with_progress(saved_search_id):
     # Initialize progress bar
     progress_bar = st.progress(0)
     
-    # Simulating the process in steps (adjust according to your actual fetching time)
-    progress_bar.progress(10)  # 10% done
+    # Simulating the data loading process in chunks
     df = fetch_restlet_data(saved_search_id)
-    progress_bar.progress(50)  # 50% done
+    progress_bar.progress(33)  # 33% done after fetching data
     
-    # Finalize loading
+    # Perform initial transformations
+    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+    df['Sales Order'] = df['Sales Order'].astype(str)
+    progress_bar.progress(66)  # 66% done after transformation
+    
+    # Finalize data processing
+    df['Date Created'] = pd.to_datetime(df['Date Created'])
     progress_bar.progress(100)  # 100% done
     progress_bar.empty()  # Remove progress bar when done
     return df
@@ -52,15 +58,6 @@ customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 # Check if the data is not empty
 if not customsearch5135_data_raw.empty:
     
-    # Convert 'Amount' and 'Sales Order' columns to appropriate types
-    customsearch5135_data_raw['Amount'] = pd.to_numeric(customsearch5135_data_raw['Amount'], errors='coerce')
-    
-    # Ensure 'Sales Order' is treated as a categorical or string column
-    customsearch5135_data_raw['Sales Order'] = customsearch5135_data_raw['Sales Order'].astype(str)
-
-    # Convert the 'Date Created' column to datetime
-    customsearch5135_data_raw['Date Created'] = pd.to_datetime(customsearch5135_data_raw['Date Created'])
-
     # Define quarter ranges for 2024
     def assign_quarter(date):
         if date >= pd.Timestamp("2024-01-01") and date <= pd.Timestamp("2024-03-31"):
@@ -92,19 +89,17 @@ if not customsearch5135_data_raw.empty:
     with tab1:
         st.header("Distributor Overview")
 
-        # Master line chart aggregating all sales by month
+        # Master line chart aggregating all sales by month, with dots and interactivity
         monthly_sales_data = customsearch5135_data_raw.resample('M', on='Date Created').agg(
             total_sales=('Amount', 'sum')
         ).reset_index()
 
         st.write("Monthly Aggregated Sales (Master Line Chart)")
-        master_line_chart = alt.Chart(monthly_sales_data).mark_line().encode(
+        master_line_chart = alt.Chart(monthly_sales_data).mark_line(point=True).encode(
             x=alt.X('Date Created:T', title='Month'),
             y=alt.Y('total_sales:Q', title='Total Sales Amount'),
             tooltip=['Date Created', 'total_sales']
-        ).properties(
-            height=400
-        )
+        ).interactive()  # Enable zoom and pan interaction
 
         st.altair_chart(master_line_chart, use_container_width=True)
 
