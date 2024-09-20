@@ -46,6 +46,7 @@ def fetch_raw_data_with_progress(saved_search_id):
     return df
 
 # Fetch raw data for customsearch5135 with progress bar
+st.write("Loading data with progress bar...")
 customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 
 # Check if the data is not empty
@@ -90,7 +91,23 @@ if not customsearch5135_data_raw.empty:
     # ---- Tab 1: Distributor Overview ----
     with tab1:
         st.header("Distributor Overview")
-        
+
+        # Master line chart aggregating all sales by month
+        monthly_sales_data = customsearch5135_data_raw.resample('M', on='Date Created').agg(
+            total_sales=('Amount', 'sum')
+        ).reset_index()
+
+        st.write("Monthly Aggregated Sales (Master Line Chart)")
+        master_line_chart = alt.Chart(monthly_sales_data).mark_line().encode(
+            x=alt.X('Date Created:T', title='Month'),
+            y=alt.Y('total_sales:Q', title='Total Sales Amount'),
+            tooltip=['Date Created', 'total_sales']
+        ).properties(
+            height=400
+        )
+
+        st.altair_chart(master_line_chart, use_container_width=True)
+
         # Aggregate sales via the 'Amount' column by 'Distributor' column
         if 'Distributor' in customsearch5135_data_raw.columns and 'Amount' in customsearch5135_data_raw.columns:
             aggregated_data = filtered_data.groupby('Distributor').agg(
@@ -159,7 +176,7 @@ if not customsearch5135_data_raw.empty:
             average_order_volume = distributor_data['Amount'].mean()
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display key metrics in separate boxes with a drop shadow
+            # Display key metrics in a box with a drop shadow
             st.markdown("""
             <style>
             .metrics-box {
@@ -167,32 +184,18 @@ if not customsearch5135_data_raw.empty:
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
-                margin-bottom: 20px;
             }
             </style>
             """, unsafe_allow_html=True)
 
+            st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
 
-            with col1:
-                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
-                st.metric("Total Orders", total_orders)
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            with col2:
-                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
-                st.metric("Total Sales", f"${total_sales:,.2f}")
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            with col3:
-                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
-                st.metric("Average Order Volume", f"${average_order_volume:,.2f}")
-                st.markdown('</div>', unsafe_allow_html=True)
-
-            with col4:
-                st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
-                st.metric("Sales Needed", f"${sales_needed:,.2f}")
-                st.markdown('</div>', unsafe_allow_html=True)
+            col1.metric("Total Orders", total_orders)
+            col2.metric("Total Sales", f"${total_sales:,.2f}")
+            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}")
+            col4.metric("Sales Needed", f"${sales_needed:,.2f}")
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Bar chart showing the distributor's sales across quarters
             distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
@@ -214,7 +217,7 @@ if not customsearch5135_data_raw.empty:
             st.write(f"No data available for {selected_distributor}.")
 
     # Expander for raw data
-    with st.expander("View Data"):
+    with st.expander("View Raw Data"):
         # Format the 'Amount' column to currency format in the original DataFrame for display purposes
         customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
         st.write("Original Data:")
