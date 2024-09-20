@@ -174,10 +174,10 @@ if not customsearch5135_data_raw.empty:
 
             col1, col2, col3, col4 = st.columns(4)
 
-            col1.metric("Total Orders", total_orders, key="total_orders", container_class="metrics-box")
-            col2.metric("Total Sales", f"${total_sales:,.2f}", key="total_sales", container_class="metrics-box")
-            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}", key="average_order_volume", container_class="metrics-box")
-            col4.metric("Sales Needed", f"${sales_needed:,.2f}", key="sales_needed", container_class="metrics-box")
+            col1.metric("Total Orders", total_orders, container_class="metrics-box")
+            col2.metric("Total Sales", f"${total_sales:,.2f}", container_class="metrics-box")
+            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}", container_class="metrics-box")
+            col4.metric("Sales Needed", f"${sales_needed:,.2f}", container_class="metrics-box")
 
             # Bar chart showing the distributor's sales across quarters
             distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
