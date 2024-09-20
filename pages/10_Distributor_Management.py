@@ -155,31 +155,38 @@ if not customsearch5135_data_raw.empty:
         distributor_data = filtered_data[filtered_data['Distributor'] == selected_distributor]
 
         if not distributor_data.empty:
-            # Aggregate data for the selected distributor
-            distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
-                total_sales=('Amount', 'sum'),
-                unique_sales_orders=('Sales Order', 'nunique')
-            ).reset_index()
+            # Key metrics for the selected distributor
+            total_orders = distributor_data['Sales Order'].nunique()
+            total_sales = distributor_data['Amount'].sum()
+            average_order_volume = distributor_data['Amount'].mean()
+            sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display sales insights for the selected distributor
-            st.write(f"Sales Insights for {selected_distributor}")
-            st.dataframe(distributor_sales_by_quarter)
+            # Display key metrics
+            st.write(f"### Key Metrics for {selected_distributor}")
+            col1, col2, col3, col4 = st.columns(4)
+
+            col1.metric("Total Orders", total_orders)
+            col2.metric("Total Sales", f"${total_sales:,.2f}")
+            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}")
+            col4.metric("Sales Needed", f"${sales_needed:,.2f}")
 
             # Bar chart showing the distributor's sales across quarters
+            distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
+                total_sales=('Amount', 'sum')
+            ).reset_index()
+
+            st.write(f"Sales Performance for {selected_distributor} by Quarter")
             distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
                 x='Quarter',
                 y='total_sales',
                 color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])),
-                tooltip=['Quarter', 'total_sales', 'unique_sales_orders']
+                tooltip=['Quarter', 'total_sales']
             ).properties(
                 height=400
             )
 
             st.altair_chart(distributor_bar_chart, use_container_width=True)
 
-            # Additional insights or stats can be added here for the selected distributor
-            st.write(f"Total Sales Orders: {distributor_sales_by_quarter['unique_sales_orders'].sum()}")
-            st.write(f"Total Sales Amount: ${distributor_sales_by_quarter['total_sales'].sum():,.2f}")
         else:
             st.write(f"No data available for {selected_distributor}.")
 
