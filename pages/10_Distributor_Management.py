@@ -214,7 +214,7 @@ if not customsearch5135_data_raw.empty:
             st.write(f"No data available for {selected_distributor}.")
 
     # Expander for raw data
-    with st.expander("View Raw Data"):
+    with st.expander("View Data"):
         # Format the 'Amount' column to currency format in the original DataFrame for display purposes
         customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
         st.write("Original Data:")
