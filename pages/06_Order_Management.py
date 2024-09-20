@@ -133,7 +133,7 @@ funnel_data['conversion'] = funnel_data['conversion'].apply(lambda x: round(x, 2
 
 # Funnel Chart using Plotly
 st.subheader("Sales Pipeline Funnel with Conversion Percentages")
-funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='conversion',
+funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='amount',
                          color_discrete_sequence=['red'])  # Set the color to red
 
 # Customize the appearance
