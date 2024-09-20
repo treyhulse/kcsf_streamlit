@@ -122,8 +122,8 @@ estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calcula
 
 # Create a funnel chart using Plotly with horizontal orientation and red color theme
 funnel_data = go.Funnel(
-    x=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
-    y=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
+    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
+    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
     orientation='h',  # Set horizontal orientation
     textinfo="value+percent initial",
     marker=dict(
