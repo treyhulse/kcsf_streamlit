@@ -130,7 +130,7 @@ funnel_data = pd.DataFrame({
 # Funnel Chart using Plotly
 st.subheader("Sales Pipeline Funnel")
 funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='amount',  # Show amounts instead of conversion
-                         color_discrete_sequence=['mediumvioletred'])  # Set the color to red
+                         color_discrete_sequence=['firebrick'])  # Set the color to red
 
 # Customize the appearance
 funnel_chart.update_traces(texttemplate='%{text}', textposition="inside")
