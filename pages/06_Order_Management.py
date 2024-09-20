@@ -101,6 +101,8 @@ def highlight_conditions_column(s):
 ################################################################################################
 st.header("Sales Pipeline Funnel")
 
+import plotly.graph_objects as go
+
 # Function to count the records for each funnel stage
 def calculate_funnel_stages(estimates_df, sales_orders_df):
     # Count of Estimates Open
@@ -112,22 +114,23 @@ def calculate_funnel_stages(estimates_df, sales_orders_df):
     # Count of Sales Orders Partially Fulfilled AND Pending Billing/Partially Fulfilled
     partially_fulfilled = sales_orders_df[sales_orders_df['Status'].isin(['Partially Fulfilled', 'Pending Billing/Partially Fulfilled'])].shape[0]
 
-    # Count of Sales Orders Ready
-    ready_orders = sales_orders_df[(sales_orders_df['Stock Status'] == 'In Stock') & (sales_orders_df['Payment Status'].isin(['Terms', 'Paid']))].shape[0]
+    # Count of Sales Orders Ready (Filtered by Stock Status = 'In Stock' AND Payment Status = 'Paid' or 'Terms')
+    ready_orders = sales_orders_df[(sales_orders_df['Stock Status'] == 'In Stock') & 
+                                   (sales_orders_df['Payment Status'].isin(['Paid', 'Terms']))].shape[0]
 
     return estimates_open, pending_fulfillment, partially_fulfilled, ready_orders
 
 # Get the counts for each funnel stage
 estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calculate_funnel_stages(estimate_data, sales_order_data)
 
-# Create a funnel chart using Plotly with horizontal orientation and red color theme
+# Create a funnel chart using Plotly with vertical orientation and red color theme
 funnel_data = go.Funnel(
     y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
     x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
-    orientation='v',  # Set horizontal orientation
     textinfo="value+percent initial",
     marker=dict(
-        color='darkred',  # Set color to red
+        color='red',  # Set color to red
+        line=dict(width=1, color='darkred')  # Optional: darker border for contrast
     )
 )
 
@@ -135,6 +138,7 @@ fig = go.Figure(funnel_data)
 
 # Add the funnel chart to your Streamlit app
 st.plotly_chart(fig)
+
 ################################################################################################
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
