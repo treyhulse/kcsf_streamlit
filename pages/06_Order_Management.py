@@ -127,21 +127,18 @@ funnel_data = pd.DataFrame({
     'amount': [estimates_open, pending_fulfillment, partially_fulfilled, ready_orders]
 })
 
-# Calculate Conversion Percentages
-funnel_data['conversion'] = funnel_data['amount'].pct_change().fillna(0) * 100
-funnel_data['conversion'] = funnel_data['conversion'].apply(lambda x: round(x, 2))
-
 # Funnel Chart using Plotly
-st.subheader("Sales Pipeline Funnel with Conversion Percentages")
-funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='amount',
-                         color_discrete_sequence=['indianred'])  # Set the color to red
+st.subheader("Sales Pipeline Funnel")
+funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='amount',  # Show amounts instead of conversion
+                         color_discrete_sequence=['mediumvioletred'])  # Set the color to red
 
 # Customize the appearance
-funnel_chart.update_traces(texttemplate='%{text}%')
+funnel_chart.update_traces(texttemplate='%{text}', textposition="inside")
 funnel_chart.update_layout(title_text='Sales Pipeline Funnel', title_x=0.5)
 
 # Add the funnel chart to Streamlit
 st.plotly_chart(funnel_chart)
+
 
 ################################################################################################
 
