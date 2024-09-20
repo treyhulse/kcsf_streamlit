@@ -10,3 +10,4 @@ streamlit-aggrid
 python-dotenv
 apscheduler
 altair
+streamlit_echarts
