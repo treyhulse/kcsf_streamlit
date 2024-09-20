@@ -52,7 +52,6 @@ def fetch_raw_data_with_progress(saved_search_id):
     return df
 
 # Fetch raw data for customsearch5135 with progress bar
-st.write("Loading data with progress bar...")
 customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5135")
 
 # Check if the data is not empty
@@ -95,7 +94,7 @@ if not customsearch5135_data_raw.empty:
             total_sales=('Amount', 'sum')
         ).reset_index()
 
-        st.write("Monthly Aggregated Sales (Master Line Chart)")
+        st.write("Distributor Program Sales by Month")
         master_line_chart = alt.Chart(monthly_sales_data).mark_line(point=True).encode(
             x=alt.X('Date Created:T', title='Month'),
             y=alt.Y('total_sales:Q', title='Total Sales Amount'),
@@ -120,7 +119,7 @@ if not customsearch5135_data_raw.empty:
 
             # Pie chart in the first column (col1)
             with col1:
-                st.write("Sales Distribution by Distributor (Pie Chart)")
+                st.write("Sales by Distributor:")
                 pie_chart = alt.Chart(aggregated_data).mark_arc().encode(
                     theta=alt.Theta(field="total_sales", type="quantitative"),
                     color=alt.Color(field="Distributor", type="nominal"),
@@ -130,7 +129,7 @@ if not customsearch5135_data_raw.empty:
 
             # Aggregated data table in the second column (col2)
             with col2:
-                st.write("Aggregated Sales by Distributor:")
+                st.write("Sales by Distributor:")
                 st.dataframe(formatted_aggregated_data)
 
             # Stacked bar chart: Group data by Distributor and Quarter
@@ -138,7 +137,7 @@ if not customsearch5135_data_raw.empty:
                 total_sales=('Amount', 'sum')
             ).reset_index()
 
-            st.write("Sales by Distributor and Quarter (Stacked Bar Chart)")
+            st.write("Sales by Distributor by Quarter")
             stacked_bar_chart = alt.Chart(sales_by_quarter).mark_bar().encode(
                 x='Distributor',
                 y='total_sales',
@@ -253,7 +252,7 @@ if not customsearch5135_data_raw.empty:
 
             # Right half: Dataframe for the selected distributor
             with right_col:
-                st.subheader(f"Data for {selected_distributor}")
+                st.subheader(f"Orders for {selected_distributor}")
                 st.dataframe(distributor_data)
 
         else:
