@@ -159,7 +159,7 @@ if not customsearch5135_data_raw.empty:
             average_order_volume = distributor_data['Amount'].mean()
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display key metrics in a box with a drop shadow
+            # Display key metrics in individual boxes with drop shadows
             st.markdown("""
             <style>
             .metrics-box {
@@ -167,18 +167,17 @@ if not customsearch5135_data_raw.empty:
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
             }
             </style>
             """, unsafe_allow_html=True)
 
-            st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
 
-            col1.metric("Total Orders", total_orders)
-            col2.metric("Total Sales", f"${total_sales:,.2f}")
-            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}")
-            col4.metric("Sales Needed", f"${sales_needed:,.2f}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            col1.metric("Total Orders", total_orders, key="total_orders", container_class="metrics-box")
+            col2.metric("Total Sales", f"${total_sales:,.2f}", key="total_sales", container_class="metrics-box")
+            col3.metric("Average Order Volume", f"${average_order_volume:,.2f}", key="average_order_volume", container_class="metrics-box")
+            col4.metric("Sales Needed", f"${sales_needed:,.2f}", key="sales_needed", container_class="metrics-box")
 
             # Bar chart showing the distributor's sales across quarters
             distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
