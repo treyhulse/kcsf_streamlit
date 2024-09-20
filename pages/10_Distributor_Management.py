@@ -31,7 +31,6 @@ import altair as alt
 from utils.restlet import fetch_restlet_data
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=900)
 def fetch_raw_data_with_progress(saved_search_id):
     # Initialize progress bar
     progress_bar = st.progress(0)
@@ -161,21 +160,32 @@ if not customsearch5135_data_raw.empty:
             average_order_volume = distributor_data['Amount'].mean()
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
-            # Display key metrics
-            st.write(f"### Key Metrics for {selected_distributor}")
+            # Display key metrics in a box with a drop shadow
+            st.markdown("""
+            <style>
+            .metrics-box {
+                background-color: #f9f9f9;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            st.markdown('<div class="metrics-box">', unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
 
             col1.metric("Total Orders", total_orders)
             col2.metric("Total Sales", f"${total_sales:,.2f}")
             col3.metric("Average Order Volume", f"${average_order_volume:,.2f}")
             col4.metric("Sales Needed", f"${sales_needed:,.2f}")
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Bar chart showing the distributor's sales across quarters
             distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
                 total_sales=('Amount', 'sum')
             ).reset_index()
 
-            st.write(f"Sales Performance for {selected_distributor} by Quarter")
             distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
                 x='Quarter',
                 y='total_sales',
