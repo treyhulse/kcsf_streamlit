@@ -99,7 +99,7 @@ def highlight_conditions_column(s):
     return [''] * len(s)  # No formatting otherwise
 
 ################################################################################################
-st.header("Sales Pipeline Funnel")
+st.header("Sales Pipeline")
 
 import plotly.graph_objects as go
 
@@ -123,19 +123,25 @@ def calculate_funnel_stages(estimates_df, sales_orders_df):
 # Get the counts for each funnel stage
 estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calculate_funnel_stages(estimate_data, sales_order_data)
 
-# Create a funnel chart using Plotly with left-to-right orientation and red color theme
-funnel_data = go.Funnel(
-    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
-    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
-    orientation='h',  # Set horizontal orientation for left-to-right flow
-    textinfo="value+percent initial",
+# Create a horizontal bar chart using Plotly
+fig = go.Figure(go.Bar(
+    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],  # Values for each stage
+    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],  # Stages
+    orientation='h',  # Horizontal orientation for left-to-right
     marker=dict(
         color='red',  # Set color to red
-        line=dict(width=1, color='darkred')  # Optional: darker border for contrast
+        line=dict(width=2, color='darkred')  # Optional: darker border for contrast
     )
-)
+))
 
-fig = go.Figure(funnel_data)
+# Update layout to adjust the spacing and display direction
+fig.update_layout(
+    title='Sales Pipeline Funnel',
+    xaxis_title='Number of Orders',
+    yaxis_title='',  # Empty as we only need labels on the y-axis
+    yaxis=dict(showgrid=False, showline=False, zeroline=False),
+    xaxis=dict(showgrid=False),
+)
 
 # Add the funnel chart to your Streamlit app
 st.plotly_chart(fig)
