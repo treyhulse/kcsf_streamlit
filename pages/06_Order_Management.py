@@ -113,7 +113,7 @@ def calculate_funnel_stages(estimates_df, sales_orders_df):
     partially_fulfilled = sales_orders_df[sales_orders_df['Status'].isin(['Partially Fulfilled', 'Pending Billing/Partially Fulfilled'])].shape[0]
 
     # Count of Sales Orders Ready
-    ready_orders = sales_orders_df[sales_orders_df['Stock Status'] == 'In Stock'].shape[0]
+    ready_orders = sales_orders_df[(sales_orders_df['Stock Status'] == 'In Stock') & (sales_orders_df['Payment Status'].isin(['Terms', 'Paid']))].shape[0]
 
     return estimates_open, pending_fulfillment, partially_fulfilled, ready_orders
 
@@ -122,13 +122,12 @@ estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calcula
 
 # Create a funnel chart using Plotly with horizontal orientation and red color theme
 funnel_data = go.Funnel(
-    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
-    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
+    x=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
+    y=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
     orientation='h',  # Set horizontal orientation
     textinfo="value+percent initial",
     marker=dict(
         color='red',  # Set color to red
-        line=dict(width=2, color='darkred')  # Optional: darker border for contrast
     )
 )
 
