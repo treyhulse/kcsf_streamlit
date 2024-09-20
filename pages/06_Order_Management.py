@@ -33,7 +33,7 @@ st.write(f"You have access to this page.")
 
 from utils.restlet import fetch_restlet_data
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
@@ -101,8 +101,6 @@ def highlight_conditions_column(s):
 ################################################################################################
 st.header("Sales Pipeline")
 
-import plotly.graph_objects as go
-
 # Function to count the records for each funnel stage
 def calculate_funnel_stages(estimates_df, sales_orders_df):
     # Count of Estimates Open
@@ -123,29 +121,26 @@ def calculate_funnel_stages(estimates_df, sales_orders_df):
 # Get the counts for each funnel stage
 estimates_open, pending_fulfillment, partially_fulfilled, ready_orders = calculate_funnel_stages(estimate_data, sales_order_data)
 
-# Create a horizontal bar chart using Plotly
-fig = go.Figure(go.Bar(
-    x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],  # Values for each stage
-    y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],  # Stages
-    orientation='h',  # Horizontal orientation for left-to-right
-    marker=dict(
-        color='red',  # Set color to red
-        line=dict(width=2, color='darkred')  # Optional: darker border for contrast
-    )
-))
+# Funnel Chart Data
+funnel_data = pd.DataFrame({
+    'stage': ['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
+    'amount': [estimates_open, pending_fulfillment, partially_fulfilled, ready_orders]
+})
 
-# Update layout to adjust the spacing and display direction
-fig.update_layout(
-    title='Sales Pipeline Funnel',
-    xaxis_title='Number of Orders',
-    yaxis_title='',  # Empty as we only need labels on the y-axis
-    yaxis=dict(showgrid=False, showline=False, zeroline=False),
-    xaxis=dict(showgrid=False),
-)
+# Calculate Conversion Percentages
+funnel_data['conversion'] = funnel_data['amount'].pct_change().fillna(0) * 100
+funnel_data['conversion'] = funnel_data['conversion'].apply(lambda x: round(x, 2))
 
-# Add the funnel chart to your Streamlit app
-st.plotly_chart(fig)
+# Funnel Chart using Plotly
+st.subheader("Sales Pipeline Funnel with Conversion Percentages")
+funnel_chart = px.funnel(funnel_data, x='stage', y='amount', text='conversion')
 
+# Customize the appearance
+funnel_chart.update_traces(texttemplate='%{text}%')
+funnel_chart.update_layout(title_text='Sales Pipeline Funnel', title_x=0.5)
+
+# Add the funnel chart to Streamlit
+st.plotly_chart(funnel_chart)
 ################################################################################################
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
