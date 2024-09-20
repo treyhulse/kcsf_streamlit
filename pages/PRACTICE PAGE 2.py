@@ -28,6 +28,24 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
+from streamlit_echarts import st_echarts
+
+# Simple pie chart to test
+test_options = {
+    "series": [
+        {
+            "type": "pie",
+            "radius": "50%",
+            "data": [
+                {"value": 1048, "name": "Tasked Orders"},
+                {"value": 735, "name": "Untasked Orders"},
+            ],
+        }
+    ]
+}
+
+st_echarts(options=test_options, height="400px")
+
 import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
