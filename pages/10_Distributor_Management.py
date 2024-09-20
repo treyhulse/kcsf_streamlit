@@ -142,7 +142,7 @@ if not customsearch5135_data_raw.empty:
             stacked_bar_chart = alt.Chart(sales_by_quarter).mark_bar().encode(
                 x='Distributor',
                 y='total_sales',
-                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF0000', '#FF3333', '#FF6666', '#FF9999'])),
+                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
                 tooltip=['Distributor', 'Quarter', 'total_sales']
             ).properties(
                 height=400
@@ -201,7 +201,7 @@ if not customsearch5135_data_raw.empty:
             distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
                 x='Quarter',
                 y='total_sales',
-                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF0000', '#FF3333', '#FF6666', '#FF9999'])),
+                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
                 tooltip=['Quarter', 'total_sales']
             ).properties(
                 height=400
