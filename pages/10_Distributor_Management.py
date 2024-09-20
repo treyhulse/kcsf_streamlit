@@ -173,7 +173,6 @@ if not customsearch5135_data_raw.empty:
             sales_needed = 100000 - total_sales  # Assuming a goal of $100,000 in sales
 
             # Simulating percentage changes for demonstration purposes
-            # You can replace these with real calculations based on historical data
             percentage_change_orders = 5  # Example change for orders
             percentage_change_sales = 2.5  # Example change for sales
             percentage_change_average = -3  # Example change for average order volume
@@ -213,6 +212,7 @@ if not customsearch5135_data_raw.empty:
             </style>
             """, unsafe_allow_html=True)
 
+            # First row: metrics
             col1, col2, col3, col4 = st.columns(4)
 
             for col, metric in zip([col1, col2, col3, col4], metrics):
@@ -228,23 +228,30 @@ if not customsearch5135_data_raw.empty:
                     </div>
                     """, unsafe_allow_html=True)
 
+            # Second row: bar chart (left) and dataframe (right)
+            left_col, right_col = st.columns(2)
 
-                    # Bar chart showing the distributor's sales across quarters
-                    distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
-                        total_sales=('Amount', 'sum')
-                    ).reset_index()
+            # Left half: Bar chart showing the distributor's sales across quarters
+            with left_col:
+                distributor_sales_by_quarter = distributor_data.groupby('Quarter').agg(
+                    total_sales=('Amount', 'sum')
+                ).reset_index()
 
-                    distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
-                        x='Quarter',
-                        y='total_sales',
-                        color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
-                        tooltip=['Quarter', 'total_sales']
-                    ).properties(
-                        height=400
-                    )
+                distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
+                    x='Quarter',
+                    y='total_sales',
+                    color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF9999', '#FF6666', '#FF3333', '#FF0000'])),
+                    tooltip=['Quarter', 'total_sales']
+                ).properties(
+                    height=400
+                )
 
-                    st.altair_chart(distributor_bar_chart, use_container_width=True)
+                st.altair_chart(distributor_bar_chart, use_container_width=True)
 
+            # Right half: Dataframe for the selected distributor
+            with right_col:
+                st.subheader(f"Data for {selected_distributor}")
+                st.dataframe(distributor_data)
 
     # Expander for raw data
     with st.expander("View Raw Data"):
@@ -252,6 +259,3 @@ if not customsearch5135_data_raw.empty:
         customsearch5135_data_raw['Amount'] = customsearch5135_data_raw['Amount'].apply(lambda x: "${:,.2f}".format(x))
         st.write("Original Data:")
         st.dataframe(customsearch5135_data_raw)
-
-else:
-    st.write("No data available for customsearch5135.")
