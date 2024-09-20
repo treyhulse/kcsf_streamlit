@@ -33,8 +33,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
 
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=450)
+# Cache the raw data fetching process, reset cache every 5 minutes (300 seconds)
+@st.cache_data(ttl=300)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)

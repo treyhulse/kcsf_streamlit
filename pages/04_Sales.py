@@ -41,7 +41,7 @@ logging.basicConfig(
 )
 
 # Use st.cache_resource to cache the MongoDB client
-@st.cache_resource
+@st.cache_resource(ttl=900)  # Set the time-to-live (ttl) to 900 seconds (15 minutes)
 def get_mongo_client():
     try:
         logging.debug("Attempting to connect to MongoDB...")
