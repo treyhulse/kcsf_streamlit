@@ -71,6 +71,7 @@ if not customsearch5135_data_raw.empty:
 
     # Apply the quarter assignment based on 'Date Created'
     customsearch5135_data_raw['Quarter'] = customsearch5135_data_raw['Date Created'].apply(assign_quarter)
+    customsearch5135_data_raw['Quarter'] = customsearch5135_data_raw['Date Created'].apply(assign_quarter)
 
     # Sidebar filter for Quarter
     selected_quarter = st.sidebar.multiselect(
@@ -141,7 +142,7 @@ if not customsearch5135_data_raw.empty:
             stacked_bar_chart = alt.Chart(sales_by_quarter).mark_bar().encode(
                 x='Distributor',
                 y='total_sales',
-                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])),
+                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF0000', '#FF3333', '#FF6666', '#FF9999'])),
                 tooltip=['Distributor', 'Quarter', 'total_sales']
             ).properties(
                 height=400
@@ -200,7 +201,7 @@ if not customsearch5135_data_raw.empty:
             distributor_bar_chart = alt.Chart(distributor_sales_by_quarter).mark_bar().encode(
                 x='Quarter',
                 y='total_sales',
-                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])),
+                color=alt.Color('Quarter', scale=alt.Scale(domain=['Q1', 'Q2', 'Q3', 'Q4'], range=['#FF0000', '#FF3333', '#FF6666', '#FF9999'])),
                 tooltip=['Quarter', 'total_sales']
             ).properties(
                 height=400
