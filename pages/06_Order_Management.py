@@ -128,6 +128,7 @@ funnel_data = go.Funnel(
     y=['Estimates Open', 'Pending Fulfillment', 'Partially Fulfilled / Pending Billing', 'Orders Ready'],
     x=[estimates_open, pending_fulfillment, partially_fulfilled, ready_orders],
     textinfo="value+percent initial",
+    orientation='v',
     marker=dict(
         color='red',  # Set color to red
         line=dict(width=1, color='darkred')  # Optional: darker border for contrast
