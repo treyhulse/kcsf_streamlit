@@ -55,6 +55,7 @@ progress_bar = st.progress(0)
 # Fetch data using the RESTlet function
 saved_search_id = 'customsearch5108'
 
+@st.cache_data(ttl=900)
 def fetch_data_with_progress(saved_search_id):
     try:
         # Fetch raw data from RESTlet
