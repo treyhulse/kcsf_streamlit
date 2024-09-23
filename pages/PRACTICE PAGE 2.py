@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 progress_bar = st.progress(0)
 
 # Fetch data using the RESTlet function
-saved_search_id = 'customsearch5068'
+saved_search_id = 'customsearch5090'
 
 # Cache only the data fetching part (returning a DataFrame)
 @st.cache_data(ttl=900)
