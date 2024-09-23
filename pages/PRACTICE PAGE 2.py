@@ -43,6 +43,7 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import logging
 import time
+import pandas as pd
 
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
