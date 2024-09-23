@@ -1,5 +1,8 @@
 # ~/.streamlit/config.toml
 
+[ui]
+hideTopBar = true
+
 [server]
 runOnSave = false
 
@@ -20,5 +23,3 @@ token = "your-mapbox-token"
 componentJsPath = "/path/to/components"
 # .streamlit/config.toml
 
-[ui]
-hideTopBar = true
