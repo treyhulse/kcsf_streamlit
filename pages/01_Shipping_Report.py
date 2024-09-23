@@ -3,8 +3,13 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 
 st.set_page_config(page_title="Shipping Report", 
                    page_icon="🚚",
-                   layout="wide",
-                   hideTopBar=True,)
+                   layout="wide",)
+
+hide_streamlit_style = """
+<style>
+    #root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}
+</style>
+"""
 
 st.title("Shipping Report")
 
