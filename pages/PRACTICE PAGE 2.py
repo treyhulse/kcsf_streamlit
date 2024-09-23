@@ -94,7 +94,6 @@ if not df.empty:
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
-        theme='streamlit',
     )
 else:
     logger.info("No data returned.")
