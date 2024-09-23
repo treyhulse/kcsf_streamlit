@@ -11,6 +11,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Custom CSS to hide the top bar and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Get today's date
 today = date.today()
 
