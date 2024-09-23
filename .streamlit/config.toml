@@ -18,3 +18,7 @@ token = "your-mapbox-token"
 [customComponent]
 # Path to a folder containing JavaScript files for custom components
 componentJsPath = "/path/to/components"
+# .streamlit/config.toml
+
+[ui]
+hideTopBar = true
