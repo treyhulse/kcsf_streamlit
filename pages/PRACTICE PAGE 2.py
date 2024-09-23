@@ -38,7 +38,6 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import time
@@ -64,7 +63,7 @@ progress_bar = st.progress(0)
 saved_search_id = 'customsearch5090'
 
 # Cache only the data fetching part (returning a DataFrame)
-@st.cache_data(ttl=900)
+@st.cache_data(ttl=86400)
 def fetch_data(saved_search_id):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
     return fetch_restlet_data(saved_search_id)
@@ -85,7 +84,7 @@ if not df.empty:
 
     # Configure the AgGrid to display with pagination
     gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=50)  # Set page size to 50
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)  # Set page size to 50
     gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
 
     gridOptions = gb.build()
