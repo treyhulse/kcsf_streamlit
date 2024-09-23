@@ -48,6 +48,9 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import st_aggrid
+st.write(st_aggrid.AgGridTheme.__members__)
+
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
