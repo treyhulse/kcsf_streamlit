@@ -47,10 +47,7 @@ import time
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-import st_aggrid
-st.write(st_aggrid.AgGridTheme.__members__)
-
+s
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
@@ -97,6 +94,7 @@ if not df.empty:
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
+        theme='streamlit',
     )
 else:
     logger.info("No data returned.")
