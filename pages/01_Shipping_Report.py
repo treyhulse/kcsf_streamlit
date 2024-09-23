@@ -3,7 +3,8 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 
 st.set_page_config(page_title="Shipping Report", 
                    page_icon="🚚",
-                   layout="wide")
+                   layout="wide",
+                   hideTopBar=True,)
 
 st.title("Shipping Report")
 
