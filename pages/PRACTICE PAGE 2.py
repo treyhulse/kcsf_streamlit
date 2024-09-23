@@ -95,7 +95,7 @@ if not df.empty:
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
-        theme='light',  # Ensure theme is correct
+        theme='streamlit',  # Ensure theme is correct
     )
 else:
     logger.info("No data returned.")
