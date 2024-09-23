@@ -41,8 +41,8 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
-import logging
 import time
+import logging
 import pandas as pd
 
 # Set up logging to monitor the status
@@ -55,26 +55,19 @@ progress_bar = st.progress(0)
 # Fetch data using the RESTlet function
 saved_search_id = 'customsearch5108'
 
+# Cache only the data fetching part (returning a DataFrame)
 @st.cache_data(ttl=900)
-def fetch_data_with_progress(saved_search_id):
-    try:
-        # Fetch raw data from RESTlet
-        logger.info(f"Fetching data for saved search ID: {saved_search_id}")
-        df = fetch_restlet_data(saved_search_id)
-        
-        # Simulate progress
-        for i in range(5):
-            progress_bar.progress((i+1)*20)
-            time.sleep(0.1)
+def fetch_data(saved_search_id):
+    logger.info(f"Fetching data for saved search ID: {saved_search_id}")
+    return fetch_restlet_data(saved_search_id)
 
-        return df
-    except Exception as e:
-        logger.error(f"Error during data fetch: {e}")
-        st.error(f"Failed to fetch data: {e}")
-        return pd.DataFrame()  # Return empty DataFrame if an error occurs
+# Fetch data (outside of the cache)
+df = fetch_data(saved_search_id)
 
-# Fetch the data
-df = fetch_data_with_progress(saved_search_id)
+# Simulate progress updates (this part is not cached)
+for i in range(5):
+    progress_bar.progress((i+1)*20)
+    time.sleep(0.1)
 
 # Finalize progress
 progress_bar.progress(100)
@@ -89,13 +82,13 @@ if not df.empty:
 
     gridOptions = gb.build()
 
-    # Ensure a valid theme for AgGrid
+    # Display the data in an interactive grid with pagination
     AgGrid(
         df,
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
-        theme='streamlit',  # Ensure theme is correct
+        theme='streamlit',  # Use valid theme
     )
 else:
     logger.info("No data returned.")
