@@ -149,6 +149,10 @@ if not customsearch5135_data_raw.empty:
 
             # Display the stacked bar chart below the pie chart and aggregated dataframe
             st.altair_chart(stacked_bar_chart, use_container_width=True)
+            
+            # Display the raw data in an expander
+            with st.expander("View Raw Data"):
+                st.dataframe(customsearch5135_data_raw)
 
         else:
             st.error("Required columns 'Distributor' or 'Amount' not found in the data.")
