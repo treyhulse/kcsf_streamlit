@@ -48,7 +48,7 @@ import pandas as pd
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-s
+
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
