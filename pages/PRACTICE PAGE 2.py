@@ -43,11 +43,19 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import time
 import logging
-import pandas as pd
 
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Function to clear cache
+def clear_cache():
+    st.cache_data.clear()
+    st.success("Cache cleared!")
+
+# Button to clear cache
+if st.button("Clear Cache"):
+    clear_cache()
 
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
