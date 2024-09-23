@@ -90,11 +90,13 @@ if not df.empty:
 
     # Ensure a valid theme for AgGrid
     AgGrid(
-        df,
-        gridOptions=gridOptions,
-        enable_enterprise_modules=False,
-        allow_unsafe_jscode=True,
+    df,
+    gridOptions=gridOptions,
+    enable_enterprise_modules=False,
+    allow_unsafe_jscode=True,
+    theme='streamlit',  # Updated to a valid theme option
     )
+
 else:
     logger.info("No data returned.")
     st.error("No data available or failed to load.")
