@@ -39,10 +39,14 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ################################################################################################
 
 
+import pandas as pd
+import streamlit as st
 from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import time
 import logging
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +102,38 @@ if not df.empty:
         allow_unsafe_jscode=True,
         theme='streamlit',  # Use valid theme
     )
+
+    # Visualization 1: Bar chart aggregating 'Amount' by 'Category'
+    st.subheader("Bar Chart: Amount by Category")
+    bar_chart_data = df.groupby('Category')['Amount'].sum().reset_index()
+    fig_bar = px.bar(bar_chart_data, x='Category', y='Amount', title="Total Amount by Category")
+    st.plotly_chart(fig_bar)
+
+    # Visualization 2: Line chart aggregating 'Amount' by week (from 'Date')
+    st.subheader("Line Chart: Amount by Week")
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Week'] = df['Date'].dt.isocalendar().week
+    line_chart_data = df.groupby('Week')['Amount'].sum().reset_index()
+    fig_line = px.line(line_chart_data, x='Week', y='Amount', title="Amount by Week")
+    st.plotly_chart(fig_line)
+
+    # Visualization 3: Pie chart aggregating 'Amount' by 'Sales Rep'
+    st.subheader("Pie Chart: Amount by Sales Rep")
+    pie_chart_data = df.groupby('Sales Rep')['Amount'].sum().reset_index()
+    fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount', title="Amount by Sales Rep")
+    st.plotly_chart(fig_pie)
+
+    # Visualization 4: Bar chart comparing 'Amount' by month (Last Year vs This Year)
+    st.subheader("Bar Chart: Amount by Month (Last Year vs This Year)")
+    df['Year'] = df['Date'].dt.year
+    df['Month'] = df['Date'].dt.month
+    current_year = df['Year'].max()
+    last_year = current_year - 1
+
+    comparison_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
+    fig_compare = px.bar(comparison_data, x='Month', y='Amount', color='Year', barmode='group', title=f"Amount by Month: {last_year} vs {current_year}")
+    st.plotly_chart(fig_compare)
+
 else:
     logger.info("No data returned.")
     st.error("No data available or failed to load.")
