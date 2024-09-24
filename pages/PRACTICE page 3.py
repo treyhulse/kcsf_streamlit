@@ -40,11 +40,9 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import pandas as pd
 import streamlit as st
-from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import time
 import logging
-import plotly.express as px
 
 # Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
@@ -84,24 +82,26 @@ progress_bar.progress(100)
 
 if not df.empty:
     st.success(f"Data fetched successfully with {len(df)} records.")
+    
+    # Define pagination variables
+    page_size = 20  # Set page size
+    total_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
 
-    # Display Data Table in AgGrid
-    gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)
-    gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
+    # Pagination controls
+    page_number = st.number_input('Page number', min_value=1, max_value=total_pages, value=1)
+    start_index = (page_number - 1) * page_size
+    end_index = start_index + page_size
 
-    gridOptions = gb.build()
+    # Paginated DataFrame
+    paginated_df = df.iloc[start_index:end_index]
+    
+    st.write(f"Displaying records {start_index + 1} to {min(end_index, len(df))} of {len(df)}")
+    
+    # Display the paginated DataFrame
+    st.dataframe(paginated_df)
 
-    # Display the data in an interactive grid with pagination
-    AgGrid(
-        df,
-        gridOptions=gridOptions,
-        enable_enterprise_modules=False,
-        allow_unsafe_jscode=True,
-        theme='streamlit',  # Use valid theme
-    )
-
-    # Divide the page into two columns for each row
+    # Continue with visualizations in the same format as before:
+    
     col1, col2 = st.columns(2)
 
     # Visualization 1: Bar chart aggregating 'Amount' by 'Category'
@@ -134,7 +134,6 @@ if not df.empty:
         )
         st.plotly_chart(fig_line)
 
-    # Create second row with two columns for visualizations
     col3, col4 = st.columns(2)
 
     # Visualization 3: Pie chart aggregating 'Amount' by 'Sales Rep'
