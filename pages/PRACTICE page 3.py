@@ -56,15 +56,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Function to clear cache
-def clear_cache():
-    st.cache.clear()
-    st.success("Cache cleared!")
-
-# Button to clear cache
-if st.button("Clear Cache"):
-    clear_cache()
-
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
