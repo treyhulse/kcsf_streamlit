@@ -209,14 +209,13 @@ with tab3:
     else:
         st.write("No data available for Customsearch 5128.")
 
-# Quote Data tab (formerly Transfer Orders) - this now uses the quote data
 with tab4:
     st.subheader("Quote Data (customsearch4993)")
 
     if not quote_data.empty:
-        # Convert 'Latest' and 'Earliest' to datetime
-        quote_data['Latest'] = pd.to_datetime(quote_data['Latest'])
-        quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'])
+        # Convert 'Latest' and 'Earliest' to datetime, handling errors by setting invalid formats to NaT
+        quote_data['Latest'] = pd.to_datetime(quote_data['Latest'], errors='coerce')
+        quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'], errors='coerce')
 
         # Calculate the time difference between 'Latest' and 'Earliest'
         quote_data['Time Difference'] = quote_data['Latest'] - quote_data['Earliest']
