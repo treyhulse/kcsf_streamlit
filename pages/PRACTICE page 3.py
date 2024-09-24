@@ -2,6 +2,7 @@ import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from utils.restlet import fetch_restlet_data
 import pandas as pd
+import plotly.express as px
 
 # Set the page configuration
 st.set_page_config(
@@ -40,7 +41,6 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-import plotly.express as px
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -62,9 +62,11 @@ sales_by_rep_data = fetch_raw_data("customsearch4963")
 sales_by_category_data = fetch_raw_data("customsearch5145")
 sales_by_month_data = fetch_raw_data("customsearch5146")
 
-# Function to format 'Billed Amount' as currency
+# Function to format 'Billed Amount' as currency and handle non-numeric values
 def format_currency(df, column_name):
-    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
+    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')  # Convert to numeric, set errors as NaN
+    df[column_name].fillna(0, inplace=True)  # Replace NaN values with 0
+    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))  # Apply currency formatting
     return df
 
 # Format 'Billed Amount' column for each dataframe
