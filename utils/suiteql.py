@@ -75,20 +75,21 @@ def fetch_netsuite_inventory():
         pd.DataFrame: DataFrame containing the inventory balance results.
     """
     suiteql_inventory_query = """
-    SELECT 
-        item.id AS item_id,
-        item.itemid AS item_name,
-        item.displayname AS display_name,
-        balance.location AS location_name,
-        balance.quantityonhand AS quantity_on_hand,
-        balance.quantityavailable AS quantity_available,
-    FROM 
-        item
-    JOIN 
-        inventorybalance AS balance ON item.id = balance.item
-    WHERE 
-        item.isinactive = 'F'
-    ORDER BY 
-        item_name ASC;
+    SELECT
+        invbal.item AS "Item ID",
+        item.displayname AS "Item",
+        invbal.binnumber AS "Bin Number",
+        invbal.location AS "Warehouse",
+        invbal.inventorynumber AS "Inventory Number",
+        invbal.quantityonhand AS "Quantity On Hand",  -- Correct field name for "On Hand"
+        invbal.quantityavailable AS "Quantity Available"  -- Correct field name for "Available"
+    FROM
+        inventorybalance invbal
+    JOIN
+        item ON invbal.item = item.id
+    WHERE
+        item.isinactive = 'F'  -- Only active items
+    ORDER BY
+        item.displayname ASC;
     """
     return fetch_suiteql_data(suiteql_inventory_query)
