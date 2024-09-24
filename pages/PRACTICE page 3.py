@@ -118,17 +118,31 @@ if not df.empty:
         {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
     ]
 
-    # Display metrics as boxes
-    cols = st.columns(4)
-    for col, metric in zip(cols, metrics):
-        with col:
-            st.markdown(f"""
-            <div style='background-color:#eee; padding:10px; border-radius:10px; border: 2px solid #ddd; margin-top: 10px;'>
-                <h4>{metric['label']}</h4>
-                <h3>{metric['value']}</h3>
-                <h5 style='color: {"green" if metric['positive'] else "red"}'>{'+' if metric['positive'] else ''}{metric['change']}%</h5>
-            </div>
-            """, unsafe_allow_html=True)
+    # Styling for the boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .metric-change {
+        margin: 0;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # Visualization: Yearly Comparison Line Chart
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
