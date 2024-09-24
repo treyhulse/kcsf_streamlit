@@ -68,7 +68,9 @@ saved_search_id = 'customsearch5108'
 @st.cache(ttl=86400, allow_output_mutation=True)
 def fetch_data(saved_search_id):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
-    return fetch_restlet_data(saved_search_id)
+    data = fetch_restlet_data(saved_search_id)
+    data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')  # Convert 'Amount' to numeric
+    return data
 
 # Fetch data (outside of the cache)
 df = fetch_data(saved_search_id)
