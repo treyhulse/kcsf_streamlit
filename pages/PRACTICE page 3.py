@@ -237,6 +237,7 @@ with tab2:
 
     # Calculate the average time difference
     avg_time_diff = quote_data['Time Difference'].mean()
+    avg_time_diff_str = str(avg_time_diff).split('.')[0]  # Convert to string and remove microseconds
 
     # Placeholder percentage changes for estimates (you can replace these with actual calculations)
     percentage_change_estimates = 100
@@ -247,7 +248,7 @@ with tab2:
     # Estimates Metrics
     estimates_metrics = [
         {"label": "Total Estimates", "value": total_estimates, "change": percentage_change_estimates, "positive": percentage_change_estimates > 0},
-        {"label": "Average Quote Cycle Time", "value": avg_time_diff, "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
+        {"label": "Average Quote Cycle Time", "value": avg_time_diff_str, "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
         {"label": "Total Estimates Not Ready", "value": not_ready_estimates, "change": percentage_change_not_ready_estimates, "positive": percentage_change_not_ready_estimates > 0},
         {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_estimates:,.2f}", "change": percentage_change_revenue_estimates, "positive": percentage_change_revenue_estimates > 0},
     ]
