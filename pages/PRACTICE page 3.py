@@ -42,6 +42,10 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ################################################################################################
 
 
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -79,6 +83,25 @@ if 'Grouped Category' in sales_by_category_data.columns:
 if 'Grouped Rep' in sales_by_rep_data.columns:
     sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
 
+# Display each saved search in a DataFrame
+saved_searches = {
+    "Sales by Sales Rep": sales_by_rep_data,
+    "Sales by Category": sales_by_category_data,
+    "Sales by Month": sales_by_month_data
+}
+
+for search_name, df in saved_searches.items():
+    st.header(search_name)
+    st.dataframe(df)
+
+# Visualization: Sales by Sales Rep (Pie Chart)
+st.header("Sales by Sales Rep (Pie Chart)")
+if not sales_by_rep_data.empty:
+    fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
+    st.plotly_chart(fig_rep)
+else:
+    st.warning("No data available for Sales by Sales Rep.")
+
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
 
@@ -103,10 +126,23 @@ if not sales_2023.empty and not sales_2024.empty:
         on='Month', how='outer'
     )
 
-    # Create the line chart with both years
-    fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
-                        title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
+    # Create the line chart with stacked sales for both years
+    sales_month_comparison['Total Sales'] = sales_month_comparison['Billed Amount_2023'].fillna(0) + sales_month_comparison['Billed Amount_2024'].fillna(0)
+
+    fig_month = px.area(sales_month_comparison, x='Month', 
+                        y=['Billed Amount_2023', 'Billed Amount_2024'],
+                        title='Stacked Sales by Month (2023 vs 2024)',
+                        labels={'value': 'Billed Amount', 'variable': 'Year'},
+                        groupnorm='fraction')  # This will create a stacked effect
 
     st.plotly_chart(fig_month)
 else:
     st.warning("No data available for both 2023 and 2024 in Sales by Month.")
+
+# Visualization: Sales by Category (Bar Chart)
+st.header("Sales by Category (Bar Chart)")
+if not sales_by_category_data.empty:
+    fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
+    st.plotly_chart(fig_category)
+else:
+    st.warning("No data available for Sales by Category.")
