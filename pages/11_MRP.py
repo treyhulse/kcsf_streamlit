@@ -158,8 +158,6 @@ with tab1:
 
 # Second tab (two saved searches side by side)
 with tab2:
-    st.write("Rendering data from saved searches")
-
     # Fetch data for the two saved searches
     customsearch5141_data = fetch_raw_data("customsearch5141")
     customsearch5142_data = fetch_raw_data("customsearch5142")
