@@ -71,9 +71,9 @@ def format_currency(df, column_name):
     return df
 
 # Format 'Billed Amount' column for each dataframe
-sales_by_rep_data = format_currency(sales_by_rep_data, 'BILLED AMOUNT')
-sales_by_category_data = format_currency(sales_by_category_data, 'BILLED AMOUNT')
-sales_by_month_data = format_currency(sales_by_month_data, 'BILLED AMOUNT')
+sales_by_rep_data = format_currency(sales_by_rep_data, 'Billed Amount')
+sales_by_category_data = format_currency(sales_by_category_data, 'Billed Amount')
+sales_by_month_data = format_currency(sales_by_month_data, 'Billed Amount')
 
 # Ensure column names are uppercase
 sales_by_rep_data.columns = sales_by_rep_data.columns.str.upper()
@@ -93,29 +93,29 @@ for search_name, df in saved_searches.items():
 
 # Visualization: Sales by Sales Rep (Pie Chart)
 st.header("Sales by Sales Rep (Pie Chart)")
-fig_rep = px.pie(sales_by_rep_data, names='GROUPED REP', values='BILLED AMOUNT', title='Sales by Sales Rep')
+fig_rep = px.pie(sales_by_rep_data, names='GROUPED REP', values='Billed Amount', title='Sales by Sales Rep')
 st.plotly_chart(fig_rep)
 
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
-# Assuming the sales_by_month_data has 'YEAR', 'MONTH', and 'BILLED AMOUNT' columns
-sales_by_month_data['BILLED AMOUNT'] = sales_by_month_data['BILLED AMOUNT'].replace('[\$,]', '', regex=True).astype(float)
+# Assuming the sales_by_month_data has 'YEAR', 'MONTH', and 'Billed Amount' columns
+sales_by_month_data['Billed Amount'] = sales_by_month_data['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
 
 # Filter data for 2023 and 2024
 sales_2023 = sales_by_month_data[sales_by_month_data['YEAR'] == 2023]
 sales_2024 = sales_by_month_data[sales_by_month_data['YEAR'] == 2024]
 
 # Merge the two years of data for comparison
-sales_month_comparison = pd.merge(sales_2023[['MONTH', 'BILLED AMOUNT']], 
-                                  sales_2024[['MONTH', 'BILLED AMOUNT']], 
+sales_month_comparison = pd.merge(sales_2023[['MONTH', 'Billed Amount']], 
+                                  sales_2024[['MONTH', 'Billed Amount']], 
                                   on='MONTH', 
                                   suffixes=('_2023', '_2024'))
 
-fig_month = px.line(sales_month_comparison, x='MONTH', y=['BILLED AMOUNT_2023', 'BILLED AMOUNT_2024'], 
-                    title='Sales by Month (2023 vs 2024)', labels={'value': 'BILLED AMOUNT', 'variable': 'Year'})
+fig_month = px.line(sales_month_comparison, x='MONTH', y=['Billed Amount_2023', 'Billed Amount_2024'], 
+                    title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
 st.plotly_chart(fig_month)
 
 # Visualization: Sales by Category (Bar Chart)
 st.header("Sales by Category (Bar Chart)")
-fig_category = px.bar(sales_by_category_data, x='GROUPED CATEGORY', y='BILLED AMOUNT', title='Sales by Category')
+fig_category = px.bar(sales_by_category_data, x='GROUPED CATEGORY', y='Billed Amount', title='Sales by Category')
 st.plotly_chart(fig_category)
