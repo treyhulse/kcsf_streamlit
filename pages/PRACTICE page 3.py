@@ -176,7 +176,9 @@ if not df.empty:
 
     # Sales by Sales Rep - Pie Chart
     sales_by_rep = billed_orders.groupby('Sales Rep')['Amount'].sum().reset_index()
-    fig_rep = px.pie(sales_by_rep, values='Amount', names='Sales Rep', title='Total Sales by Sales Rep')
+    top_sales_by_rep = sales_by_rep.nlargest(10, 'Amount')  # Get only the top 10 sales reps by total amount
+    fig_rep = px.pie(top_sales_by_rep, values='Amount', names='Sales Rep', title='Total Sales by Sales Rep')
+
 
     # Sales by Category
     sales_by_category = billed_orders.groupby('Category')['Amount'].sum().reset_index()
