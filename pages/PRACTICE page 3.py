@@ -218,6 +218,8 @@ with tab1:
     ]
     
     display_metrics(sales_order_metrics)
+    # Display the sales order data with conditional formatting
+    st.dataframe(sales_order_data.style.apply(highlight_conditions_column, axis=1))
 
 # Estimates tab (with the merged contents of Quote Data)
 with tab2:
@@ -251,6 +253,8 @@ with tab2:
     ]
 
     display_metrics(estimates_metrics)
+    # Display the estimate data with conditional formatting
+    st.dataframe(estimate_data.style.apply(highlight_conditions_column, axis=1))
 
     # Nest the quote data DataFrame inside an expander
     with st.expander("View Detailed Quote Data"):
