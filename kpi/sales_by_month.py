@@ -1,8 +1,10 @@
 import pandas as pd
 from utils.restlet import fetch_restlet_data
 import plotly.express as px
+import streamlit as st
 
 # KPI: Sales by Month
+@st.cache_data(ttl=3600)  # Cache the data for 1 hour (TTL)
 def get_sales_by_month():
     df = fetch_restlet_data('customsearch5146')
     if df.empty:
