@@ -58,6 +58,11 @@ def clear_cache():
 if st.button("Clear Cache"):
     clear_cache()
 
+# Sidebar filters for 'Sales Rep' and 'Date'
+st.sidebar.header("Filter Data")
+selected_rep = st.sidebar.multiselect("Select Sales Rep", options=pd.unique(df['Sales Rep']))
+selected_date = st.sidebar.date_input("Select Date Range", [])
+
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
@@ -70,10 +75,17 @@ def fetch_data(saved_search_id):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
     data = fetch_restlet_data(saved_search_id)
     data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')  # Convert 'Amount' to numeric
+    data['Date'] = pd.to_datetime(data['Date'])  # Ensure 'Date' is datetime type
     return data
 
 # Fetch data (outside of the cache)
 df = fetch_data(saved_search_id)
+
+# Filter data based on sidebar selections
+if selected_rep:
+    df = df[df['Sales Rep'].isin(selected_rep)]
+if selected_date:
+    df = df[(df['Date'] >= selected_date[0]) & (df['Date'] <= selected_date[1])]
 
 # Simulate progress updates (this part is not cached)
 for i in range(5):
@@ -86,28 +98,10 @@ progress_bar.progress(100)
 if not df.empty:
     st.success(f"Data fetched successfully with {len(df)} records.")
     
-    # Define pagination variables
-    page_size = 20  # Set page size
-    total_pages = len(df) // page_size + (1 if len(df) % page_size != 0 else 0)
-
-    # Pagination controls
-    page_number = st.number_input('Page number', min_value=1, max_value=total_pages, value=1)
-    start_index = (page_number - 1) * page_size
-    end_index = start_index + page_size
-
-    # Paginated DataFrame
-    paginated_df = df.iloc[start_index:end_index]
-    
-    st.write(f"Displaying records {start_index + 1} to {min(end_index, len(df))} of {len(df)}")
-    
-    # Move the DataFrame into an expander at the bottom of the page
-    with st.expander("Show DataFrame"):
-        st.dataframe(paginated_df)
-
     # Calculate metrics for the dashboard
     billed_orders = df[df['Status'] == 'Billed']
     pending_orders = df[df['Status'] == 'Pending']
-    closed_orders = df[df['Status'] == 'Closed']
+    closed_orders = df[(df['Status'] == 'Closed') & (~df['Closed Order Reason'].isin(['Items moved to a different order', 'Other - See Notes']))]
 
     total_revenue = billed_orders['Amount'].sum()
     average_order_volume = billed_orders['Amount'].mean()
@@ -122,21 +116,20 @@ if not df.empty:
     ]
 
     # Display metrics
-    for metric in metrics:
-        col = st.columns(1)[0]
+    cols = st.columns(4)
+    for col, metric in zip(cols, metrics):
         with col:
             st.markdown(f"<div class='metrics-box'><p class='metric-title'>{metric['label']}</p><p class='metric-value'>{metric['value']}</p></div>", unsafe_allow_html=True)
 
-    # Visualization: Pie Chart
-    fig_pie = px.pie(billed_orders, values='Amount', names='Sales Rep', title='Total Sales by Sales Rep')
-    st.plotly_chart(fig_pie)
-
+    # Visualization: Pie Chart (Top 12 Sales Reps)
+    top_reps = billed_orders.groupby('Sales Rep')['Amount'].sum().nlargest(12).index
+    top_reps_data = billed_orders[billed_orders['Sales Rep'].isin(top_reps)]
+    fig_pie = px.pie(top_reps_data, values='Amount', names='Sales Rep', title='Total Sales by Top 12 Sales Reps')
+    
     # Visualization: Bar Chart
     fig_bar = px.bar(df, x='Category', y='Amount', title='Total Sales by Category')
-    st.plotly_chart(fig_bar)
-
+    
     # Visualization: Line Chart (compare this year vs last year)
-    df['Date'] = pd.to_datetime(df['Date'])  # Ensure 'Date' is datetime type
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
     last_year = df[df['Date'].dt.year == pd.to_datetime('today').year - 1]
 
@@ -146,7 +139,14 @@ if not df.empty:
     fig_line = px.line(title='Weekly Sales Comparison')
     fig_line.add_scatter(x=this_year_weekly.index, y=this_year_weekly.values, mode='lines', name='This Year')
     fig_line.add_scatter(x=last_year_weekly.index, y=last_year_weekly.values, mode='lines', name='Last Year')
-    st.plotly_chart(fig_line)
+    
+    # Arrange visualizations in two columns
+    left_col, right_col = st.columns(2)
+    with left_col:
+        st.plotly_chart(fig_pie)
+        st.plotly_chart(fig_bar)
+    with right_col:
+        st.plotly_chart(fig_line)
 
 else:
     logger.info("No data returned.")
