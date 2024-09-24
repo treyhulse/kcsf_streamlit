@@ -110,13 +110,17 @@ if not df.empty:
         with col1:
             st.subheader("Amount by Category")
             bar_chart_data = df.groupby('Category')['Amount'].sum().reset_index()
-            fig_bar = px.bar(bar_chart_data, x='Category', y='Amount')
+            fig_bar = px.bar(bar_chart_data, x='Category', y='Amount', title="Amount by Category",
+                             labels={'Category': 'Category', 'Amount': 'Total Amount'},
+                             color='Category',
+                             template='plotly_dark')
             fig_bar.update_layout(
                 xaxis_tickangle=-45, 
-                xaxis_title=None, 
-                yaxis_title=None, 
-                showlegend=False, 
-                xaxis_showticklabels=False
+                yaxis=dict(range=[0, bar_chart_data['Amount'].max() + (0.1 * bar_chart_data['Amount'].max())],  # Add some space on top
+                           title="Total Amount", showgrid=False),
+                xaxis_title="Category",
+                showlegend=False,
+                plot_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_bar)
 
@@ -127,13 +131,15 @@ if not df.empty:
                 df['Date'] = pd.to_datetime(df['Date'])
                 df['Week'] = df['Date'].dt.isocalendar().week
                 line_chart_data = df.groupby('Week')['Amount'].sum().reset_index()
-                fig_line = px.line(line_chart_data, x='Week', y='Amount')
+                fig_line = px.line(line_chart_data, x='Week', y='Amount', title="Weekly Amount Over Time",
+                                   labels={'Week': 'Week Number', 'Amount': 'Weekly Total Amount'},
+                                   template='plotly_dark')
                 fig_line.update_layout(
-                    xaxis_title=None, 
-                    yaxis_title=None, 
-                    showlegend=False, 
-                    xaxis_showticklabels=False,
-                    yaxis_showticklabels=False
+                    xaxis_title="Week",
+                    yaxis_title="Total Amount",
+                    showlegend=False,
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    yaxis=dict(showgrid=False)
                 )
                 st.plotly_chart(fig_line)
 
@@ -145,9 +151,9 @@ if not df.empty:
             with col3:
                 st.subheader("Amount by Sales Rep")
                 pie_chart_data = df.groupby('Sales Rep')['Amount'].sum().reset_index()
-                fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount')
-                fig_pie.update_traces(textinfo='percent+label')  # Only show percentages
-                fig_pie.update_layout(showlegend=False)
+                fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount', title="Sales Distribution by Rep",
+                                 template='plotly_dark')
+                fig_pie.update_traces(textinfo='percent+label', marker=dict(line=dict(color='#000000', width=2)))
                 st.plotly_chart(fig_pie)
 
         # Visualization 4: Line chart comparing 'Amount' by month (Last Year vs This Year)
@@ -159,13 +165,13 @@ if not df.empty:
             last_year = current_year - 1
 
             comparison_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
-            fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year')
+            fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year', title="Amount by Month: Last Year vs This Year",
+                                  labels={'Month': 'Month', 'Amount': 'Total Amount'},
+                                  template='plotly_dark')
             fig_compare.update_layout(
-                xaxis_title=None, 
-                yaxis_title=None, 
-                showlegend=True,
-                xaxis_showticklabels=False,
-                yaxis_showticklabels=False
+                xaxis=dict(tickvals=list(range(1, 13)), title="Month"),
+                yaxis=dict(title="Total Amount", showgrid=False),
+                plot_bgcolor='rgba(0,0,0,0)'
             )
             st.plotly_chart(fig_compare)
     else:
