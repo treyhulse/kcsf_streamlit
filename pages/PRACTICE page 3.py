@@ -48,17 +48,17 @@ from kpi.sales_by_month import get_sales_by_month
 
 st.title("Sales Dashboard")
 
-# Sales by Rep KPI
+# Display Sales by Rep
 st.subheader("Sales by Rep")
-sales_by_rep_df = get_sales_by_rep()
-st.dataframe(sales_by_rep_df)
+sales_by_rep_chart = get_sales_by_rep()
+st.pyplot(sales_by_rep_chart)
 
-# Sales by Category KPI
+# Display Sales by Category
 st.subheader("Sales by Category")
-sales_by_category_df = get_sales_by_category()
-st.dataframe(sales_by_category_df)
+sales_by_category_chart = get_sales_by_category()
+st.pyplot(sales_by_category_chart)
 
-# Sales by Month KPI
+# Display Sales by Month
 st.subheader("Sales by Month")
-sales_by_month_df = get_sales_by_month()
-st.dataframe(sales_by_month_df)
+sales_by_month_chart = get_sales_by_month()
+st.pyplot(sales_by_month_chart)
