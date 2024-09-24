@@ -102,25 +102,23 @@ if not df.empty:
     with st.expander("Show DataFrame"):
         st.dataframe(paginated_df)
 
-    # Check if required columns are present for visualizations
-    if 'Category' in df.columns and 'Amount' in df.columns:
+    # Aggregating 'Amount' by 'Sales Rep'
+    if 'Sales Rep' in df.columns and 'Amount' in df.columns:
         col1, col2 = st.columns(2)
 
-        # Visualization 1: Bar chart aggregating 'Amount' by 'Category'
+        # Visualization 1: Bar chart aggregating 'Amount' by 'Sales Rep'
         with col1:
-            st.subheader("Amount by Category")
-            bar_chart_data = df.groupby('Category')['Amount'].sum().reset_index()
-            fig_bar = px.bar(bar_chart_data, x='Category', y='Amount', title="Amount by Category",
-                             labels={'Category': 'Category', 'Amount': 'Total Amount'},
-                             color='Category',
-                             template='plotly_dark')
+            st.subheader("Amount by Sales Rep")
+            sales_rep_data = df.groupby('Sales Rep')['Amount'].sum().reset_index()  # Aggregate Amount by Sales Rep
+            fig_bar = px.bar(sales_rep_data, x='Sales Rep', y='Amount', title="Total Amount by Sales Rep",
+                             labels={'Sales Rep': 'Sales Representative', 'Amount': 'Total Amount'},
+                             color='Sales Rep', template='plotly_dark')
             fig_bar.update_layout(
                 xaxis_tickangle=-45, 
-                yaxis=dict(range=[0, bar_chart_data['Amount'].max() + (0.1 * bar_chart_data['Amount'].max())],  # Add some space on top
-                           title="Total Amount", showgrid=False),
-                xaxis_title="Category",
+                xaxis_title="Sales Rep", 
+                yaxis_title="Total Amount", 
                 showlegend=False,
-                plot_bgcolor='rgba(0,0,0,0)'
+                plot_bgcolor='rgba(0,0,0,0)'  # Transparent background
             )
             st.plotly_chart(fig_bar)
 
@@ -130,28 +128,27 @@ if not df.empty:
                 st.subheader("Amount by Week")
                 df['Date'] = pd.to_datetime(df['Date'])
                 df['Week'] = df['Date'].dt.isocalendar().week
-                line_chart_data = df.groupby('Week')['Amount'].sum().reset_index()
-                fig_line = px.line(line_chart_data, x='Week', y='Amount', title="Weekly Amount Over Time",
+                week_data = df.groupby('Week')['Amount'].sum().reset_index()  # Aggregate by week
+                fig_line = px.line(week_data, x='Week', y='Amount', title="Weekly Amount Over Time",
                                    labels={'Week': 'Week Number', 'Amount': 'Weekly Total Amount'},
                                    template='plotly_dark')
                 fig_line.update_layout(
-                    xaxis_title="Week",
-                    yaxis_title="Total Amount",
+                    xaxis_title="Week", 
+                    yaxis_title="Total Amount", 
                     showlegend=False,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    yaxis=dict(showgrid=False)
+                    plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
                 )
                 st.plotly_chart(fig_line)
 
         # Create second row with two columns for visualizations
         col3, col4 = st.columns(2)
 
-        # Visualization 3: Pie chart aggregating 'Amount' by 'Sales Rep'
-        if 'Sales Rep' in df.columns:
+        # Visualization 3: Pie chart aggregating 'Amount' by 'Category'
+        if 'Category' in df.columns:
             with col3:
-                st.subheader("Amount by Sales Rep")
-                pie_chart_data = df.groupby('Sales Rep')['Amount'].sum().reset_index()
-                fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount', title="Sales Distribution by Rep",
+                st.subheader("Amount by Category")
+                category_data = df.groupby('Category')['Amount'].sum().reset_index()  # Aggregate by Category
+                fig_pie = px.pie(category_data, names='Category', values='Amount', title="Amount by Category",
                                  template='plotly_dark')
                 fig_pie.update_traces(textinfo='percent+label', marker=dict(line=dict(color='#000000', width=2)))
                 st.plotly_chart(fig_pie)
@@ -164,14 +161,15 @@ if not df.empty:
             current_year = df['Year'].max()
             last_year = current_year - 1
 
-            comparison_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
-            fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year', title="Amount by Month: Last Year vs This Year",
+            month_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
+            fig_compare = px.line(month_data, x='Month', y='Amount', color='Year', title="Amount by Month: Last Year vs This Year",
                                   labels={'Month': 'Month', 'Amount': 'Total Amount'},
                                   template='plotly_dark')
             fig_compare.update_layout(
-                xaxis=dict(tickvals=list(range(1, 13)), title="Month"),
-                yaxis=dict(title="Total Amount", showgrid=False),
-                plot_bgcolor='rgba(0,0,0,0)'
+                xaxis_title="Month", 
+                yaxis_title="Total Amount", 
+                showlegend=True,
+                plot_bgcolor='rgba(0,0,0,0)'  # Transparent background
             )
             st.plotly_chart(fig_compare)
     else:
