@@ -219,13 +219,6 @@ with tab4:
         st.dataframe(customsearch5129_data)
     else:
         st.write("No data available for Customsearch 5129.")
-    
-    st.subheader("Quotes")
-
-    if not quote_data.empty:
-        st.dataframe(quote_data)
-    else:
-        st.write("No data available for Quotes.")
 
 
 # Customsearch 5132 tab (no metrics)
