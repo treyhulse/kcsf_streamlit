@@ -41,11 +41,6 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -83,16 +78,15 @@ if 'Grouped Category' in sales_by_category_data.columns:
 if 'Grouped Rep' in sales_by_rep_data.columns:
     sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
 
-# Display each saved search in a DataFrame
-saved_searches = {
-    "Sales by Sales Rep": sales_by_rep_data,
-    "Sales by Category": sales_by_category_data,
-    "Sales by Month": sales_by_month_data
-}
+# Add separate Year and Month columns while keeping the original 'Month' column
+sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
 
-for search_name, df in saved_searches.items():
-    st.header(search_name)
-    st.dataframe(df)
+# Create separate 'Year' and 'Month' columns from the original 'Month' column
+sales_by_month_data['Year'] = sales_by_month_data['Month'].dt.year
+sales_by_month_data['Month_Num'] = sales_by_month_data['Month'].dt.month
+
+# Display the DataFrame with new columns for Year and Month
+st.write("Sales by Month Data with Year and Month Columns:", sales_by_month_data)
 
 # Visualization: Sales by Sales Rep (Pie Chart)
 st.header("Sales by Sales Rep (Pie Chart)")
@@ -104,12 +98,6 @@ else:
 
 # Visualization: Sales by Month (Dual-Line Chart)
 st.header("Sales by Month (2023 vs 2024 - Line Chart)")
-
-# Convert 'Month' to a datetime object for proper sorting
-sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
-
-# Extract the 'Year' from the 'Month' column and add it as a separate column
-sales_by_month_data['Year'] = sales_by_month_data['Month'].dt.year
 
 # Sort the data by 'Month' for proper plotting
 sales_by_month_data = sales_by_month_data.sort_values(by='Month')
