@@ -67,32 +67,53 @@ def fetch_suiteql_data(query, max_retries=3):
             time.sleep(2 ** attempt)  # Exponential backoff
 
 
-def fetch_netsuite_inventory():
+def fetch_paginated_inventory_data():
     """
-    Fetches the inventory balance data from NetSuite using SuiteQL.
+    Fetches the entire inventory balance data from NetSuite using SuiteQL in paginated requests.
     
     Returns:
-        pd.DataFrame: DataFrame containing the inventory balance results.
+        pd.DataFrame: DataFrame containing all the inventory balance results.
     """
-    suiteql_inventory_query = """
-    SELECT
-        invbal.item AS "Item ID",
-        item.displayname AS "Item",
-        invbal.binnumber AS "Bin Number",
-        invbal.location AS "Warehouse",
-        invbal.inventorynumber AS "Inventory Number",
-        invbal.quantityonhand AS "Quantity On Hand",
-        invbal.quantityavailable AS "Quantity Available"
-    FROM
-        inventorybalance invbal
-    JOIN
-        item ON invbal.item = item.id
-    WHERE
-        item.isinactive = 'F'
-    ORDER BY
-        item.displayname ASC;
-    """
-    
-    # Fetch all data using SuiteQL
-    return fetch_suiteql_data(suiteql_inventory_query)
+    all_data = []
+    offset = 0
+    page_size = 1000  # NetSuite's SuiteQL limit is typically 1,000 records per query
+
+    while True:
+        # Paginate through results using OFFSET
+        suiteql_inventory_query = f"""
+        SELECT
+            invbal.item AS "Item ID",
+            item.displayname AS "Item",
+            invbal.binnumber AS "Bin Number",
+            invbal.location AS "Warehouse",
+            invbal.inventorynumber AS "Inventory Number",
+            invbal.quantityonhand AS "Quantity On Hand",
+            invbal.quantityavailable AS "Quantity Available"
+        FROM
+            inventorybalance invbal
+        JOIN
+            item ON invbal.item = item.id
+        WHERE
+            item.isinactive = 'F'
+        ORDER BY
+            item.displayname ASC
+        OFFSET {offset}
+        FETCH NEXT {page_size} ROWS ONLY;
+        """
+        
+        # Fetch data for the current page
+        df = fetch_suiteql_data(suiteql_inventory_query)
+        
+        # Break the loop if no more data is returned
+        if df.empty:
+            break
+        
+        # Append the current page data to the full dataset
+        all_data.append(df)
+        offset += page_size  # Move to the next page
+
+    # Concatenate all the pages into a single DataFrame
+    return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
+
+
 
