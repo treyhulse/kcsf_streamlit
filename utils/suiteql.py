@@ -46,11 +46,17 @@ def fetch_suiteql_data(query, max_retries=3):
         try:
             logger.info(f"Fetching SuiteQL data with query: {query}")
             response = requests.post(url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
+            
+            # Log the response status
+            logger.info(f"Response status code: {response.status_code}")
+            
+            # Check if the request was successful
             response.raise_for_status()  # Raise error for bad responses (4xx, 5xx)
-
+            
             # Assuming the response is in JSON format
             data = response.json().get('items', [])
-
+            logger.info(f"Response JSON: {response.json()}")  # Log the full JSON response
+            
             if not data:
                 logger.info("No data returned.")
                 return pd.DataFrame(all_data) if all_data else pd.DataFrame()
@@ -59,12 +65,14 @@ def fetch_suiteql_data(query, max_retries=3):
             logger.info(f"Successfully fetched {len(data)} records.")
             return pd.DataFrame(all_data)
 
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")
+            st.error(f"Error fetching data on attempt {attempt + 1}: {str(e)}")  # Display error in Streamlit
             if attempt == max_retries - 1:
                 st.error(f"Failed to fetch data after {max_retries} attempts.")
                 return pd.DataFrame(all_data) if all_data else pd.DataFrame()
             time.sleep(2 ** attempt)  # Exponential backoff
+
 
 
 def fetch_paginated_inventory_data():
