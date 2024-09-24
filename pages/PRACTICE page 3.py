@@ -41,6 +41,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
+
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -61,20 +62,22 @@ sales_by_rep_data = fetch_raw_data("customsearch4963")
 sales_by_category_data = fetch_raw_data("customsearch5145")
 sales_by_month_data = fetch_raw_data("customsearch5146")
 
-# Function to format 'Billed Amount' as currency and handle non-numeric values
-def format_currency(df, column_name):
-    if column_name in df.columns:
-        df[column_name] = pd.to_numeric(df[column_name], errors='coerce')  # Convert to numeric, set errors as NaN
-        df[column_name].fillna(0, inplace=True)  # Replace NaN values with 0
-        df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))  # Apply currency formatting
-    else:
-        st.error(f"Column '{column_name}' not found in the DataFrame!")
+# Check data types and values before using them in visualizations
+st.write("Sales by Sales Rep Data:", sales_by_rep_data.head())
+st.write("Sales by Sales Rep Data Types:", sales_by_rep_data.dtypes)
+
+st.write("Sales by Month Data:", sales_by_month_data.head())
+st.write("Sales by Month Data Types:", sales_by_month_data.dtypes)
+
+# Ensure 'Billed Amount' is numeric
+def ensure_numeric(df, column_name):
+    df[column_name] = pd.to_numeric(df[column_name].replace('[\$,]', '', regex=True), errors='coerce')
+    df[column_name].fillna(0, inplace=True)
     return df
 
-# Format 'Billed Amount' column for each dataframe
-sales_by_rep_data = format_currency(sales_by_rep_data, 'Billed Amount')
-sales_by_category_data = format_currency(sales_by_category_data, 'Billed Amount')
-sales_by_month_data = format_currency(sales_by_month_data, 'Billed Amount')
+sales_by_rep_data = ensure_numeric(sales_by_rep_data, 'Billed Amount')
+sales_by_category_data = ensure_numeric(sales_by_category_data, 'Billed Amount')
+sales_by_month_data = ensure_numeric(sales_by_month_data, 'Billed Amount')
 
 # Drop unnecessary columns 'Grouped Category' and 'Grouped Rep' if they exist
 if 'Grouped Category' in sales_by_category_data.columns:
@@ -96,29 +99,38 @@ for search_name, df in saved_searches.items():
 
 # Visualization: Sales by Sales Rep (Pie Chart)
 st.header("Sales by Sales Rep (Pie Chart)")
-fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
-st.plotly_chart(fig_rep)
+if not sales_by_rep_data.empty:
+    fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
+    st.plotly_chart(fig_rep)
+else:
+    st.warning("No data available for Sales by Sales Rep.")
 
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
-# Assuming the sales_by_month_data has 'Year', 'Month', and 'Billed Amount' columns
-sales_by_month_data['Billed Amount'] = sales_by_month_data['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
+if not sales_by_month_data.empty:
+    # Filter data for 2023 and 2024
+    sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
+    sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
 
-# Filter data for 2023 and 2024
-sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
-sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
+    if not sales_2023.empty and not sales_2024.empty:
+        # Merge the two years of data for comparison
+        sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']], 
+                                          sales_2024[['Month', 'Billed Amount']], 
+                                          on='Month', 
+                                          suffixes=('_2023', '_2024'))
 
-# Merge the two years of data for comparison
-sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']], 
-                                  sales_2024[['Month', 'Billed Amount']], 
-                                  on='Month', 
-                                  suffixes=('_2023', '_2024'))
-
-fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
-                    title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
-st.plotly_chart(fig_month)
+        fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
+                            title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
+        st.plotly_chart(fig_month)
+    else:
+        st.warning("No data available for 2023 and 2024 in Sales by Month.")
+else:
+    st.warning("No data available for Sales by Month.")
 
 # Visualization: Sales by Category (Bar Chart)
 st.header("Sales by Category (Bar Chart)")
-fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
-st.plotly_chart(fig_category)
+if not sales_by_category_data.empty:
+    fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
+    st.plotly_chart(fig_category)
+else:
+    st.warning("No data available for Sales by Category.")
