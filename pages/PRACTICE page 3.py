@@ -148,6 +148,9 @@ if not df.empty:
     with right_col:
         st.plotly_chart(fig_line)
 
+    with st.expander("View Filtered DataFrame"):
+        st.dataframe(df)
+
 else:
     logger.info("No data returned.")
     st.error("No data available or failed to load.")
