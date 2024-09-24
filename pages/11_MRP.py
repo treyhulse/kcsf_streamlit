@@ -35,16 +35,100 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_paginated_inventory_data
+import requests
+from requests_oauthlib import OAuth1
+import logging
 
-# Title of the app
-st.title("NetSuite Inventory Balance Data")
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Automatically load and display the data
+# Authentication setup for SuiteQL requests
+def get_authentication():
+    """
+    Returns an OAuth1 object for authenticating SuiteQL requests.
+    Credentials are stored in st.secrets.
+    """
+    return OAuth1(
+        st.secrets["consumer_key"],
+        st.secrets["consumer_secret"],
+        st.secrets["token_key"],
+        st.secrets["token_secret"],
+        realm=st.secrets["realm"],
+        signature_method='HMAC-SHA256'
+    )
+
+# Function to fetch paginated SuiteQL data
+def fetch_paginated_suiteql_data(query, base_url):
+    """
+    Fetches paginated data from SuiteQL by following 'next' links.
+    
+    Args:
+        query (str): SuiteQL query.
+        base_url (str): Base URL for NetSuite's SuiteQL API.
+    
+    Returns:
+        pd.DataFrame: A DataFrame containing all paginated results.
+    """
+    auth = get_authentication()
+    all_data = []
+    next_url = base_url
+    payload = {"q": query}
+
+    while next_url:
+        try:
+            response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
+            response.raise_for_status()  # Raise error for bad responses
+
+            data = response.json()
+            items = data.get("items", [])
+
+            if not items:
+                logger.info("No more data returned.")
+                break
+
+            all_data.extend(items)
+            logger.info(f"Fetched {len(items)} records. Total so far: {len(all_data)}")
+
+            # Check if there's a next page
+            links = data.get("links", [])
+            next_link = next((link['href'] for link in links if link['rel'] == 'next'), None)
+            next_url = next_link if next_link else None  # Continue to next page if available
+
+        except Exception as e:
+            logger.error(f"Error fetching data: {e}")
+            break
+
+    return pd.DataFrame(all_data)
+
+# SuiteQL query
+suiteql_query = """
+SELECT
+    invbal.item AS "Item ID",
+    item.displayname AS "Item",
+    invbal.binnumber AS "Bin Number",
+    invbal.location AS "Warehouse",
+    invbal.inventorynumber AS "Inventory Number",
+    invbal.quantityonhand AS "Quantity On Hand",
+    invbal.quantityavailable AS "Quantity Available"
+FROM
+    inventorybalance invbal
+JOIN
+    item ON invbal.item = item.id
+WHERE
+    item.isinactive = 'F'
+ORDER BY
+    item.displayname ASC;
+"""
+
+# Base URL for SuiteQL API
+base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+
+# Fetch and display data
 st.write("Loading data from NetSuite...")
 
 # Fetch the paginated data
-inventory_df = fetch_paginated_inventory_data()
+inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 
 if not inventory_df.empty:
     st.success(f"Successfully fetched {len(inventory_df)} records.")
