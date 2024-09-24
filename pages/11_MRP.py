@@ -45,6 +45,11 @@ def fetch_paginated_inventory_data():
     all_data = []
     offset = 0
     page_size = 100
+    page_count = 0
+
+    # Add a progress bar to show loading progress
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
     while True:
         query = f"""
@@ -69,11 +74,19 @@ def fetch_paginated_inventory_data():
         
         # Fetch the paginated data
         df = fetch_suiteql_data(query)
+
+        # Break the loop if no more data is returned
         if df.empty:
-            break  # Stop if no more data is returned
+            status_text.write("All data fetched!")
+            break
 
         all_data.append(df)
+        page_count += 1
         offset += page_size  # Move to the next page
+        
+        # Update the status and progress
+        status_text.write(f"Fetched {len(df)} records on page {page_count}")
+        progress_bar.progress(min(100, page_count * 5))  # Approximate progress
 
     # Combine all pages into a single DataFrame
     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
