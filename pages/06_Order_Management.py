@@ -109,7 +109,7 @@ def highlight_conditions_column(s):
     return [''] * len(s)  # No formatting otherwise
 
 ################################################################################################
-st.header("Sales Pipeline")
+st.header("Order Management")
 
 # Function to count the records for each funnel stage
 def calculate_funnel_stages(estimates_df, sales_orders_df):
@@ -153,7 +153,6 @@ st.plotly_chart(funnel_chart)
 ################################################################################################
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
-st.header("Order Management")
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Transfer Orders", "Work Orders"])
 
 # Sales Orders tab (with metrics)
