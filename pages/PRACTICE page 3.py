@@ -61,7 +61,6 @@ customsearch5129_data_raw = fetch_raw_data("customsearch5129")
 customsearch5132_data_raw = fetch_raw_data("customsearch5132")
 quote_data_raw = fetch_raw_data("customsearch4993")
 
-
 # Extract unique sales reps from both datasets and add 'All' option
 unique_sales_reps = pd.concat([
     estimate_data_raw['Sales Rep'], 
@@ -150,6 +149,50 @@ st.plotly_chart(funnel_chart)
 
 ################################################################################################
 
+# Styling for the drop shadow boxes
+st.markdown("""
+<style>
+.metrics-box {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-bottom: 20px;
+}
+.metric-title {
+    margin: 0;
+    font-size: 20px;
+}
+.metric-value {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+.metric-change {
+    margin: 0;
+    font-size: 14px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+def display_metrics(metrics):
+    col1, col2, col3, col4 = st.columns(4)
+    for idx, metric in enumerate(metrics):
+        col = [col1, col2, col3, col4][idx]
+        with col:
+            change_class = "positive" if metric['positive'] else "negative"
+            col.markdown(f"""
+            <div class="metrics-box">
+                <p class="metric-title">{metric['label']}</p>
+                <p class="metric-value">{metric['value']}</p>
+                <p class="metric-change" style="color: {'green' if metric['positive'] else 'red'}">
+                    {metric['change']}%
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+
 # Subtabs for Estimates, Sales Orders, customsearch5128, customsearch5129, Work Orders
 tab1, tab2, tab3, tab5, tab6 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Work Orders", "Transfer Orders"])
 
@@ -159,21 +202,22 @@ with tab1:
 
     # Calculate metrics for sales orders
     total_orders, ready_orders, not_ready_orders, outstanding_revenue_orders = calculate_metrics(sales_order_data)
-
-    # Display the metrics for Sales Orders
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Orders", total_orders)
-    col2.metric("Total Orders Ready", ready_orders)
-    col3.metric("Total Orders Not Ready", not_ready_orders)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_orders:,.2f}")
-
-    # Apply conditional formatting and format 'Amount Remaining' as currency
-    if not sales_order_data.empty:
-        sales_order_data['Amount Remaining'] = sales_order_data['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
-        styled_sales_order_data = sales_order_data.style.apply(highlight_conditions_column, axis=1)
-        st.dataframe(styled_sales_order_data)
-    else:
-        st.write("No data available for Sales Orders.")
+    
+    # Placeholder percentage changes (you can replace these with actual calculations)
+    percentage_change_orders = 10
+    percentage_change_ready = 5
+    percentage_change_not_ready = -3
+    percentage_change_revenue = 15
+    
+    # Sales Orders Metrics
+    sales_order_metrics = [
+        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+        {"label": "Total Orders Ready", "value": ready_orders, "change": percentage_change_ready, "positive": percentage_change_ready > 0},
+        {"label": "Total Orders Not Ready", "value": not_ready_orders, "change": percentage_change_not_ready, "positive": percentage_change_not_ready > 0},
+        {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_orders:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
+    ]
+    
+    display_metrics(sales_order_metrics)
 
 # Estimates tab (with the merged contents of Quote Data)
 with tab2:
@@ -192,23 +236,50 @@ with tab2:
     # Calculate the average time difference
     avg_time_diff = quote_data['Time Difference'].mean()
 
-    # Display the metrics for Estimates
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Estimates", total_estimates)
-    
-    # Use the average time difference in the 'Total Estimates Ready' metric
-    col2.metric("Total Estimates Ready (Avg Time Difference)", f"{ready_estimates} (Avg: {avg_time_diff})")
-    
-    col3.metric("Total Estimates Not Ready", not_ready_estimates)
-    col4.metric("Outstanding Revenue", f"${outstanding_revenue_estimates:,.2f}")
+    # Placeholder percentage changes for estimates (you can replace these with actual calculations)
+    percentage_change_estimates = 8
+    percentage_change_ready_estimates = 6
+    percentage_change_not_ready_estimates = -4
+    percentage_change_revenue_estimates = 12
 
-    # Apply conditional formatting and format 'Amount Remaining' as currency
-    if not estimate_data.empty:
-        estimate_data['Amount Remaining'] = estimate_data['Amount Remaining'].apply(lambda x: f"${x:,.2f}")
-        styled_estimate_data = estimate_data.style.apply(highlight_conditions_column, axis=1)
-        st.dataframe(styled_estimate_data)
-    
+    # Estimates Metrics
+    estimates_metrics = [
+        {"label": "Total Estimates", "value": total_estimates, "change": percentage_change_estimates, "positive": percentage_change_estimates > 0},
+        {"label": "Total Estimates Ready (Avg Time Diff)", "value": f"{ready_estimates} (Avg: {avg_time_diff})", "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
+        {"label": "Total Estimates Not Ready", "value": not_ready_estimates, "change": percentage_change_not_ready_estimates, "positive": percentage_change_not_ready_estimates > 0},
+        {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_estimates:,.2f}", "change": percentage_change_revenue_estimates, "positive": percentage_change_revenue_estimates > 0},
+    ]
+
+    display_metrics(estimates_metrics)
+
     # Nest the quote data DataFrame inside an expander
     with st.expander("View Detailed Quote Data"):
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
-    
+
+# Customsearch 5128 tab (no metrics)
+with tab3:
+    st.subheader("Purchase Orders")
+
+    if not customsearch5128_data.empty:
+        st.dataframe(customsearch5128_data)
+    else:
+        st.write("No data available for Customsearch 5128.")
+
+# Customsearch 5132 tab (no metrics)
+with tab5:
+    st.subheader("Work Orders")
+
+    if not customsearch5132_data.empty:
+        st.dataframe(customsearch5132_data)
+    else:
+        st.write("No data available for Work Orders.")
+
+# Customsearch 5129 tab (no metrics)
+with tab6:
+    st.subheader("Transfer Orders")
+
+    if not customsearch5129_data.empty:
+        st.dataframe(customsearch5129_data)
+    else:
+        st.write("No data available for Customsearch 5129.")
+
