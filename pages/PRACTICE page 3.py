@@ -118,54 +118,53 @@ if not df.empty:
         {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
     ]
 
-            # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
         {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
         {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
         {"label": "Open Orders", "value": open_orders, "change": 0, "positive": True},
         {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
+    ]
+    # Styling for the boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .metric-change {
+        margin: 0;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-            # Styling for the boxes
-            st.markdown("""
-            <style>
-            .metrics-box {
-                background-color: #f9f9f9;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
-                text-align: center;
-            }
-            .metric-title {
-                margin: 0;
-                font-size: 20px;
-            }
-            .metric-value {
-                margin: 0;
-                font-size: 28px;
-                font-weight: bold;
-            }
-            .metric-change {
-                margin: 0;
-                font-size: 14px;
-            }
-            </style>
+    # First row: metrics
+    col1, col2, col3, col4 = st.columns(4)
+
+    for col, metric in zip([col1, col2, col3, col4], metrics):
+        arrow = "↑" if metric["positive"] else "↓"
+        color = "green" if metric["positive"] else "red"
+
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+                <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
+            </div>
             """, unsafe_allow_html=True)
-
-            # First row: metrics
-            col1, col2, col3, col4 = st.columns(4)
-
-            for col, metric in zip([col1, col2, col3, col4], metrics):
-                arrow = "↑" if metric["positive"] else "↓"
-                color = "green" if metric["positive"] else "red"
-
-                with col:
-                    st.markdown(f"""
-                    <div class="metrics-box">
-                        <h3 class="metric-title">{metric['label']}</h3>
-                        <p class="metric-value">{metric['value']}</p>
-                        <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
-                    </div>
-                    """, unsafe_allow_html=True)
 
     # Visualization: Yearly Comparison Line Chart
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
