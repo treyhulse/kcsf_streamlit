@@ -108,9 +108,13 @@ if not df.empty:
     open_orders = len(pending_orders)
     lost_revenue = closed_orders['Amount'].sum()
 
+    # Metrics with potential for percentage change (dummy values here for illustration)
+    percentage_change_revenue = 5  # Example: 5% increase
+    percentage_change_average = -2  # Example: 2% decrease
+    
     metrics = [
-        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": 0, "positive": True},  # No percentage change data available
-        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": 0, "positive": True},
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
         {"label": "Open Orders", "value": open_orders, "change": 0, "positive": True},
         {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
     ]
@@ -119,7 +123,13 @@ if not df.empty:
     cols = st.columns(4)
     for col, metric in zip(cols, metrics):
         with col:
-            st.markdown(f"<div class='metrics-box'><p class='metric-title'>{metric['label']}</p><p class='metric-value'>{metric['value']}</p></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='metrics-box'>
+                <p class='metric-title'>{metric['label']}</p>
+                <p class='metric-value'>{metric['value']}</p>
+                <p class='metric-change' style='color: {"green" if metric['positive'] else "red"}'>{'+' if metric['positive'] else ''}{metric['change']}%</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Visualization: Pie Chart (Top 12 Sales Reps)
     top_reps = billed_orders.groupby('Sales Rep')['Amount'].sum().nlargest(12).index
@@ -147,9 +157,6 @@ if not df.empty:
         st.plotly_chart(fig_bar)
     with right_col:
         st.plotly_chart(fig_line)
-
-    with st.expander("View Filtered DataFrame"):
-        st.dataframe(df)
 
 else:
     logger.info("No data returned.")
