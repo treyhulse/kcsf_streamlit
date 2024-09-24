@@ -105,7 +105,7 @@ if not df.empty:
     # Calculate metrics for the dashboard
     billed_orders = df[df['Status'] == 'Billed']
     pending_orders = df[df['Status'] == 'Pending']
-    closed_orders = df[(df['Status'] == 'Closed') & (~df['Closed Order Reason'].isin(['Items moved to a different order', 'Other - See Notes']))]
+    closed_orders = df[(df['Status'] == 'Closed')]
 
     total_revenue = billed_orders['Amount'].sum()
     average_order_volume = billed_orders['Amount'].mean()
