@@ -38,14 +38,12 @@ import pandas as pd
 import requests
 from requests_oauthlib import OAuth1
 import logging
+from utils.restlet import fetch_restlet_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import streamlit as st
-from utils.restlet import fetch_restlet_data
-import pandas as pd
 
 # Cache the raw data fetching process (TTL: 900 seconds)
 @st.cache_data(ttl=900)
@@ -54,7 +52,7 @@ def fetch_raw_data(saved_search_id):
     return fetch_restlet_data(saved_search_id)
 
 # Tab structure for switching between different views
-tab1, tab2 = st.tabs(["Inventory Data", "Custom Searches"])
+tab1, tab2 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines"])
 
 # First tab (existing functionality for inventory data)
 with tab1:
@@ -159,7 +157,7 @@ with tab1:
 
 # Second tab (two saved searches side by side)
 with tab2:
-    st.write("Rendering data from custom searches")
+    st.write("Rendering data from saved searches")
 
     # Fetch data for the two saved searches
     customsearch5141_data = fetch_raw_data("customsearch5141")
@@ -170,7 +168,7 @@ with tab2:
 
     # Left column: customsearch5141 data
     with col1:
-        st.write("Custom Search 5141")
+        st.write("Sales Order Lines")
         if not customsearch5141_data.empty:
             st.dataframe(customsearch5141_data)
         else:
@@ -178,8 +176,8 @@ with tab2:
 
     # Right column: customsearch5142 data
     with col2:
-        st.write("Custom Search 5142")
+        st.write("Purchase Order Lines")
         if not customsearch5142_data.empty:
             st.dataframe(customsearch5142_data)
         else:
-            st.write("No data available for customsearch5142.")
+            st.write("No data available for Purchase Order Lines.")
