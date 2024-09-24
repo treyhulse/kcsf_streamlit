@@ -98,6 +98,7 @@ if not df.empty:
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
+        theme='streamlit',  # Use valid theme
     )
 
     # Divide the page into two columns for each row
@@ -105,20 +106,32 @@ if not df.empty:
 
     # Visualization 1: Bar chart aggregating 'Amount' by 'Category'
     with col1:
-        st.subheader("Bar Chart: Amount by Category")
+        st.subheader("Amount by Category")
         bar_chart_data = df.groupby('Category')['Amount'].sum().reset_index()
-        fig_bar = px.bar(bar_chart_data, x='Category', y='Amount', title="Total Amount by Category")
-        fig_bar.update_layout(xaxis_tickangle=-45, xaxis_title=None)  # Reduce text overlap
+        fig_bar = px.bar(bar_chart_data, x='Category', y='Amount')
+        fig_bar.update_layout(
+            xaxis_tickangle=-45, 
+            xaxis_title=None, 
+            yaxis_title=None, 
+            showlegend=False, 
+            xaxis_showticklabels=False
+        )
         st.plotly_chart(fig_bar)
 
     # Visualization 2: Line chart aggregating 'Amount' by week (from 'Date')
     with col2:
-        st.subheader("Line Chart: Amount by Week")
+        st.subheader("Amount by Week")
         df['Date'] = pd.to_datetime(df['Date'])
         df['Week'] = df['Date'].dt.isocalendar().week
         line_chart_data = df.groupby('Week')['Amount'].sum().reset_index()
-        fig_line = px.line(line_chart_data, x='Week', y='Amount', title="Amount by Week")
-        fig_line.update_layout(xaxis_title="Week", yaxis_title="Amount", xaxis_tickvals=list(range(0, 53, 4)))
+        fig_line = px.line(line_chart_data, x='Week', y='Amount')
+        fig_line.update_layout(
+            xaxis_title=None, 
+            yaxis_title=None, 
+            showlegend=False, 
+            xaxis_showticklabels=False,
+            yaxis_showticklabels=False
+        )
         st.plotly_chart(fig_line)
 
     # Create second row with two columns for visualizations
@@ -126,22 +139,30 @@ if not df.empty:
 
     # Visualization 3: Pie chart aggregating 'Amount' by 'Sales Rep'
     with col3:
-        st.subheader("Pie Chart: Amount by Sales Rep")
+        st.subheader("Amount by Sales Rep")
         pie_chart_data = df.groupby('Sales Rep')['Amount'].sum().reset_index()
-        fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount', title="Amount by Sales Rep")
+        fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount')
+        fig_pie.update_traces(textinfo='percent+label')  # Only show percentages
+        fig_pie.update_layout(showlegend=False)
         st.plotly_chart(fig_pie)
 
     # Visualization 4: Line chart comparing 'Amount' by month (Last Year vs This Year)
     with col4:
-        st.subheader("Line Chart: Amount by Month (Last Year vs This Year)")
+        st.subheader("Amount by Month (Last Year vs This Year)")
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
         current_year = df['Year'].max()
         last_year = current_year - 1
 
         comparison_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
-        fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year', title=f"Amount by Month: {last_year} vs {current_year}")
-        fig_compare.update_layout(xaxis_tickvals=list(range(1, 13)), xaxis_title="Month", yaxis_title="Amount")
+        fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year')
+        fig_compare.update_layout(
+            xaxis_title=None, 
+            yaxis_title=None, 
+            showlegend=True,
+            xaxis_showticklabels=False,
+            yaxis_showticklabels=False
+        )
         st.plotly_chart(fig_compare)
 
 else:
