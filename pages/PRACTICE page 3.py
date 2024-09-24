@@ -53,20 +53,16 @@ def fetch_raw_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Saved Searches")
 
-# Fetch raw data for each saved search
-estimate_data_raw = fetch_raw_data("customsearch5127")
-sales_order_data_raw = fetch_raw_data("customsearch5122")
-customsearch5128_data_raw = fetch_raw_data("customsearch5128")
-customsearch5129_data_raw = fetch_raw_data("customsearch5129")
-quote_data_raw = fetch_raw_data("customsearch4993")
+# Fetch raw data for the new saved searches
+sales_by_rep_data = fetch_raw_data("customsearch4963")
+sales_by_category_data = fetch_raw_data("customsearch5145")
+sales_by_month_data = fetch_raw_data("customsearch5146")
 
 # Create a dictionary to store the dataframes and names
 saved_searches = {
-    "Estimate Data": estimate_data_raw,
-    "Sales Order Data": sales_order_data_raw,
-    "Custom Search 5128": customsearch5128_data_raw,
-    "Custom Search 5129": customsearch5129_data_raw,
-    "Quote Data": quote_data_raw
+    "Sales by Sales Rep": sales_by_rep_data,
+    "Sales by Category": sales_by_category_data,
+    "Sales by Month": sales_by_month_data
 }
 
 # Display each saved search in a DataFrame
