@@ -213,9 +213,9 @@ with tab4:
     st.subheader("Quote Data (customsearch4993)")
 
     if not quote_data.empty:
-        # Convert 'Latest' and 'Earliest' to datetime, handling errors by setting invalid formats to NaT
-        quote_data['Latest'] = pd.to_datetime(quote_data['Latest'], errors='coerce')
-        quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'], errors='coerce')
+        # Convert 'Latest' and 'Earliest' to datetime with custom format
+        quote_data['Latest'] = pd.to_datetime(quote_data['Latest'], format='%m/%d/%Y %I:%M %p', errors='coerce')
+        quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'], format='%m/%d/%Y %I:%M %p', errors='coerce')
 
         # Calculate the time difference between 'Latest' and 'Earliest'
         quote_data['Time Difference'] = quote_data['Latest'] - quote_data['Earliest']
@@ -224,6 +224,7 @@ with tab4:
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
     else:
         st.write("No data available for customsearch4993.")
+
 
 
 # Customsearch 5132 tab (no metrics)
