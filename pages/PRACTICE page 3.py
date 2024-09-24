@@ -98,7 +98,6 @@ if not df.empty:
         gridOptions=gridOptions,
         enable_enterprise_modules=False,
         allow_unsafe_jscode=True,
-        theme='streamlit',  # Use valid theme
     )
 
     # Divide the page into two columns for each row
