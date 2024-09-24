@@ -1,5 +1,7 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
+import pandas as pd
 
 # Set the page configuration
 st.set_page_config(
@@ -38,17 +40,17 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-
-import streamlit as st
-from utils.restlet import fetch_restlet_data
-import pandas as pd
-
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)
     return df
+
+# Add a button to clear the cache
+if st.button("Clear Cache"):
+    st.cache_data.clear()
+    st.success("Cache cleared successfully!")
 
 # Sidebar filters
 st.sidebar.header("Saved Searches")
@@ -69,7 +71,3 @@ saved_searches = {
 for search_name, df in saved_searches.items():
     st.header(search_name)
     st.dataframe(df)
-    # Add a button to clear the cache
-    if st.button("Clear Cache"):
-        st.cache_data.clear()
-        st.success("Cache cleared successfully!")
