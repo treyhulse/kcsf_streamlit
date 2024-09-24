@@ -81,7 +81,7 @@ if 'Grouped Category' in sales_by_category_data.columns:
     sales_by_category_data = sales_by_category_data.drop(columns=['Grouped Category'])
 
 if 'Grouped Rep' in sales_by_rep_data.columns:
-    sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
+    sales_by_rep_data = sales_by_rep_data.drop(columns(['Grouped Rep']))
 
 # Display each saved search in a DataFrame
 saved_searches = {
@@ -102,8 +102,8 @@ if not sales_by_rep_data.empty:
 else:
     st.warning("No data available for Sales by Sales Rep.")
 
-# Visualization: Sales by Month (Stacked Line Chart)
-st.header("Sales by Month (Stacked Line Chart)")
+# Visualization: Sales by Month (Dual-Line Chart)
+st.header("Sales by Month (2023 vs 2024 - Line Chart)")
 
 # Convert 'Month' to a datetime object for proper sorting
 sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
@@ -126,14 +126,11 @@ if not sales_2023.empty and not sales_2024.empty:
         on='Month', how='outer'
     )
 
-    # Create the line chart with stacked sales for both years
-    sales_month_comparison['Total Sales'] = sales_month_comparison['Billed Amount_2023'].fillna(0) + sales_month_comparison['Billed Amount_2024'].fillna(0)
-
-    fig_month = px.area(sales_month_comparison, x='Month', 
+    # Create the dual-line chart without stacking
+    fig_month = px.line(sales_month_comparison, x='Month', 
                         y=['Billed Amount_2023', 'Billed Amount_2024'],
-                        title='Stacked Sales by Month (2023 vs 2024)',
-                        labels={'value': 'Billed Amount', 'variable': 'Year'},
-                        groupnorm='fraction')  # This will create a stacked effect
+                        title='Sales by Month (2023 vs 2024)',
+                        labels={'value': 'Billed Amount', 'variable': 'Year'})
 
     st.plotly_chart(fig_month)
 else:
