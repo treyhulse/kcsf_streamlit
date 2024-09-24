@@ -204,9 +204,9 @@ with tab1:
     total_orders, ready_orders, not_ready_orders, outstanding_revenue_orders = calculate_metrics(sales_order_data)
     
     # Placeholder percentage changes (you can replace these with actual calculations)
-    percentage_change_orders = 10
-    percentage_change_ready = 5
-    percentage_change_not_ready = -3
+    percentage_change_orders = 100
+    percentage_change_ready = (ready_orders / total_orders) * 100 if total_orders > 0 else 0
+    percentage_change_not_ready = (not_ready_orders / total_orders) * 100 if total_orders > 0 else 0
     percentage_change_revenue = 15
     
     # Sales Orders Metrics
@@ -237,17 +237,17 @@ with tab2:
     avg_time_diff = quote_data['Time Difference'].mean()
 
     # Placeholder percentage changes for estimates (you can replace these with actual calculations)
-    percentage_change_estimates = 8
-    percentage_change_ready_estimates = 6
+    percentage_change_estimates = 100
+    percentage_change_ready_estimates = 8
     percentage_change_not_ready_estimates = -4
     percentage_change_revenue_estimates = 12
 
     # Estimates Metrics
     estimates_metrics = [
-        {"label": "Total Estimates", "value": total_estimates},
+        {"label": "Total Estimates", "value": total_estimates, "change": percentage_change_estimates, "positive": percentage_change_estimates > 0},
         {"label": "Average Quote Cycle Time", "value": f"Avg: {avg_time_diff}", "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
         {"label": "Total Estimates Not Ready", "value": not_ready_estimates, "change": percentage_change_not_ready_estimates, "positive": percentage_change_not_ready_estimates > 0},
-        {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_estimates:,.2f}"},
+        {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_estimates:,.2f}", "change": percentage_change_revenue_estimates, "positive": percentage_change_revenue_estimates > 0},
     ]
 
     display_metrics(estimates_metrics)
