@@ -69,3 +69,7 @@ saved_searches = {
 for search_name, df in saved_searches.items():
     st.header(search_name)
     st.dataframe(df)
+    # Add a button to clear the cache
+    if st.button("Clear Cache"):
+        st.cache_data.clear()
+        st.success("Cache cleared successfully!")
