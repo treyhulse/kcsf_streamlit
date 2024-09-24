@@ -41,8 +41,6 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
-
-
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -65,9 +63,12 @@ sales_by_month_data = fetch_raw_data("customsearch5146")
 
 # Function to format 'Billed Amount' as currency and handle non-numeric values
 def format_currency(df, column_name):
-    df[column_name] = pd.to_numeric(df[column_name], errors='coerce')  # Convert to numeric, set errors as NaN
-    df[column_name].fillna(0, inplace=True)  # Replace NaN values with 0
-    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))  # Apply currency formatting
+    if column_name in df.columns:
+        df[column_name] = pd.to_numeric(df[column_name], errors='coerce')  # Convert to numeric, set errors as NaN
+        df[column_name].fillna(0, inplace=True)  # Replace NaN values with 0
+        df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))  # Apply currency formatting
+    else:
+        st.error(f"Column '{column_name}' not found in the DataFrame!")
     return df
 
 # Format 'Billed Amount' column for each dataframe
@@ -75,10 +76,12 @@ sales_by_rep_data = format_currency(sales_by_rep_data, 'Billed Amount')
 sales_by_category_data = format_currency(sales_by_category_data, 'Billed Amount')
 sales_by_month_data = format_currency(sales_by_month_data, 'Billed Amount')
 
-# Ensure column names are uppercase
-sales_by_rep_data.columns = sales_by_rep_data.columns.str.upper()
-sales_by_category_data.columns = sales_by_category_data.columns.str.upper()
-sales_by_month_data.columns = sales_by_month_data.columns.str.upper()
+# Drop unnecessary columns 'Grouped Category' and 'Grouped Rep' if they exist
+if 'Grouped Category' in sales_by_category_data.columns:
+    sales_by_category_data = sales_by_category_data.drop(columns=['Grouped Category'])
+
+if 'Grouped Rep' in sales_by_rep_data.columns:
+    sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
 
 # Display each saved search in a DataFrame
 saved_searches = {
@@ -98,20 +101,20 @@ st.plotly_chart(fig_rep)
 
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
-# Assuming the sales_by_month_data has 'YEAR', 'MONTH', and 'Billed Amount' columns
+# Assuming the sales_by_month_data has 'Year', 'Month', and 'Billed Amount' columns
 sales_by_month_data['Billed Amount'] = sales_by_month_data['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
 
 # Filter data for 2023 and 2024
-sales_2023 = sales_by_month_data[sales_by_month_data['YEAR'] == 2023]
-sales_2024 = sales_by_month_data[sales_by_month_data['YEAR'] == 2024]
+sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
+sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
 
 # Merge the two years of data for comparison
-sales_month_comparison = pd.merge(sales_2023[['MONTH', 'Billed Amount']], 
-                                  sales_2024[['MONTH', 'Billed Amount']], 
-                                  on='MONTH', 
+sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']], 
+                                  sales_2024[['Month', 'Billed Amount']], 
+                                  on='Month', 
                                   suffixes=('_2023', '_2024'))
 
-fig_month = px.line(sales_month_comparison, x='MONTH', y=['Billed Amount_2023', 'Billed Amount_2024'], 
+fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
                     title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
 st.plotly_chart(fig_month)
 
