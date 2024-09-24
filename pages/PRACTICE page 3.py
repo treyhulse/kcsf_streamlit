@@ -107,23 +107,10 @@ if not df.empty:
     open_orders = len(pending_orders)
     lost_revenue = closed_orders['Amount'].sum()
 
-    # Metrics with potential for percentage change (dummy values here for illustration)
+    # Metrics with potential for percentage change
     percentage_change_revenue = 5  # Example: 5% increase
     percentage_change_average = -2  # Example: 2% decrease
 
-    metrics = [
-        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
-        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-        {"label": "Open Orders", "value": open_orders, "change": 0, "positive": True},
-        {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
-    ]
-
-    metrics = [
-        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
-        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-        {"label": "Open Orders", "value": open_orders, "change": 0, "positive": True},
-        {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
-    ]
     # Styling for the boxes
     st.markdown("""
     <style>
@@ -153,6 +140,13 @@ if not df.empty:
     # First row: metrics
     col1, col2, col3, col4 = st.columns(4)
 
+    metrics = [
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_revenue, "positive": percentage_change_revenue > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+        {"label": "Open Orders", "value": open_orders, "change": 0, "positive": True},
+        {"label": "Lost Revenue", "value": f"${lost_revenue:,.2f}", "change": 0, "positive": False}
+    ]
+
     for col, metric in zip([col1, col2, col3, col4], metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
@@ -166,20 +160,39 @@ if not df.empty:
             </div>
             """, unsafe_allow_html=True)
 
-    # Visualization: Yearly Comparison Line Chart
+    # Visualizations
+    # Yearly Comparison Line Chart
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
     last_year = df[df['Date'].dt.year == pd.to_datetime('today').year - 1]
-    fig_line = px.line()
-    fig_line.add_scatter(x=this_year['Date'].dt.month, y=this_year['Amount'], mode='lines', name='This Year')
-    fig_line.add_scatter(x=last_year['Date'].dt.month, y=last_year['Amount'], mode='lines', name='Last Year')
-    fig_line.update_layout(title='Yearly Sales Comparison', xaxis_title='Month', yaxis_title='Amount')
+    this_year_monthly = this_year.resample('M', on='Date')['Amount'].sum()
+    last_year_monthly = last_year.resample('M', on='Date')['Amount'].sum()
+
+    fig_line = px.line(title='Yearly Sales Comparison')
+    fig_line.add_scatter(x=this_year_monthly.index.month, y=this_year_monthly.values, mode='lines', name='This Year')
+    fig_line.add_scatter(x=last_year_monthly.index.month, y=last_year_monthly.values, mode='lines', name='Last Year')
+    fig_line.update_layout(xaxis_title='Month', yaxis_title='Amount')
+
+    # Sales by Sales Rep
+    sales_by_rep = billed_orders.groupby('Sales Rep')['Amount'].sum().reset_index()
+    fig_rep = px.bar(sales_by_rep, x='Sales Rep', y='Amount', title='Total Sales by Sales Rep', labels={'Amount': 'Total Amount'})
+
+    # Sales by Category
+    sales_by_category = billed_orders.groupby('Category')['Amount'].sum().reset_index()
+    fig_category = px.bar(sales_by_category, x='Category', y='Amount', title='Total Sales by Category', labels={'Amount': 'Total Amount'})
+
+    # Layout for visualizations
+    left_col, middle_col, right_col = st.columns(3)
+    with left_col:
+        st.plotly_chart(fig_rep, use_container_width=True)
+    with middle_col:
+        st.plotly_chart(fig_category, use_container_width=True)
+    with right_col:
+        st.plotly_chart(fig_line, use_container_width=True)
 
     # Display Dataframe
     with st.expander("View Dataframe"):
         st.dataframe(df)
-
-    st.plotly_chart(fig_line)
-
+    
 else:
     logger.info("No data returned.")
     st.error("No data available or failed to load.")
