@@ -95,8 +95,6 @@ for i in range(5):
 progress_bar.progress(100)
 
 if not df.empty:
-    st.success(f"Data fetched successfully with {len(df)} records.")
-
     # Calculate metrics for the dashboard
     billed_orders = df[df['Status'] == 'Billed']
     pending_orders = df[df['Status'] == 'Pending']
@@ -176,9 +174,9 @@ if not df.empty:
     fig_line.add_scatter(x=last_year_monthly.index.month, y=last_year_monthly.values, mode='lines', name='Last Year')
     fig_line.update_layout(xaxis_title='Month', yaxis_title='Amount')
 
-    # Sales by Sales Rep
+    # Sales by Sales Rep - Pie Chart
     sales_by_rep = billed_orders.groupby('Sales Rep')['Amount'].sum().reset_index()
-    fig_rep = px.bar(sales_by_rep, x='Sales Rep', y='Amount', title='Total Sales by Sales Rep', labels={'Amount': 'Total Amount'})
+    fig_rep = px.pie(sales_by_rep, values='Amount', names='Sales Rep', title='Total Sales by Sales Rep')
 
     # Sales by Category
     sales_by_category = billed_orders.groupby('Category')['Amount'].sum().reset_index()
@@ -196,6 +194,7 @@ if not df.empty:
     # Display Dataframe
     with st.expander("View Data"):
         st.dataframe(df)
+        st.success(f"Data fetched successfully with {len(df)} records.")
     
 else:
     logger.info("No data returned.")
