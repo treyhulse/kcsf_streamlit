@@ -76,7 +76,7 @@ def fetch_paginated_inventory_data():
     """
     all_data = []
     offset = 0
-    page_size = 100  # NetSuite's SuiteQL limit is typically 1,000 records per query
+    page_size = 1000  # NetSuite's SuiteQL limit is typically 1,000 records per query
 
     while True:
         # Paginate through results using OFFSET
