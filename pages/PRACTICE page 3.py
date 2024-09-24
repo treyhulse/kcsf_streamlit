@@ -93,7 +93,7 @@ for search_name, df in saved_searches.items():
 
 # Visualization: Sales by Sales Rep (Pie Chart)
 st.header("Sales by Sales Rep (Pie Chart)")
-fig_rep = px.pie(sales_by_rep_data, names='GROUPED REP', values='Billed Amount', title='Sales by Sales Rep')
+fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
 st.plotly_chart(fig_rep)
 
 # Visualization: Sales by Month (Stacked Line Chart)
@@ -117,5 +117,5 @@ st.plotly_chart(fig_month)
 
 # Visualization: Sales by Category (Bar Chart)
 st.header("Sales by Category (Bar Chart)")
-fig_category = px.bar(sales_by_category_data, x='GROUPED CATEGORY', y='Billed Amount', title='Sales by Category')
+fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
 st.plotly_chart(fig_category)
