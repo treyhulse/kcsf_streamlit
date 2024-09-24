@@ -79,60 +79,34 @@ if 'Grouped Category' in sales_by_category_data.columns:
 if 'Grouped Rep' in sales_by_rep_data.columns:
     sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
 
-# Display each saved search in a DataFrame
-saved_searches = {
-    "Sales by Sales Rep": sales_by_rep_data,
-    "Sales by Category": sales_by_category_data,
-    "Sales by Month": sales_by_month_data
-}
-
-for search_name, df in saved_searches.items():
-    st.header(search_name)
-    st.dataframe(df)
-
-# Visualization: Sales by Sales Rep (Pie Chart)
-st.header("Sales by Sales Rep (Pie Chart)")
-if not sales_by_rep_data.empty:
-    fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
-    st.plotly_chart(fig_rep)
-else:
-    st.warning("No data available for Sales by Sales Rep.")
-
-# Adjustments for the "Sales by Month" visualization
-
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
-if not sales_by_month_data.empty:
-    # Convert 'Month' to a datetime object to ensure proper sorting
-    sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
 
-    # Sort the data by 'Month' for proper plotting
-    sales_by_month_data = sales_by_month_data.sort_values(by='Month')
+# Convert 'Month' to a datetime object for proper sorting
+sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
 
-    # Filter data for 2023 and 2024
-    sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
-    sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
+# Extract the 'Year' from the 'Month' column and add it as a separate column
+sales_by_month_data['Year'] = sales_by_month_data['Month'].dt.year
 
-    if not sales_2023.empty and not sales_2024.empty:
-        # Merge the two years of data for comparison
-        sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2023'}), 
-                                          sales_2024[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2024'}), 
-                                          on='Month', how='outer')
+# Sort the data by 'Month' for proper plotting
+sales_by_month_data = sales_by_month_data.sort_values(by='Month')
 
-        # Create the line chart with both years
-        fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
-                            title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
+# Filter data for 2023 and 2024 based on the 'Year' extracted from the 'Month' column
+sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
+sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
 
-        st.plotly_chart(fig_month)
-    else:
-        st.warning("No data available for both 2023 and 2024 in Sales by Month.")
+if not sales_2023.empty and not sales_2024.empty:
+    # Merge the two years of data for comparison
+    sales_month_comparison = pd.merge(
+        sales_2023[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2023'}), 
+        sales_2024[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2024'}), 
+        on='Month', how='outer'
+    )
+
+    # Create the line chart with both years
+    fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
+                        title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
+
+    st.plotly_chart(fig_month)
 else:
-    st.warning("No data available for Sales by Month.")
-
-# Visualization: Sales by Category (Bar Chart)
-st.header("Sales by Category (Bar Chart)")
-if not sales_by_category_data.empty:
-    fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
-    st.plotly_chart(fig_category)
-else:
-    st.warning("No data available for Sales by Category.")
+    st.warning("No data available for both 2023 and 2024 in Sales by Month.")
