@@ -46,35 +46,37 @@ from utils.restlet import fetch_restlet_data
 import time
 import logging
 
-# Set up logging
+# Set up logging to monitor the status
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define the fetch_data function with caching
-@st.cache(allow_output_mutation=True, show_spinner=False)
+# Initialize Streamlit progress bar
+progress_bar = st.progress(0)
+
+# Fetch data using the RESTlet function
+saved_search_id = 'customsearch5108'
+
+# Cache only the data fetching part (returning a DataFrame)
 def fetch_data(saved_search_id):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
     data = fetch_restlet_data(saved_search_id)
     if data.empty:
         logger.error("No data returned from the API.")
-        return pd.DataFrame()
-    data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')
-    data['Date'] = pd.to_datetime(data['Date'])
+        return pd.DataFrame()  # Return an empty DataFrame to handle this gracefully in your app
+    print(data.head())  # Temporarily print data to debug
+    data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')  # Convert 'Amount' to numeric
+    data['Date'] = pd.to_datetime(data['Date'])  # Ensure 'Date' is datetime type
     return data
 
-# Define a function to clear the cache
+
+# Function to clear cache
 def clear_cache():
-    st.legacy_caching.clear_cache()  # Clears all cached functions
-    logger.info("Cache cleared successfully")
+    fetch_data.clear()
 
-# Example usage in your Streamlit app
-saved_search_id = 'customsearch5108'
-df = fetch_data(saved_search_id)
-
-# Authorized emails can clear cache
+# List of authorized emails to clear cache
 authorized_emails = ['treyhulse3@gmail.com', 'trey.hulse@kcstorefixtures.com']
-user_email = 'example@example.com'  # Placeholder for user email
 
+# Button to clear cache for authorized users
 if user_email in authorized_emails:
     if st.button("Clear Cache"):
         clear_cache()
