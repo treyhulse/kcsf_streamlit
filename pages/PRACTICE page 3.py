@@ -32,12 +32,6 @@ if not validate_page_access(user_email, page_name):
 
 st.write(f"Welcome, {user_email}. You have access to this page.")
 
-# Check user email for cache clear button
-if user_email in ["treyhulse3@gmail.com", "trey.hulse@kcstorefixtures.com"]:
-    if st.button("Clear Cache"):
-        st.cache.clear()
-        st.success("Cache cleared!")
-
 ################################################################################################
 
 ## AUTHENTICATED
@@ -70,6 +64,19 @@ def fetch_data(saved_search_id):
     data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')  # Convert 'Amount' to numeric
     data['Date'] = pd.to_datetime(data['Date'])  # Ensure 'Date' is datetime type
     return data
+
+# Function to clear cache
+def clear_cache():
+    fetch_data.clear()
+
+# List of authorized emails to clear cache
+authorized_emails = ['treyhulse3@gmail.com']
+
+# Button to clear cache for authorized users
+if user_email in authorized_emails:
+    if st.button("Clear Cache"):
+        clear_cache()
+        st.success("Cache cleared successfully.")
 
 # Fetch data (outside of the cache)
 df = fetch_data(saved_search_id)
