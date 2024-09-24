@@ -42,6 +42,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ################################################################################################
 
 
+
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -70,11 +71,13 @@ def format_currency(df, column_name):
     return df
 
 # Format 'Billed Amount' column for each dataframe
-sales_by_rep_data = format_currency(sales_by_rep_data, 'Billed Amount')
-sales_by_category_data = format_currency(sales_by_category_data, 'Billed Amount')
-sales_by_month_data = format_currency(sales_by_month_data, 'Billed Amount')
+sales_by_rep_data = format_currency(sales_by_rep_data, 'BILLED AMOUNT')
+sales_by_category_data = format_currency(sales_by_category_data, 'BILLED AMOUNT')
+sales_by_month_data = format_currency(sales_by_month_data, 'BILLED AMOUNT')
 
-# Ensure column names are uppercase as in your saved search
+# Ensure column names are uppercase
+sales_by_rep_data.columns = sales_by_rep_data.columns.str.upper()
+sales_by_category_data.columns = sales_by_category_data.columns.str.upper()
 sales_by_month_data.columns = sales_by_month_data.columns.str.upper()
 
 # Display each saved search in a DataFrame
@@ -90,7 +93,7 @@ for search_name, df in saved_searches.items():
 
 # Visualization: Sales by Sales Rep (Pie Chart)
 st.header("Sales by Sales Rep (Pie Chart)")
-fig_rep = px.pie(sales_by_rep_data, names='Sales Rep', values='Billed Amount', title='Sales by Sales Rep')
+fig_rep = px.pie(sales_by_rep_data, names='GROUPED REP', values='BILLED AMOUNT', title='Sales by Sales Rep')
 st.plotly_chart(fig_rep)
 
 # Visualization: Sales by Month (Stacked Line Chart)
@@ -114,5 +117,5 @@ st.plotly_chart(fig_month)
 
 # Visualization: Sales by Category (Bar Chart)
 st.header("Sales by Category (Bar Chart)")
-fig_category = px.bar(sales_by_category_data, x='Category', y='Billed Amount', title='Sales by Category')
+fig_category = px.bar(sales_by_category_data, x='GROUPED CATEGORY', y='BILLED AMOUNT', title='Sales by Category')
 st.plotly_chart(fig_category)
