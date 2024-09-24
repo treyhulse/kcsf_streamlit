@@ -220,6 +220,12 @@ with tab4:
         # Calculate the time difference between 'Latest' and 'Earliest'
         quote_data['Time Difference'] = quote_data['Latest'] - quote_data['Earliest']
 
+        # Calculate the average time difference
+        avg_time_diff = quote_data['Time Difference'].mean()
+
+        # Display the KPI for average time difference
+        st.metric(label="Average Time Difference", value=str(avg_time_diff))
+
         # Display the DataFrame with the additional 'Time Difference' column
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
     else:
