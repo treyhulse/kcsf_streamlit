@@ -62,13 +62,6 @@ sales_by_rep_data = fetch_raw_data("customsearch4963")
 sales_by_category_data = fetch_raw_data("customsearch5145")
 sales_by_month_data = fetch_raw_data("customsearch5146")
 
-# Check data types and values before using them in visualizations
-st.write("Sales by Sales Rep Data:", sales_by_rep_data.head())
-st.write("Sales by Sales Rep Data Types:", sales_by_rep_data.dtypes)
-
-st.write("Sales by Month Data:", sales_by_month_data.head())
-st.write("Sales by Month Data Types:", sales_by_month_data.dtypes)
-
 # Ensure 'Billed Amount' is numeric
 def ensure_numeric(df, column_name):
     df[column_name] = pd.to_numeric(df[column_name].replace('[\$,]', '', regex=True), errors='coerce')
@@ -105,25 +98,34 @@ if not sales_by_rep_data.empty:
 else:
     st.warning("No data available for Sales by Sales Rep.")
 
+# Adjustments for the "Sales by Month" visualization
+
 # Visualization: Sales by Month (Stacked Line Chart)
 st.header("Sales by Month (Stacked Line Chart)")
 if not sales_by_month_data.empty:
+    # Convert 'Month' to a datetime object to ensure proper sorting
+    sales_by_month_data['Month'] = pd.to_datetime(sales_by_month_data['Month'], format='%Y-%m')
+
+    # Sort the data by 'Month' for proper plotting
+    sales_by_month_data = sales_by_month_data.sort_values(by='Month')
+
     # Filter data for 2023 and 2024
     sales_2023 = sales_by_month_data[sales_by_month_data['Year'] == 2023]
     sales_2024 = sales_by_month_data[sales_by_month_data['Year'] == 2024]
 
     if not sales_2023.empty and not sales_2024.empty:
         # Merge the two years of data for comparison
-        sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']], 
-                                          sales_2024[['Month', 'Billed Amount']], 
-                                          on='Month', 
-                                          suffixes=('_2023', '_2024'))
+        sales_month_comparison = pd.merge(sales_2023[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2023'}), 
+                                          sales_2024[['Month', 'Billed Amount']].rename(columns={'Billed Amount': 'Billed Amount_2024'}), 
+                                          on='Month', how='outer')
 
+        # Create the line chart with both years
         fig_month = px.line(sales_month_comparison, x='Month', y=['Billed Amount_2023', 'Billed Amount_2024'], 
                             title='Sales by Month (2023 vs 2024)', labels={'value': 'Billed Amount', 'variable': 'Year'})
+
         st.plotly_chart(fig_month)
     else:
-        st.warning("No data available for 2023 and 2024 in Sales by Month.")
+        st.warning("No data available for both 2023 and 2024 in Sales by Month.")
 else:
     st.warning("No data available for Sales by Month.")
 
