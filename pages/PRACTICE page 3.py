@@ -70,7 +70,7 @@ def clear_cache():
     fetch_data.clear()
 
 # List of authorized emails to clear cache
-authorized_emails = ['treyhulse@gmail.com']
+authorized_emails = ['treyhulse3@gmail.com', 'trey.hulse@kcstorefixtures.com']
 
 # Button to clear cache for authorized users
 if user_email in authorized_emails:
