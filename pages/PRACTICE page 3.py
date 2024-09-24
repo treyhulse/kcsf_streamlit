@@ -160,6 +160,10 @@ if not df.empty:
             </div>
             """, unsafe_allow_html=True)
 
+    # Additional space for separation
+    st.write(" ")
+    st.write(" ")
+
     # Visualizations
     # Yearly Comparison Line Chart
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
@@ -190,7 +194,7 @@ if not df.empty:
         st.plotly_chart(fig_line, use_container_width=True)
 
     # Display Dataframe
-    with st.expander("View Dataframe"):
+    with st.expander("View Data"):
         st.dataframe(df)
     
 else:
