@@ -127,6 +127,7 @@ if not df.empty:
         border-radius: 10px;
         box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
         text-align: center;
+        margin-bottom: 20px;
     }
     .metric-title {
         margin: 0;
@@ -141,8 +142,24 @@ if not df.empty:
         margin: 0;
         font-size: 14px;
     }
+    .positive-change {
+        color: green;
+    }
+    .negative-change {
+        color: red;
+    }
     </style>
     """, unsafe_allow_html=True)
+
+    for metric in metrics:
+        change_class = "positive-change" if metric["positive"] else "negative-change"
+        st.markdown(f"""
+        <div class="metrics-box">
+            <p class="metric-title">{metric['label']}</p>
+            <p class="metric-value">{metric['value']}</p>
+            <p class="metric-change {change_class}">{metric['change']}%</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     # Visualization: Yearly Comparison Line Chart
     this_year = df[df['Date'].dt.year == pd.to_datetime('today').year]
