@@ -62,6 +62,7 @@ sales_order_data_raw = fetch_raw_data("customsearch5122")
 customsearch5128_data_raw = fetch_raw_data("customsearch5128")
 customsearch5129_data_raw = fetch_raw_data("customsearch5129")
 customsearch5132_data_raw = fetch_raw_data("customsearch5132")
+quote_data_raw = fetch_raw_data("customsearch4993")
 
 
 # Extract unique sales reps from both datasets and add 'All' option
@@ -87,6 +88,7 @@ sales_order_data = apply_filters(sales_order_data_raw)
 customsearch5128_data = apply_filters(customsearch5128_data_raw)
 customsearch5129_data = apply_filters(customsearch5129_data_raw)
 customsearch5132_data = (customsearch5132_data_raw)
+quote_data = (quote_data_raw)
 
 # Function to calculate metrics for orders or estimates
 def calculate_metrics(df):
@@ -217,6 +219,14 @@ with tab4:
         st.dataframe(customsearch5129_data)
     else:
         st.write("No data available for Customsearch 5129.")
+    
+    st.subheader("Quotes")
+
+    if not quote_data.empty:
+        st.dataframe(quote_data)
+    else:
+        st.write("No data available for Quotes.")
+
 
 # Customsearch 5132 tab (no metrics)
 with tab5:
