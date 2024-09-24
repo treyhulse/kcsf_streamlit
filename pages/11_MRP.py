@@ -20,7 +20,7 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = 'Distributor Management'  # Adjust this based on the current page
+page_name = 'MRP'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
 
@@ -44,6 +44,8 @@ from utils.restlet import fetch_restlet_data
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Page title
+st.title("MRP Dashboard")
 
 # Cache the raw data fetching process (TTL: 900 seconds)
 @st.cache_data(ttl=900)
@@ -56,7 +58,6 @@ tab1, tab2 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines"])
 
 # First tab (existing functionality for inventory data)
 with tab1:
-    st.write("Loading data from NetSuite...")
 
     # Authentication setup for SuiteQL requests
     def get_authentication():
