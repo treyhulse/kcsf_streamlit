@@ -81,7 +81,7 @@ if 'Grouped Category' in sales_by_category_data.columns:
     sales_by_category_data = sales_by_category_data.drop(columns=['Grouped Category'])
 
 if 'Grouped Rep' in sales_by_rep_data.columns:
-    sales_by_rep_data = sales_by_rep_data.drop(columns(['Grouped Rep']))
+    sales_by_rep_data = sales_by_rep_data.drop(columns=['Grouped Rep'])
 
 # Display each saved search in a DataFrame
 saved_searches = {
