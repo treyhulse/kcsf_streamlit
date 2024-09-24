@@ -214,9 +214,18 @@ with tab4:
     st.subheader("Quote Data (customsearch4993)")
 
     if not quote_data.empty:
-        st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest']])  # Display the relevant columns
+        # Convert 'Latest' and 'Earliest' to datetime
+        quote_data['Latest'] = pd.to_datetime(quote_data['Latest'])
+        quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'])
+
+        # Calculate the time difference between 'Latest' and 'Earliest'
+        quote_data['Time Difference'] = quote_data['Latest'] - quote_data['Earliest']
+
+        # Display the DataFrame with the additional 'Time Difference' column
+        st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
     else:
         st.write("No data available for customsearch4993.")
+
 
 # Customsearch 5132 tab (no metrics)
 with tab5:
