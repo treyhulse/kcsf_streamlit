@@ -292,3 +292,30 @@ with st.expander("View Data Table"):
         width='100%',
         reload_data=True
     )
+
+
+
+from utils.restlet import fetch_restlet_data
+import pandas as pd
+import plotly.express as px
+
+
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
+
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Fetch raw data for estimates, sales orders, customsearch5128, and customsearch5129
+quotecycletime_data_raw = fetch_raw_data("customsearch4993")
+
+# Convert the raw data into a DataFrame
+quotecycletime_df = pd.DataFrame(quotecycletime_data_raw)
+
+# Display the DataFrame in Streamlit
+st.subheader("Quote Cycle Time Data")
+st.dataframe(quotecycletime_df)
