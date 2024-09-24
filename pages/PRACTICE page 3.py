@@ -45,7 +45,6 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 from utils.restlet import fetch_restlet_data
 import time
 import logging
-import matplotlib.pyplot as plt
 import plotly.express as px
 
 # Set up logging to monitor the status
@@ -87,9 +86,9 @@ progress_bar.progress(100)
 if not df.empty:
     st.success(f"Data fetched successfully with {len(df)} records.")
 
-    # Configure the AgGrid to display with pagination
+    # Display Data Table in AgGrid
     gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)  # Set page size to 50
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=100)
     gb.configure_default_column(groupable=True, value=True, enableRowGroup=True, aggFunc='sum', editable=True)
 
     gridOptions = gb.build()
@@ -123,15 +122,15 @@ if not df.empty:
     fig_pie = px.pie(pie_chart_data, names='Sales Rep', values='Amount', title="Amount by Sales Rep")
     st.plotly_chart(fig_pie)
 
-    # Visualization 4: Bar chart comparing 'Amount' by month (Last Year vs This Year)
-    st.subheader("Bar Chart: Amount by Month (Last Year vs This Year)")
+    # Visualization 4: Line chart comparing 'Amount' by month (Last Year vs This Year)
+    st.subheader("Line Chart: Amount by Month (Last Year vs This Year)")
     df['Year'] = df['Date'].dt.year
     df['Month'] = df['Date'].dt.month
     current_year = df['Year'].max()
     last_year = current_year - 1
 
     comparison_data = df[df['Year'].isin([last_year, current_year])].groupby(['Year', 'Month'])['Amount'].sum().reset_index()
-    fig_compare = px.bar(comparison_data, x='Month', y='Amount', color='Year', barmode='group', title=f"Amount by Month: {last_year} vs {current_year}")
+    fig_compare = px.line(comparison_data, x='Month', y='Amount', color='Year', title=f"Amount by Month: {last_year} vs {current_year}")
     st.plotly_chart(fig_compare)
 
 else:
