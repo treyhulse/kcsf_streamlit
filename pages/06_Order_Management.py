@@ -56,7 +56,7 @@ def fetch_raw_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Fetch raw data for estimates, sales orders, customsearch5128, and customsearch5129
+# Fetch raw data for estimates, sales orders, customsearch5128, customsearch5129, and quote data
 estimate_data_raw = fetch_raw_data("customsearch5127")
 sales_order_data_raw = fetch_raw_data("customsearch5122")
 customsearch5128_data_raw = fetch_raw_data("customsearch5128")
@@ -87,8 +87,8 @@ estimate_data = apply_filters(estimate_data_raw)
 sales_order_data = apply_filters(sales_order_data_raw)
 customsearch5128_data = apply_filters(customsearch5128_data_raw)
 customsearch5129_data = apply_filters(customsearch5129_data_raw)
-customsearch5132_data = (customsearch5132_data_raw)
-quote_data = (quote_data_raw)
+customsearch5132_data = customsearch5132_data_raw
+quote_data = quote_data_raw  # Use raw data for quote
 
 # Function to calculate metrics for orders or estimates
 def calculate_metrics(df):
@@ -151,11 +151,10 @@ funnel_chart.update_layout(title_text='Sales Pipeline Funnel', title_x=0.5)
 # Add the funnel chart to Streamlit
 st.plotly_chart(funnel_chart)
 
-
 ################################################################################################
 
 # Subtabs for Estimates, Sales Orders, customsearch5128, and customsearch5129
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Transfer Orders", "Work Orders"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Sales Orders", "Estimates", "Purchase Orders", "Quote Data", "Work Orders", "Transfer Orders" ])
 
 # Sales Orders tab (with metrics)
 with tab1:
@@ -201,7 +200,6 @@ with tab2:
     else:
         st.write("No data available for Estimates.")
 
-
 # Customsearch 5128 tab (no metrics)
 with tab3:
     st.subheader("Purchase Orders")
@@ -211,15 +209,14 @@ with tab3:
     else:
         st.write("No data available for Customsearch 5128.")
 
-# Customsearch 5129 tab (no metrics)
+# Quote Data tab (formerly Transfer Orders) - this now uses the quote data
 with tab4:
-    st.subheader("Transfer Orders")
+    st.subheader("Quote Data (customsearch4993)")
 
-    if not customsearch5129_data.empty:
-        st.dataframe(customsearch5129_data)
+    if not quote_data.empty:
+        st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest']])  # Display the relevant columns
     else:
-        st.write("No data available for Customsearch 5129.")
-
+        st.write("No data available for customsearch4993.")
 
 # Customsearch 5132 tab (no metrics)
 with tab5:
@@ -229,3 +226,16 @@ with tab5:
         st.dataframe(customsearch5132_data)
     else:
         st.write("No data available for customsearch5132.")
+
+
+# Customsearch 5129 tab (no metrics)
+with tab6:
+    st.subheader("Transfer Orders")
+
+    if not customsearch5129_data.empty:
+        st.dataframe(customsearch5129_data)
+    else:
+        st.write("No data available for Customsearch 5129.")
+
+
+
