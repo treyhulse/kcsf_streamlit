@@ -35,24 +35,61 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_netsuite_inventory
+from utils.suiteql import fetch_suiteql_data
 
 # Title of the app
 st.title("NetSuite Inventory Balance Data")
 
-# Button to trigger data fetching
-if st.button("Fetch Inventory Data"):
-    st.write("Fetching data from NetSuite...")
+# Paginate the query to fetch 100 items per page
+def fetch_paginated_inventory_data():
+    all_data = []
+    offset = 0
+    page_size = 100
 
-    # Fetch the inventory balance data
-    inventory_df = fetch_netsuite_inventory()
+    while True:
+        query = f"""
+        SELECT 
+            item.id AS item_id,
+            item.itemid AS item_name,
+            item.displayname AS display_name,
+            balance.location AS location_name,
+            balance.quantityonhand AS quantity_on_hand,
+            balance.quantityavailable AS quantity_available
+        FROM 
+            item
+        JOIN 
+            inventorybalance AS balance ON item.id = balance.item
+        WHERE 
+            item.isinactive = 'F'
+        ORDER BY 
+            item_name ASC
+        OFFSET {offset} ROWS
+        FETCH NEXT {page_size} ROWS ONLY;
+        """
+        
+        # Fetch the paginated data
+        df = fetch_suiteql_data(query)
+        if df.empty:
+            break  # Stop if no more data is returned
 
-    if not inventory_df.empty:
-        st.success(f"Successfully fetched {len(inventory_df)} records.")
-        st.dataframe(inventory_df)  # Display the DataFrame in Streamlit
+        all_data.append(df)
+        offset += page_size  # Move to the next page
 
-        # Option to download the data as CSV
-        csv = inventory_df.to_csv(index=False)
-        st.download_button(label="Download data as CSV", data=csv, file_name='inventory_data.csv', mime='text/csv')
-    else:
-        st.error("No data available or an error occurred during data fetching.")
+    # Combine all pages into a single DataFrame
+    return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
+
+# Automatically load and display the data
+st.write("Loading data from NetSuite...")
+
+# Fetch the paginated data
+inventory_df = fetch_paginated_inventory_data()
+
+if not inventory_df.empty:
+    st.success(f"Successfully fetched {len(inventory_df)} records.")
+    st.dataframe(inventory_df)  # Display the DataFrame in Streamlit
+
+    # Option to download the data as CSV
+    csv = inventory_df.to_csv(index=False)
+    st.download_button(label="Download data as CSV", data=csv, file_name='inventory_data.csv', mime='text/csv')
+else:
+    st.error("No data available or an error occurred during data fetching.")
