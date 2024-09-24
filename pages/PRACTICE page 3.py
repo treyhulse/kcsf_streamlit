@@ -57,13 +57,17 @@ progress_bar = st.progress(0)
 saved_search_id = 'customsearch5108'
 
 # Cache only the data fetching part (returning a DataFrame)
-@st.cache(ttl=86400, allow_output_mutation=True)
 def fetch_data(saved_search_id):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
     data = fetch_restlet_data(saved_search_id)
+    if data.empty:
+        logger.error("No data returned from the API.")
+        return pd.DataFrame()  # Return an empty DataFrame to handle this gracefully in your app
+    print(data.head())  # Temporarily print data to debug
     data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')  # Convert 'Amount' to numeric
     data['Date'] = pd.to_datetime(data['Date'])  # Ensure 'Date' is datetime type
     return data
+
 
 # Function to clear cache
 def clear_cache():
