@@ -58,11 +58,6 @@ def clear_cache():
 if st.button("Clear Cache"):
     clear_cache()
 
-# Sidebar filters for 'Sales Rep' and 'Date'
-st.sidebar.header("Filter Data")
-selected_rep = st.sidebar.multiselect("Select Sales Rep", options=pd.unique(df['Sales Rep']))
-selected_date = st.sidebar.date_input("Select Date Range", [])
-
 # Initialize Streamlit progress bar
 progress_bar = st.progress(0)
 
@@ -80,6 +75,11 @@ def fetch_data(saved_search_id):
 
 # Fetch data (outside of the cache)
 df = fetch_data(saved_search_id)
+
+# Sidebar filters for 'Sales Rep' and 'Date'
+st.sidebar.header("Filter Data")
+selected_rep = st.sidebar.multiselect("Select Sales Rep", options=pd.unique(df['Sales Rep']))
+selected_date = st.sidebar.date_input("Select Date Range", [])
 
 # Filter data based on sidebar selections
 if selected_rep:
