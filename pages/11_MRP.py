@@ -35,7 +35,7 @@ st.write(f"You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.suiteql import fetch_netsuite_inventory
+from utils.suiteql import fetch_paginated_inventory_data
 
 # Title of the app
 st.title("NetSuite Inventory Balance Data")
@@ -45,7 +45,7 @@ if st.button("Fetch Inventory Data"):
     st.write("Fetching data from NetSuite...")
 
     # Fetch the inventory balance data
-    inventory_df = fetch_netsuite_inventory()
+    inventory_df = fetch_paginated_inventory_data()
 
     if not inventory_df.empty:
         st.success(f"Successfully fetched {len(inventory_df)} records.")
