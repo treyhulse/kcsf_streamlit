@@ -51,14 +51,17 @@ st.title("Sales Dashboard")
 # Display Sales by Rep
 st.subheader("Sales by Rep")
 sales_by_rep_chart = get_sales_by_rep()
-st.pyplot(sales_by_rep_chart)
+if sales_by_rep_chart:
+    st.plotly_chart(sales_by_rep_chart)
 
 # Display Sales by Category
 st.subheader("Sales by Category")
 sales_by_category_chart = get_sales_by_category()
-st.pyplot(sales_by_category_chart)
+if sales_by_category_chart:
+    st.plotly_chart(sales_by_category_chart)
 
 # Display Sales by Month
 st.subheader("Sales by Month")
 sales_by_month_chart = get_sales_by_month()
-st.pyplot(sales_by_month_chart)
+if sales_by_month_chart:
+    st.plotly_chart(sales_by_month_chart)
