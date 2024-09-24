@@ -81,15 +81,18 @@ def fetch_netsuite_inventory():
         invbal.binnumber AS "Bin Number",
         invbal.location AS "Warehouse",
         invbal.inventorynumber AS "Inventory Number",
-        invbal.quantityonhand AS "Quantity On Hand",  -- Correct field name for "On Hand"
-        invbal.quantityavailable AS "Quantity Available"  -- Correct field name for "Available"
+        invbal.quantityonhand AS "Quantity On Hand",
+        invbal.quantityavailable AS "Quantity Available"
     FROM
         inventorybalance invbal
     JOIN
         item ON invbal.item = item.id
     WHERE
-        item.isinactive = 'F'  -- Only active items
+        item.isinactive = 'F'
     ORDER BY
         item.displayname ASC;
     """
+    
+    # Fetch all data using SuiteQL
     return fetch_suiteql_data(suiteql_inventory_query)
+
