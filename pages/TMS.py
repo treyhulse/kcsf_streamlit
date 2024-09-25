@@ -13,46 +13,36 @@ def fetch_raw_data(saved_search_id):
 
 # Function to parse shipAddress into components and convert country name to ISO code
 def parse_ship_address(ship_address):
-    # Split the address into lines
-    address_lines = ship_address.split('\n')
+    # Split the address by new lines
+    address_lines = [line.strip() for line in ship_address.split('\n') if line.strip()]
     
-    # Initialize default fields
-    street_address = city = state = postal_code = country = ""
-
-    # Extract street address, city, state, postal code, and country based on the format
-    if len(address_lines) >= 5:
-        street_address = address_lines[2]
-        city_state_postal = address_lines[3].split()  # Split city, state, and postal code
-        country = address_lines[4]
+    # Assume the format is (with possible extra lines):
+    # Line 1: Name (ignored)
+    # Line 2: Company (ignored)
+    # Line 3+: Street Address (can span multiple lines)
+    # Final Line 1: City, State Postal Code
+    # Final Line 2: Country
+    
+    # Check if we have enough lines to parse the address
+    if len(address_lines) >= 3:
+        # Extract street address (concatenate all lines except the last two)
+        street_address = " ".join(address_lines[:-2])
+        
+        # Extract the last two lines (city, state, postal code and country)
+        city_state_postal = address_lines[-2]
+        country = address_lines[-1]
         
         # Convert full country name to ISO 2-letter code if needed
         if country == "United States":
             country = "US"
         
-        # Extract city, state, and postal code (assumes postal code is always last)
-        city = " ".join(city_state_postal[:-2])
-        state = city_state_postal[-2]
-        postal_code = city_state_postal[-1]
-
-        return {
-            "streetAddress": street_address,
-            "city": city,
-            "state": state,
-            "postalCode": postal_code,
-            "country": country
-        }
-    elif len(address_lines) >= 3:
-        street_address = address_lines[1]
-        city_state_postal = address_lines[2].split()
-        country = address_lines[-1]
-
-        if country == "United States":
-            country = "US"
+        # Extract city, state, and postal code from the second-to-last line
+        # The postal code should be the last item in this line
+        city_state_postal_split = city_state_postal.split()
+        postal_code = city_state_postal_split[-1]
+        state = city_state_postal_split[-2]
+        city = " ".join(city_state_postal_split[:-2])
         
-        city = " ".join(city_state_postal[:-2])
-        state = city_state_postal[-2]
-        postal_code = city_state_postal[-1]
-
         return {
             "streetAddress": street_address,
             "city": city,
@@ -61,7 +51,15 @@ def parse_ship_address(ship_address):
             "country": country
         }
     else:
-        return {}
+        # Handle cases where the address is incomplete or incorrectly formatted
+        return {
+            "streetAddress": "",
+            "city": "",
+            "state": "",
+            "postalCode": "",
+            "country": ""
+        }
+
 
 # Sidebar filters
 st.sidebar.header("Filters")
