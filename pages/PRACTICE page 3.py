@@ -51,7 +51,7 @@ from utils.suiteql import fetch_paginated_suiteql_data, base_url
 import logging
 
 # Set up logging
-logging.basicConfig(level=INFO)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Page title

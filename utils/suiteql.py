@@ -75,6 +75,59 @@ def fetch_suiteql_data(query, max_retries=3):
 
 
 
+def fetch_paginated_suiteql_data(query, base_url):
+    """
+    Fetches paginated data from SuiteQL by following 'next' links.
+    
+    Args:
+        query (str): SuiteQL query.
+        base_url (str): Base URL for NetSuite's SuiteQL API.
+    
+    Returns:
+        pd.DataFrame: A DataFrame containing all paginated results.
+    """
+    # Placeholder OAuth1 authentication or replace with your own method
+    auth = OAuth1(
+        st.secrets["consumer_key"],
+        st.secrets["consumer_secret"],
+        st.secrets["token_key"],
+        st.secrets["token_secret"],
+        realm=st.secrets["realm"],
+        signature_method='HMAC-SHA256'
+    )
+    
+    all_data = []
+    next_url = base_url
+    payload = {"q": query}
+
+    while next_url:
+        try:
+            response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
+            response.raise_for_status()  # Raise error for bad responses
+
+            data = response.json()
+            items = data.get("items", [])
+
+            if not items:
+                break
+
+            all_data.extend(items)
+
+            # Check if there's a next page
+            links = data.get("links", [])
+            next_link = next((link['href'] for link in links if link['rel'] == 'next'), None)
+            next_url = next_link if next_link else None
+
+        except Exception as e:
+            print(f"Error fetching data: {e}")
+            break
+
+    return pd.DataFrame(all_data)
+
+# Base URL for SuiteQL API
+base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+
+
 def fetch_paginated_inventory_data():
     """
     Fetches the entire inventory balance data from NetSuite using SuiteQL in paginated requests.
