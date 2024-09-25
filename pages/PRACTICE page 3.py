@@ -49,6 +49,7 @@ import logging
 from utils.restlet import fetch_restlet_data
 from utils.suiteql import fetch_paginated_suiteql_data, base_url
 
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,108 +62,83 @@ st.title("MRP Dashboard")
 def fetch_raw_data(saved_search_id):
     return fetch_restlet_data(saved_search_id)
 
-# Tab structure for switching between different views
-tab1, tab2, tab3 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines", "Supply and Demand Visibility"])
+# SuiteQL query function to fetch inventory data
+@st.cache_data(ttl=900)
+def fetch_inventory_data(suiteql_query, base_url):
+    return fetch_paginated_suiteql_data(suiteql_query, base_url)
 
-# First tab (Inventory Data)
-with tab1:
-    suiteql_query = """
-    SELECT
-        invbal.item AS "Item ID",
-        item.displayname AS "Item",
-        invbal.location AS "Warehouse",
-        invbal.inventorynumber AS "Inventory Number",
-        invbal.quantityonhand AS "Quantity On Hand",
-        invbal.quantityavailable AS "Quantity Available"
-    FROM
-        inventorybalance invbal
-    JOIN
-        item ON invbal.item = item.id
-    WHERE
-        item.isinactive = 'F'
-    ORDER BY
-        item.displayname ASC;
-    """
-    
-    # Fetch the inventory data
-    inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
-    
-    if not inventory_df.empty:
-        st.success(f"Successfully fetched {len(inventory_df)} records.")
-        st.dataframe(inventory_df)
-    else:
-        st.error("No data available or an error occurred during data fetching.")
+# Define the SuiteQL query for the inventory data
+suiteql_query = """
+SELECT
+    invbal.item AS "Item ID",
+    item.displayname AS "Item",
+    invbal.location AS "Warehouse",
+    invbal.quantityonhand AS "Quantity On Hand",
+    invbal.quantityavailable AS "Quantity Available"
+FROM
+    inventorybalance invbal
+JOIN
+    item ON invbal.item = item.id
+WHERE
+    item.isinactive = 'F'
+ORDER BY
+    item.displayname ASC;
+"""
 
-# Second tab (Sales and Purchase Order Lines)
-with tab2:
-    customsearch5141_data = fetch_raw_data("customsearch5141")
-    customsearch5142_data = fetch_raw_data("customsearch5142")
+# Base URL for SuiteQL API
+base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-    col1, col2 = st.columns(2)
+# Fetch the inventory data from SuiteQL query
+inventory_df = fetch_inventory_data(suiteql_query, base_url)
 
-    with col1:
-        st.write("Sales Order Lines")
-        if not customsearch5141_data.empty:
-            st.dataframe(customsearch5141_data)
-        else:
-            st.write("No data available for customsearch5141.")
+# Fetch sales order and purchase order data using saved search IDs
+sales_orders_df = fetch_raw_data("customsearch5141")  # Example saved search for sales orders
+purchase_orders_df = fetch_raw_data("customsearch5142")  # Example saved search for purchase orders
 
-    with col2:
-        st.write("Purchase Order Lines")
-        if not customsearch5142_data.empty:
-            st.dataframe(customsearch5142_data)
-        else:
-            st.write("No data available for Purchase Order Lines.")
+# Ensure column consistency by renaming 'item id' in the inventory table to match 'Item' in sales/purchase orders
+inventory_df.rename(columns={'Item ID': 'Item'}, inplace=True)
 
-# Third tab (Supply and Demand Visibility)
-with tab3:
-    # Ensure common keys for merging: 'item' for sales and purchase orders and 'item id' for inventory
-    # First, rename columns for clarity and consistency
-    inventory_df.rename(columns={'item id': 'Item'}, inplace=True)
-    customsearch5141_data.rename(columns={'item': 'Item'}, inplace=True)
-    customsearch5142_data.rename(columns={'item': 'Item'}, inplace=True)
+# Merge the data on 'Item' and 'Warehouse'
+merged_df = pd.merge(inventory_df, sales_orders_df, on=['Item', 'Warehouse'], how='outer')
+merged_df = pd.merge(merged_df, purchase_orders_df, on=['Item', 'Warehouse'], how='outer')
 
-    # Merge the Inventory, Sales Orders, and Purchase Orders DataFrames based on 'Item'
-    supply_demand_df = pd.merge(inventory_df, customsearch5141_data, on='Item', how='outer')
-    supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
+# Group by 'Item' and 'Warehouse' and sum relevant columns
+supply_demand_df = merged_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
+    'Quantity Available': 'sum',
+    'Quantity On Hand': 'sum',
+    'Ordered_x': 'sum',  # Sales Ordered
+    'Committed': 'sum',
+    'Fulfilled_x': 'sum',  # Sales Fulfilled
+    'Back Ordered': 'sum',
+    'Ordered_y': 'sum',  # Purchase Ordered
+    'Fulfilled_y': 'sum',  # Purchase Fulfilled
+    'Not Received': 'sum'
+})
 
-    # Combine the correct Warehouse column: use 'warehouse' or fallback to 'Warehouse_x' or 'Warehouse_y'
-    supply_demand_df['Warehouse'] = supply_demand_df['warehouse'].combine_first(supply_demand_df['Warehouse_x']).combine_first(supply_demand_df['Warehouse_y'])
+# Rename columns for clarity
+supply_demand_df.columns = ['Item', 'Warehouse', 'Available Quantity', 'On Hand Quantity',
+                            'Sales Ordered', 'Sales Committed', 'Sales Fulfilled',
+                            'Sales Back Ordered', 'Purchase Ordered', 'Purchase Fulfilled',
+                            'Purchase Not Received']
 
-    # Drop unnecessary columns
-    supply_demand_df.drop(columns=['warehouse', 'Warehouse_x', 'Warehouse_y'], inplace=True)
+# Fill NaN values with 0
+supply_demand_df.fillna(0, inplace=True)
 
-    # Group by 'Item' and 'Warehouse' and sum the quantities
-    supply_demand_df = supply_demand_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
-        'Available Quantity': 'sum',
-        'On Hand Quantity': 'sum',
-        'Sales Ordered': 'sum',
-        'Sales Committed': 'sum',
-        'Sales Fulfilled': 'sum',
-        'Sales Back Ordered': 'sum',
-        'Purchase Ordered': 'sum',
-        'Purchase Fulfilled': 'sum',
-        'Purchase Not Received': 'sum'
-    })
+# Add Net Inventory column
+supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
+                                    (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
 
-    # Add Net Inventory column
-    supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
-                                        (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
+# Add a filter for Warehouse
+warehouse_options = supply_demand_df['Warehouse'].unique()
+selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
 
-    # Fill NaN values with 0 for better visibility
-    supply_demand_df.fillna(0, inplace=True)
+# Filter by the selected warehouse
+filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
 
-    # Add a filter for Warehouse
-    warehouse_options = supply_demand_df['Warehouse'].unique()
-    selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
+# Display the filtered DataFrame
+st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
+st.dataframe(filtered_df)
 
-    # Filter by selected warehouse
-    filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
-
-    # Display the filtered DataFrame in Streamlit
-    st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
-    st.dataframe(filtered_df)
-
-    # Option to download the data as CSV
-    csv = filtered_df.to_csv(index=False)
-    st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
+# Option to download the data as CSV
+csv = filtered_df.to_csv(index=False)
+st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
