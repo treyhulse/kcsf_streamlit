@@ -34,65 +34,102 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import streamlit as st
-from kpi.sales_by_rep import get_sales_by_rep, fetch_restlet_data as fetch_rep_data
-from kpi.sales_by_category import get_sales_by_category, fetch_restlet_data as fetch_category_data
-from kpi.sales_by_month import get_sales_by_month, fetch_restlet_data as fetch_month_data
 import pandas as pd
+from utils.restlet import fetch_restlet_data
+import plotly.express as px
+import streamlit as st
 
-def format_currency(df, column_name):
-    # Ensure the column is numeric, and fill any NaN values with 0
-    df[column_name] = pd.to_numeric(df[column_name], errors='coerce').fillna(0)
+# KPI: Sales by Rep
+@st.cache_data(ttl=3600)  # Cache the data for 1 hour (TTL)
+def get_sales_by_rep():
+    df = fetch_restlet_data('customsearch4963')
+
+    # Ensure 'Billed Amount' is numeric by removing any special characters and converting it to float
+    df['Billed Amount'] = pd.to_numeric(df['Billed Amount'], errors='coerce')
+
+    if df.empty:
+        return None
+
+    # Group by 'Sales Rep' and sum the 'Billed Amount'
+    df_grouped = df[['Sales Rep', 'Billed Amount']].groupby('Sales Rep').sum().reset_index()
+
+    # Sort by 'Billed Amount' and limit to top 10 sales reps
+    df_grouped = df_grouped.sort_values(by='Billed Amount', ascending=False).head(10)
+
+    # Create a bar chart using Plotly
+    fig = px.bar(df_grouped, x='Sales Rep', y='Billed Amount', title="Top 10 Sales by Sales Rep")
+    fig.update_layout(xaxis_title="Sales Rep", yaxis_title="Billed Amount")
     
-    # Apply currency formatting
-    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
-    
-    return df
+    return fig, df_grouped
 
+# Calculate the KPIs
+def calculate_kpis(df_grouped):
+    total_revenue = df_grouped['Billed Amount'].sum()
+    total_orders = len(df_grouped)  # Assuming 1 row per order, or use another column
+    average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
+    top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
 
-st.title("Sales Dashboard")
+    return total_revenue, total_orders, average_order_volume, top_sales_rep
 
-# Create three columns for the visualizations
-col1, col2, col3 = st.columns(3)
+# Load data and calculate KPIs
+chart, df_grouped = get_sales_by_rep()
+total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
 
-# Column 1: Sales by Rep
-with col1:
-    st.markdown("### Sales by Rep")
-    sales_by_rep_chart = get_sales_by_rep()
-    if sales_by_rep_chart:
-        st.plotly_chart(sales_by_rep_chart, use_container_width=True)
-    
-    # Show the DataFrame for Sales by Rep when expanded
-    with st.expander("Drill Down - Sales by Rep"):
-        df_sales_by_rep = fetch_rep_data('customsearch4963')
-        if 'Billed Amount' in df_sales_by_rep.columns:
-            df_sales_by_rep = format_currency(df_sales_by_rep, 'Billed Amount')
-        st.dataframe(df_sales_by_rep)
+# Placeholder percentage change values for demo purposes
+percentage_change_orders = 5.0  # Change values as needed
+percentage_change_sales = 7.5
+percentage_change_average = 3.2
+percentage_change_needed = 4.0
 
-# Column 2: Sales by Category
-with col2:
-    st.markdown("### Sales by Category")
-    sales_by_category_chart = get_sales_by_category()
-    if sales_by_category_chart:
-        st.plotly_chart(sales_by_category_chart, use_container_width=True)
-    
-    # Show the DataFrame for Sales by Category when expanded
-    with st.expander("Drill Down - Sales by Category"):
-        df_sales_by_category = fetch_category_data('customsearch5145')
-        if 'Billed Amount' in df_sales_by_category.columns:
-            df_sales_by_category = format_currency(df_sales_by_category, 'Billed Amount')
-        st.dataframe(df_sales_by_category)
+# Display dynamic metric boxes with arrows and sub-numbers
+metrics = [
+    {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+    {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+    {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+    {"label": "Top Sales Rep", "value": top_sales_rep, "change": "N/A", "positive": True},  # No percentage change for this one
+]
 
-# Column 3: Sales by Month
-with col3:
-    st.markdown("### Sales by Month")
-    sales_by_month_chart = get_sales_by_month()
-    if sales_by_month_chart:
-        st.plotly_chart(sales_by_month_chart, use_container_width=True)
-    
-    # Show the DataFrame for Sales by Month when expanded
-    with st.expander("Drill Down - Sales by Month"):
-        df_sales_by_month = fetch_month_data('customsearch5146')
-        if 'Billed Amount' in df_sales_by_month.columns:
-            df_sales_by_month = format_currency(df_sales_by_month, 'Billed Amount')
-        st.dataframe(df_sales_by_month)
+# Styling for the boxes
+st.markdown("""
+<style>
+.metrics-box {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+.metric-title {
+    margin: 0;
+    font-size: 20px;
+}
+.metric-value {
+    margin: 0;
+    font-size: 28px;
+    font-weight: bold;
+}
+.metric-change {
+    margin: 0;
+    font-size: 14px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# First row: metrics
+col1, col2, col3, col4 = st.columns(4)
+
+for col, metric in zip([col1, col2, col3, col4], metrics):
+    arrow = "↑" if metric["positive"] else "↓"
+    color = "green" if metric["positive"] else "red"
+
+    with col:
+        st.markdown(f"""
+        <div class="metrics-box">
+            <h3 class="metric-title">{metric['label']}</h3>
+            <p class="metric-value">{metric['value']}</p>
+            <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# Display the chart for Sales by Rep
+st.plotly_chart(chart, use_container_width=True)
