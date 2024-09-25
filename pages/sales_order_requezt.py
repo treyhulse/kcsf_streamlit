@@ -171,13 +171,17 @@ if sales_order_data:
                     if total_net_charge is not None and isinstance(total_net_charge, (int, float)):
                         valid_rate_options.append(option)
 
-            # Now sort the valid rate options by price (totalNetCharge)
+            # Sort the valid rate options by price (totalNetCharge)
             if valid_rate_options:
                 sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
-                st.write(f"Found {len(sorted_rate_options)} shipping options")
+                
+                # Limit to the top 3–4 options
+                top_rate_options = sorted_rate_options[:4]  # Adjust the number here (4 for top 4)
+
+                st.write(f"Found {len(top_rate_options)} shipping options")
 
                 # Display each shipping option in a card
-                for option in sorted_rate_options:
+                for option in top_rate_options:
                     service_type = option.get('serviceType', 'N/A')
                     delivery_time = option.get('deliveryTimestamp', 'N/A')
                     net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
