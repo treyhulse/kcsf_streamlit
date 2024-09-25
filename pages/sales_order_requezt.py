@@ -1,17 +1,73 @@
 import streamlit as st
 from utils.rest import make_netsuite_rest_api_request
 
-st.title("Fetch Sales Order from NetSuite API")
+# Title
+st.title("Sales Order Summary")
 
-# Define the Sales Order internal ID
+# Sales Order Internal ID
 sales_order_id = 9318465
 
-# Define the endpoint for the Sales Order record type and ID
+# API Endpoint for fetching the sales order
 endpoint = f"salesOrder/{sales_order_id}"
 
-# Make the GET request to fetch the Sales Order
+# Retrieve sales order data from the API
 sales_order_data = make_netsuite_rest_api_request(endpoint)
 
-# Display the Sales Order data
+# Check if data is retrieved successfully
 if sales_order_data:
+    # Trimmed down data
+    trimmed_data = {
+        "id": sales_order_data.get("id"),
+        "tranId": sales_order_data.get("tranId"),
+        "orderStatus": sales_order_data.get("orderStatus", {}).get("refName"),
+        "billAddress": sales_order_data.get("billAddress"),
+        "shipAddress": sales_order_data.get("shipAddress"),
+        "subtotal": sales_order_data.get("subtotal"),
+        "total": sales_order_data.get("total"),
+        "createdDate": sales_order_data.get("createdDate"),
+        "salesRep": sales_order_data.get("salesRep", {}).get("refName"),
+        "shippingMethod": sales_order_data.get("shipMethod", {}).get("refName"),
+        "currency": sales_order_data.get("currency", {}).get("refName")
+    }
+    
+    # Create a "card-like" UI for displaying the Sales Order details
+    with st.expander(f"Sales Order #{trimmed_data['tranId']} (ID: {trimmed_data['id']})"):
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### Order Information")
+            st.write(f"**Status**: {trimmed_data['orderStatus']}")
+            st.write(f"**Order ID**: {trimmed_data['id']}")
+            st.write(f"**Transaction ID**: {trimmed_data['tranId']}")
+            st.write(f"**Created Date**: {trimmed_data['createdDate']}")
+        
+        with col2:
+            st.markdown("### Financial Information")
+            st.write(f"**Subtotal**: ${trimmed_data['subtotal']}")
+            st.write(f"**Total**: ${trimmed_data['total']}")
+            st.write(f"**Currency**: {trimmed_data['currency']}")
+    
+        st.markdown("### Addresses")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Billing Address")
+            st.write(trimmed_data['billAddress'])
+            
+        with col2:
+            st.markdown("#### Shipping Address")
+            st.write(trimmed_data['shipAddress'])
+    
+        st.markdown("### Other Information")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write(f"**Sales Rep**: {trimmed_data['salesRep']}")
+        
+        with col2:
+            st.write(f"**Shipping Method**: {trimmed_data['shippingMethod']}")
+
+# Optional: View full raw response if needed
+with st.expander("View Full Response"):
     st.json(sales_order_data)
