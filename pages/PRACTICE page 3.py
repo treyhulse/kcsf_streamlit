@@ -71,7 +71,6 @@ with tab1:
     SELECT
         invbal.item AS "Item ID",
         item.displayname AS "Item",
-        invbal.binnumber AS "Bin Number",
         invbal.location AS "Warehouse",
         invbal.inventorynumber AS "Inventory Number",
         invbal.quantityonhand AS "Quantity On Hand",
@@ -127,9 +126,6 @@ with tab3:
     # Merge the Inventory, Sales Orders, and Purchase Orders DataFrames based on 'Item'
     supply_demand_df = pd.merge(inventory_df, customsearch5141_data, on='Item', how='outer')
     supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
-
-    # Remove 'Bin Number' and group by 'Item' and 'Warehouse'
-    supply_demand_df = supply_demand_df.drop(columns=['Bin Number'])
     
     # Group by 'Item' and 'Warehouse' and sum the quantities
     supply_demand_df = supply_demand_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
