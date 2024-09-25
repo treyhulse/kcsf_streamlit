@@ -1,16 +1,17 @@
 import streamlit as st
-from utils.rest import make_netsuite_request
+from utils.rest import make_netsuite_rest_api_request
 
-# Define the sales order internal ID
+st.title("Fetch Sales Order from NetSuite API")
+
+# Define the Sales Order internal ID
 sales_order_id = 9318465
 
-# Define the NetSuite RESTlet URL
-url = f"{st.secrets['netsuite_base_url']}/app/site/hosting/restlet.nl?script=YOUR_SCRIPT_ID&deploy=YOUR_DEPLOY_ID&salesOrderId={sales_order_id}"
+# Define the endpoint for the Sales Order record type and ID
+endpoint = f"salesOrder/{sales_order_id}"
 
-# Make the GET request
-st.title("Sales Order Details")
-sales_order_data = make_netsuite_request(url)
+# Make the GET request to fetch the Sales Order
+sales_order_data = make_netsuite_rest_api_request(endpoint)
 
-# Display the sales order data
+# Display the Sales Order data
 if sales_order_data:
     st.json(sales_order_data)
