@@ -57,29 +57,20 @@ st.title("Sales Order Summary")
 # Fetch sales order data from saved search
 sales_order_data_raw = fetch_raw_data("customsearch5122")
 
-# Show the data in a table with a selectbox to choose a sales order based on Sales Order ID and Customer name
+# Show the data in a table with a selectbox to choose a sales order based on ID
 if not sales_order_data_raw.empty:
     st.write("Sales Orders List")
     
-    # Create a combined column to display both Sales Order and Customer in the dropdown
-    sales_order_data_raw['sales_order_and_customer'] = sales_order_data_raw.apply(
-        lambda row: f"Order: {row['tranId']} - Customer: {row['entity']}", axis=1)
-
-    # Allow user to select a sales order by seeing both Sales Order and Customer info
-    selected_order_info = st.selectbox(
-        "Select a Sales Order by ID and Customer",
-        sales_order_data_raw['sales_order_and_customer']
+    # Allow user to select a sales order by ID (assuming 'id' is in the response)
+    selected_id = st.selectbox(
+        "Select a Sales Order by ID",
+        sales_order_data_raw['id'].unique()  # Assuming 'id' is a column in the data
     )
-
-    # Find the selected sales order row
-    selected_row = sales_order_data_raw[sales_order_data_raw['sales_order_and_customer'] == selected_order_info].iloc[0]
-    selected_id = selected_row['id']  # Extract the actual Sales Order ID for further processing
-
+    
     # Display the selected sales order row for reference
     st.write(f"Selected Sales Order ID: {selected_id}")
 else:
     st.error("No sales orders available.")
-
 
 # Step 3: Fetch and display detailed information for the selected sales order
 if selected_id:
