@@ -198,7 +198,7 @@ if sales_order_data:
                 sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
 
                 # Limit to the top options
-                top_rate_options = sorted_rate_options[:6]  # Adjust the number here
+                top_rate_options = sorted_rate_options[:12]  # Adjust the number here
 
                 st.write(f"Found {len(top_rate_options)} shipping options")
 
