@@ -149,6 +149,7 @@ with tab1:
     total_orders = len(merged_df)
     tasked_orders_count = merged_df['Task ID'].notna().sum()
     untasked_orders_count = merged_df['Task ID'].isna().sum()
+    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
     # Styling for the metrics boxes (matching the previous example)
     st.markdown("""
@@ -169,37 +170,30 @@ with tab1:
         font-size: 28px;
         font-weight: bold;
     }
-    .metric-change {
-        margin: 0;
-        font-size: 14px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-    # Display dynamic metric boxes with arrows and sub-numbers
+    # Display dynamic metric boxes
     metrics = [
         {"label": "Total Open Orders", "value": total_orders},
         {"label": "Tasked Orders", "value": tasked_orders_count},
         {"label": "Untasked Orders", "value": untasked_orders_count},
-        {"label": "Tasked Percentage", "value": f"{tasked_orders_count / total_orders:.2%}"}
+        {"label": "Successful Task Percentage", "value": f"{task_percentage:.2f}%"},
     ]
 
     # Display metrics in columns
-    col1, col2, col3 = st.columns(3)
-    for col, metric in zip([col1, col2, col3], metrics):
-        arrow = "↑" if metric["positive"] else "↓"
-        color = "green" if metric["positive"] else "red"
-
+    col1, col2, col3, col4 = st.columns(4)
+    for col, metric in zip([col1, col2, col3, col4], metrics):
         with col:
             st.markdown(f"""
             <div class="metrics-box">
                 <h3 class="metric-title">{metric['label']}</h3>
                 <p class="metric-value">{metric['value']}</p>
-                <p class="metric-change" style="color:{color};">{arrow} {metric['change']}</p>
             </div>
             """, unsafe_allow_html=True)
 
-    st.write("")  # Visual separation
+    # Add visual separation
+    st.write("")
 
     # Display charts using Plotly
     if not merged_df.empty:
