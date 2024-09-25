@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import make_netsuite_request
+from utils.rest import make_netsuite_request
 
 # Define the sales order internal ID
 sales_order_id = 9318465
