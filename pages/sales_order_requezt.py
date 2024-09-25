@@ -11,7 +11,7 @@ def fetch_raw_data(saved_search_id):
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Function to parse shipAddress into components
+# Function to parse shipAddress into components and convert country name to ISO code
 def parse_ship_address(ship_address):
     # Split the address by new lines
     address_lines = ship_address.split('\n')
@@ -28,6 +28,10 @@ def parse_ship_address(ship_address):
         city_state_postal = address_lines[3].split()  # Split city, state, and postal code
         country = address_lines[4]
         
+        # Convert full country name to ISO 2-letter code if needed
+        if country == "United States":
+            country = "US"
+        
         # Extract city, state, and postal code (assumes postal code is always last)
         city = " ".join(city_state_postal[:-2])
         state = city_state_postal[-2]
@@ -42,6 +46,7 @@ def parse_ship_address(ship_address):
         }
     else:
         return {}
+
 
 # Sidebar filters
 st.sidebar.header("Filters")
