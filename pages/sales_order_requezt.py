@@ -166,21 +166,22 @@ if sales_order_data:
                 if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0:
                     shipment_details = option['ratedShipmentDetails'][0]
                     
-                    # Check if 'totalNetCharge' and 'amount' exist
-                    if 'totalNetCharge' in shipment_details and 'amount' in shipment_details['totalNetCharge']:
+                    # Check if 'totalNetCharge' exists and is a valid number
+                    total_net_charge = shipment_details.get('totalNetCharge')
+                    if total_net_charge is not None and isinstance(total_net_charge, (int, float)):
                         valid_rate_options.append(option)
 
-            # Now sort the valid rate options by price
+            # Now sort the valid rate options by price (totalNetCharge)
             if valid_rate_options:
-                sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge']['amount'])
+                sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
                 st.write(f"Found {len(sorted_rate_options)} shipping options")
 
                 # Display each shipping option in a card
                 for option in sorted_rate_options:
-                    service_type = option['serviceType']
+                    service_type = option.get('serviceType', 'N/A')
                     delivery_time = option.get('deliveryTimestamp', 'N/A')
-                    net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']['amount']
-                    currency = option['ratedShipmentDetails'][0]['totalNetCharge']['currency']
+                    net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
+                    currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
 
                     # Display as card-like UI
                     with st.expander(f"{service_type}: ${net_charge} {currency}"):
