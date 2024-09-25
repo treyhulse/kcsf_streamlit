@@ -136,7 +136,12 @@ with tab3:
     supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
 
     # Check columns after merging to verify correct columns are present
-    st.write("Columns after merging:", supply_demand_df.columns)
+    # After merging the data
+    st.write("Columns in the merged DataFrame:", supply_demand_df.columns)
+
+    # Display a few rows of the DataFrame to check the structure
+    st.write("First few rows of merged data:", supply_demand_df.head())
+
 
     # Ensure that 'Warehouse' and 'Item' exist in the merged DataFrame before grouping
     if 'Item' in supply_demand_df.columns and 'Warehouse' in supply_demand_df.columns:
