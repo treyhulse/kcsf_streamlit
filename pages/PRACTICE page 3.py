@@ -149,7 +149,6 @@ with tab1:
     total_orders = len(merged_df)
     tasked_orders_count = merged_df['Task ID'].notna().sum()
     untasked_orders_count = merged_df['Task ID'].isna().sum()
-    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
     # Styling for the metrics boxes (matching the previous example)
     st.markdown("""
@@ -182,12 +181,11 @@ with tab1:
         {"label": "Total Open Orders", "value": total_orders, "change": "", "positive": True},
         {"label": "Tasked Orders", "value": tasked_orders_count, "change": "", "positive": tasked_orders_count > 0},
         {"label": "Untasked Orders", "value": untasked_orders_count, "change": "", "positive": untasked_orders_count > 0},
-        {"label": "Successful Task Percentage", "value": f"{task_percentage:.2f}%", "change": "", "positive": task_percentage > 0},
     ]
 
     # Display metrics in columns
-    col1, col2, col3, col4 = st.columns(4)
-    for col, metric in zip([col1, col2, col3, col4], metrics):
+    col1, col2, col3 = st.columns(3)
+    for col, metric in zip([col1, col2, col3], metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
 
@@ -199,6 +197,8 @@ with tab1:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']}</p>
             </div>
             """, unsafe_allow_html=True)
+
+    st.write("")  # Visual separation
 
     # Display charts using Plotly
     if not merged_df.empty:
