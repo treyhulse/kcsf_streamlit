@@ -40,10 +40,15 @@ from kpi.sales_by_category import get_sales_by_category, fetch_restlet_data as f
 from kpi.sales_by_month import get_sales_by_month, fetch_restlet_data as fetch_month_data
 import pandas as pd
 
-# Helper function to format currency (without modifying the underlying data type)
 def format_currency(df, column_name):
-    df['Billed Amount Formatted'] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
+    # Ensure the column is numeric, and fill any NaN values with 0
+    df[column_name] = pd.to_numeric(df[column_name], errors='coerce').fillna(0)
+    
+    # Apply currency formatting
+    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
+    
     return df
+
 
 st.title("Sales Dashboard")
 
@@ -61,12 +66,8 @@ with col1:
     with st.expander("Drill Down - Sales by Rep"):
         df_sales_by_rep = fetch_rep_data('customsearch4963')
         if 'Billed Amount' in df_sales_by_rep.columns:
-            # Sort the DataFrame by 'Billed Amount' and show only the top 10
-            df_sales_by_rep = df_sales_by_rep.sort_values('Billed Amount', ascending=False).head(10)
-            # Keep the numeric column for sorting, but add a formatted column for display
             df_sales_by_rep = format_currency(df_sales_by_rep, 'Billed Amount')
-            # Show the DataFrame with the formatted values
-            st.dataframe(df_sales_by_rep[['Grouped Rep', 'Sales Rep', 'Billed Amount Formatted']])
+        st.dataframe(df_sales_by_rep)
 
 # Column 2: Sales by Category
 with col2:
@@ -80,7 +81,7 @@ with col2:
         df_sales_by_category = fetch_category_data('customsearch5145')
         if 'Billed Amount' in df_sales_by_category.columns:
             df_sales_by_category = format_currency(df_sales_by_category, 'Billed Amount')
-        st.dataframe(df_sales_by_category[['Category', 'Billed Amount Formatted']])
+        st.dataframe(df_sales_by_category)
 
 # Column 3: Sales by Month
 with col3:
@@ -94,4 +95,4 @@ with col3:
         df_sales_by_month = fetch_month_data('customsearch5146')
         if 'Billed Amount' in df_sales_by_month.columns:
             df_sales_by_month = format_currency(df_sales_by_month, 'Billed Amount')
-        st.dataframe(df_sales_by_month[['Period', 'Billed Amount Formatted']])
+        st.dataframe(df_sales_by_month)
