@@ -66,7 +66,6 @@ tab1, tab2, tab3 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines", "Sup
 
 # First tab (Inventory Data)
 with tab1:
-    # Inventory fetching logic
     suiteql_query = """
     SELECT
         invbal.item AS "Item ID",
@@ -118,12 +117,18 @@ with tab2:
 
 # Third tab (Supply and Demand Visibility)
 with tab3:
-    # Combine the Inventory, Sales Orders, and Purchase Orders DataFrames
-    inventory_sales_df = pd.merge(inventory_df, customsearch5141_data, left_on='item id', right_on='Item', how='outer')
-    supply_demand_df = pd.merge(inventory_sales_df, customsearch5142_data, left_on='item id', right_on='Item', how='outer')
+    # Ensure common keys for merging: 'item' for sales and purchase orders and 'item id' for inventory
+    # First, rename columns for clarity and consistency
+    inventory_df.rename(columns={'item id': 'Item'}, inplace=True)
+    customsearch5141_data.rename(columns={'item': 'Item'}, inplace=True)
+    customsearch5142_data.rename(columns={'item': 'Item'}, inplace=True)
+
+    # Merge the Inventory, Sales Orders, and Purchase Orders DataFrames based on 'Item'
+    supply_demand_df = pd.merge(inventory_df, customsearch5141_data, on='Item', how='outer')
+    supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
 
     # Simplify the resulting DataFrame and add Net Inventory
-    supply_demand_df = supply_demand_df[['item', 'bin number', 'warehouse', 'quantity available', 'quantity on hand',
+    supply_demand_df = supply_demand_df[['Item', 'bin number', 'warehouse', 'quantity available', 'quantity on hand',
                                          'Ordered_x', 'Committed', 'Fulfilled_x', 'Back Ordered',
                                          'Ordered_y', 'Fulfilled_y', 'Not Received']]
 
