@@ -8,6 +8,12 @@ def create_fedex_rate_request(trimmed_data):
         "accountNumber": {
             "value": st.secrets["fedex_account_number"]
         },
+        "rateRequestControlParameters": {
+            "returnTransitTimes": False,
+            "servicesNeededOnRateFailure": True,
+            "variableOptions": "FREIGHT_GUARANTEE",
+            "rateSortOrder": "SERVICENAMETRADITIONAL"
+        },
         "requestedShipment": {
             "shipper": {
                 "address": {
@@ -15,36 +21,42 @@ def create_fedex_rate_request(trimmed_data):
                     "city": "Memphis",
                     "stateOrProvinceCode": "TN",
                     "postalCode": "38116",
-                    "countryCode": "US"
+                    "countryCode": "US",
+                    "residential": False
                 }
             },
             "recipient": {
                 "address": {
-                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Use proper address
+                    "streetLines": ["1600 Pennsylvania Avenue NW"],
                     "city": trimmed_data.get("shipCity", "Washington"),
                     "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),
                     "postalCode": trimmed_data.get("shipPostalCode", "20500"),
-                    "countryCode": trimmed_data.get("shipCountry", "US")
+                    "countryCode": trimmed_data.get("shipCountry", "US"),
+                    "residential": False
                 }
             },
+            "serviceType": "STANDARD_OVERNIGHT",  # Adjust based on your need
+            "preferredCurrency": "USD",  # Assuming USD
+            "rateRequestType": ["ACCOUNT", "LIST"],  # Both account and list rates
+            "shipDateStamp": "2024-09-25",  # Ensure this is dynamic based on the current date or future date
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
-            "shippingChargesPayment": {
-                "paymentType": "SENDER"
-            },
-            # Ensure 'rateRequestType' is a string value and not an array
-            "rateRequestTypes": ["ACCOUNT"],  # Updated this to ensure it is correct
             "requestedPackageLineItems": [
                 {
+                    "subPackagingType": "BAG",  # Assuming a package type
                     "groupPackageCount": 1,
                     "weight": {
                         "units": "LB",
-                        "value": trimmed_data.get("packageWeight", 50)
+                        "value": trimmed_data.get("packageWeight", 50)  # Default weight if missing
                     },
                     "dimensions": {
                         "length": 20,
                         "width": 20,
                         "height": 20,
                         "units": "IN"
+                    },
+                    "declaredValue": {
+                        "amount": "100",  # Default declared value if required
+                        "currency": "USD"
                     }
                 }
             ]
