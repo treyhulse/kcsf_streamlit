@@ -131,5 +131,8 @@ for col, metric in zip([col1, col2, col3, col4], metrics):
         </div>
         """, unsafe_allow_html=True)
 
+st.write("")
+st.write("")
+
 # Display the chart for Sales by Rep
 st.plotly_chart(chart, use_container_width=True)
