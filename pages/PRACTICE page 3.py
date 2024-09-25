@@ -48,7 +48,6 @@ from requests_oauthlib import OAuth1
 import logging
 from utils.restlet import fetch_restlet_data
 from utils.suiteql import fetch_paginated_suiteql_data, base_url
-import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -67,8 +66,7 @@ tab1, tab2, tab3 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines", "Sup
 
 # First tab (Inventory Data)
 with tab1:
-    # Inventory fetching logic (assuming it's fetching from your NetSuite API as in the original code)
-    # Assuming you already have the SuiteQL queries and authentication setup.
+    # Inventory fetching logic
     suiteql_query = """
     SELECT
         invbal.item AS "Item ID",
@@ -87,7 +85,7 @@ with tab1:
     ORDER BY
         item.displayname ASC;
     """
-
+    
     # Fetch the inventory data
     inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
     
@@ -134,12 +132,16 @@ with tab3:
                                 'Sales Ordered', 'Sales Committed', 'Sales Fulfilled', 'Sales Back Ordered',
                                 'Purchase Ordered', 'Purchase Fulfilled', 'Purchase Not Received']
 
-    # Add Net Inventory column
-    supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
-                                        (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
+    # Convert the relevant columns to numeric types to avoid type errors
+    numeric_cols = ['Available Quantity', 'On Hand Quantity', 'Sales Ordered', 'Sales Back Ordered', 'Purchase Ordered']
+    supply_demand_df[numeric_cols] = supply_demand_df[numeric_cols].apply(pd.to_numeric, errors='coerce')
 
     # Fill NaN values with 0 for better visibility
     supply_demand_df.fillna(0, inplace=True)
+
+    # Add Net Inventory column
+    supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
+                                        (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
 
     # Display the DataFrame in Streamlit
     st.write("Supply and Demand Visibility with Net Inventory")
