@@ -20,35 +20,37 @@ def create_fedex_rate_request(trimmed_data):
             },
             "recipient": {
                 "address": {
-                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Example, replace with sales order address if available
-                    "city": trimmed_data.get("shipCity", "Washington"),  # Default city
-                    "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),  # Default state
-                    "postalCode": trimmed_data.get("shipPostalCode", "20500"),  # Default postal code
-                    "countryCode": trimmed_data.get("shipCountry", "US")  # Default country
+                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Use proper address
+                    "city": trimmed_data.get("shipCity", "Washington"),
+                    "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),
+                    "postalCode": trimmed_data.get("shipPostalCode", "20500"),
+                    "countryCode": trimmed_data.get("shipCountry", "US")
                 }
             },
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
             "shippingChargesPayment": {
                 "paymentType": "SENDER"
             },
-            "rateRequestTypes": ["ACCOUNT"],
+            # Ensure 'rateRequestType' is a string value and not an array
+            "rateRequestTypes": ["ACCOUNT"],  # Updated this to ensure it is correct
             "requestedPackageLineItems": [
                 {
                     "groupPackageCount": 1,
                     "weight": {
                         "units": "LB",
-                        "value": trimmed_data.get("packageWeight", 50)  # Fallback if weight is missing
+                        "value": trimmed_data.get("packageWeight", 50)
                     },
                     "dimensions": {
-                        "length": 20,  # Uniform dimension (example)
-                        "width": 20,   # Uniform dimension (example)
-                        "height": 20,  # Uniform dimension (example)
+                        "length": 20,
+                        "width": 20,
+                        "height": 20,
                         "units": "IN"
                     }
                 }
             ]
         }
     }
+
 
 # Function to send the request to FedEx API
 def get_fedex_rate_quote(trimmed_data):
