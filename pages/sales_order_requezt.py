@@ -155,24 +155,39 @@ if sales_order_data:
     # Button to fetch FedEx rate quote
     if st.button("Get FedEx Rate Quote"):
         fedex_quote = get_fedex_rate_quote(trimmed_data)
+        
         if "error" not in fedex_quote:
-            # Sort rate options by price
             rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
-            sorted_rate_options = sorted(rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge']['amount'])
+            
+            # Ensure that rate options and necessary fields exist before sorting
+            valid_rate_options = []
+            for option in rate_options:
+                # Check if 'ratedShipmentDetails' exists and is non-empty
+                if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0:
+                    shipment_details = option['ratedShipmentDetails'][0]
+                    
+                    # Check if 'totalNetCharge' and 'amount' exist
+                    if 'totalNetCharge' in shipment_details and 'amount' in shipment_details['totalNetCharge']:
+                        valid_rate_options.append(option)
 
-            st.write(f"Found {len(sorted_rate_options)} shipping options")
+            # Now sort the valid rate options by price
+            if valid_rate_options:
+                sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge']['amount'])
+                st.write(f"Found {len(sorted_rate_options)} shipping options")
 
-            # Display each shipping option in a card
-            for option in sorted_rate_options:
-                service_type = option['serviceType']
-                delivery_time = option.get('deliveryTimestamp', 'N/A')
-                net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']['amount']
-                currency = option['ratedShipmentDetails'][0]['totalNetCharge']['currency']
+                # Display each shipping option in a card
+                for option in sorted_rate_options:
+                    service_type = option['serviceType']
+                    delivery_time = option.get('deliveryTimestamp', 'N/A')
+                    net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']['amount']
+                    currency = option['ratedShipmentDetails'][0]['totalNetCharge']['currency']
 
-                # Display as card-like UI
-                with st.expander(f"{service_type}: ${net_charge} {currency}"):
-                    st.write(f"**Service Type**: {service_type}")
-                    st.write(f"**Estimated Delivery Time**: {delivery_time}")
-                    st.write(f"**Total Net Charge**: ${net_charge} {currency}")
+                    # Display as card-like UI
+                    with st.expander(f"{service_type}: ${net_charge} {currency}"):
+                        st.write(f"**Service Type**: {service_type}")
+                        st.write(f"**Estimated Delivery Time**: {delivery_time}")
+                        st.write(f"**Total Net Charge**: ${net_charge} {currency}")
+            else:
+                st.write("No valid rate options found.")
         else:
             st.error(fedex_quote["error"])
