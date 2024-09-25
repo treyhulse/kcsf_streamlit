@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
 
 st.set_page_config(layout="wide")
 
