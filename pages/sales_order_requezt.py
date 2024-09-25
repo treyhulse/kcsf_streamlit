@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data
 from utils.rest import make_netsuite_rest_api_request
+from utils.fedex import get_fedex_rate_quote
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -9,6 +10,38 @@ def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)
     return df
+
+# Function to parse shipAddress into components
+def parse_ship_address(ship_address):
+    # Split the address by new lines
+    address_lines = ship_address.split('\n')
+    
+    # Assume the format is:
+    # Line 1: Name (ignored)
+    # Line 2: Company (ignored)
+    # Line 3: Street Address
+    # Line 4: City, State Postal Code
+    # Line 5: Country
+    
+    if len(address_lines) >= 5:
+        street_address = address_lines[2]
+        city_state_postal = address_lines[3].split()  # Split city, state, and postal code
+        country = address_lines[4]
+        
+        # Extract city, state, and postal code (assumes postal code is always last)
+        city = " ".join(city_state_postal[:-2])
+        state = city_state_postal[-2]
+        postal_code = city_state_postal[-1]
+        
+        return {
+            "streetAddress": street_address,
+            "city": city,
+            "state": state,
+            "postalCode": postal_code,
+            "country": country
+        }
+    else:
+        return {}
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -33,7 +66,6 @@ if not sales_order_data_raw.empty:
     st.write(f"Selected Sales Order ID: {selected_id}")
 else:
     st.error("No sales orders available.")
-
 
 # Step 3: Fetch and display detailed information for the selected sales order
 if selected_id:
@@ -98,20 +130,23 @@ if selected_id:
     else:
         st.error(f"Unable to fetch details for Sales Order ID: {selected_id}.")
 
-import streamlit as st
-from utils.fedex import get_fedex_rate_quote
-
-# Assuming you already have the sales order data pulled
+# Parse the shipping address for the FedEx API call
 if sales_order_data:
-    # Extract shipping data from the sales order (e.g., "custbody128" for weight)
-    trimmed_data = {
-        "shipCity": sales_order_data.get("shipCity"),
-        "shipState": sales_order_data.get("shipState"),
-        "shipCountry": sales_order_data.get("shipCountry"),
-        "shipPostalCode": sales_order_data.get("shipPostalCode"),
-        "packageWeight": sales_order_data.get("custbody128")  # Package weight from custom field
-    }
-
+    ship_address_str = sales_order_data.get("shipAddress", "")
+    if ship_address_str:
+        parsed_address = parse_ship_address(ship_address_str)
+        
+        # Prepare the data to send to FedEx API
+        trimmed_data = {
+            "shipCity": parsed_address.get("city"),
+            "shipState": parsed_address.get("state"),
+            "shipCountry": parsed_address.get("country"),
+            "shipPostalCode": parsed_address.get("postalCode"),
+            "packageWeight": sales_order_data.get("custbody128")  # Assuming this is the weight field
+        }
+    else:
+        st.error("Shipping address not found in sales order data.")
+    
     # Button to fetch FedEx rate quote
     if st.button("Get FedEx Rate Quote"):
         fedex_quote = get_fedex_rate_quote(trimmed_data)
