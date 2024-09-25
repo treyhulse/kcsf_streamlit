@@ -35,7 +35,7 @@ def create_fedex_rate_request(trimmed_data):
                     "residential": False
                 }
             },
-            "serviceType": "STANDARD_OVERNIGHT",  # Adjust based on your need
+            # Removed "serviceType" to let FedEx return all applicable services
             "preferredCurrency": "USD",  # Assuming USD
             "rateRequestType": ["ACCOUNT", "LIST"],  # Both account and list rates
             "shipDateStamp": "2024-09-25",  # Ensure this is dynamic based on the current date or future date
