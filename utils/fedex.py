@@ -20,11 +20,11 @@ def create_fedex_rate_request(trimmed_data):
             },
             "recipient": {
                 "address": {
-                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Adjust to real address if needed
-                    "city": trimmed_data.get("shipCity", "Washington"),  # Fallback to a default value
-                    "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),  # Fallback to default
-                    "postalCode": trimmed_data.get("shipPostalCode", "20500"),  # Fallback to default
-                    "countryCode": trimmed_data.get("shipCountry", "US")  # Fallback to default
+                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Example, replace with sales order address if available
+                    "city": trimmed_data.get("shipCity", "Washington"),  # Default city
+                    "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),  # Default state
+                    "postalCode": trimmed_data.get("shipPostalCode", "20500"),  # Default postal code
+                    "countryCode": trimmed_data.get("shipCountry", "US")  # Default country
                 }
             },
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
@@ -37,7 +37,7 @@ def create_fedex_rate_request(trimmed_data):
                     "groupPackageCount": 1,
                     "weight": {
                         "units": "LB",
-                        "value": trimmed_data.get("packageWeight", 50)  # Default if weight is missing
+                        "value": trimmed_data.get("packageWeight", 50)  # Fallback if weight is missing
                     },
                     "dimensions": {
                         "length": 20,  # Uniform dimension (example)
