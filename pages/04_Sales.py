@@ -35,30 +35,9 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from kpi.sales_by_rep import get_sales_by_rep
-from kpi.sales_by_category import get_sales_by_category
-from kpi.sales_by_month import get_sales_by_month
-import pandas as pd
-
-# Mock data for example purposes
-# You would replace these with your actual data sources
-def get_sales_by_rep_data():
-    return pd.DataFrame({
-        'Sales Rep': ['Rep A', 'Rep B', 'Rep C'],
-        'Sales': [1000, 1500, 1200]
-    })
-
-def get_sales_by_category_data():
-    return pd.DataFrame({
-        'Category': ['Category A', 'Category B', 'Category C'],
-        'Sales': [2000, 1800, 2200]
-    })
-
-def get_sales_by_month_data():
-    return pd.DataFrame({
-        'Month': ['January', 'February', 'March'],
-        'Sales': [5000, 5200, 4800]
-    })
+from kpi.sales_by_rep import get_sales_by_rep, fetch_restlet_data as fetch_rep_data
+from kpi.sales_by_category import get_sales_by_category, fetch_restlet_data as fetch_category_data
+from kpi.sales_by_month import get_sales_by_month, fetch_restlet_data as fetch_month_data
 
 st.title("Sales Dashboard")
 
@@ -72,9 +51,10 @@ with col1:
     if sales_by_rep_chart:
         st.plotly_chart(sales_by_rep_chart, use_container_width=True)
     
-    # Show the data when clicked
+    # Show the DataFrame for Sales by Rep when expanded
     with st.expander("Drill Down - Sales by Rep"):
-        st.dataframe(get_sales_by_rep_data())
+        df_sales_by_rep = fetch_rep_data('customsearch4963')
+        st.dataframe(df_sales_by_rep)
 
 # Column 2: Sales by Category
 with col2:
@@ -83,9 +63,10 @@ with col2:
     if sales_by_category_chart:
         st.plotly_chart(sales_by_category_chart, use_container_width=True)
     
-    # Show the data when clicked
+    # Show the DataFrame for Sales by Category when expanded
     with st.expander("Drill Down - Sales by Category"):
-        st.dataframe(get_sales_by_category_data())
+        df_sales_by_category = fetch_category_data('customsearch5145')
+        st.dataframe(df_sales_by_category)
 
 # Column 3: Sales by Month
 with col3:
@@ -94,6 +75,7 @@ with col3:
     if sales_by_month_chart:
         st.plotly_chart(sales_by_month_chart, use_container_width=True)
     
-    # Show the data when clicked
+    # Show the DataFrame for Sales by Month when expanded
     with st.expander("Drill Down - Sales by Month"):
-        st.dataframe(get_sales_by_month_data())
+        df_sales_by_month = fetch_month_data('customsearch5146')
+        st.dataframe(df_sales_by_month)
