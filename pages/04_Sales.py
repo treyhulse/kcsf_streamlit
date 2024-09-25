@@ -43,8 +43,8 @@ from kpi.sales_by_month import get_sales_by_month
 # Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
     total_revenue = df_grouped['Billed Amount'].sum()
-    total_orders = df_grouped['Orders'].sum()  # Sum of the 'Orders' column
-    average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
+    total_orders = df_grouped['Orders'].sum()
+    average_order_volume = total_revenue / total_orders
     top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
     return total_revenue, total_orders, average_order_volume, top_sales_rep
 
