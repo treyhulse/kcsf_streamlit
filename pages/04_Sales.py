@@ -118,7 +118,6 @@ col1, col2, col3 = st.columns(3)
 
 # Column 1: Sales by Rep visualization and DataFrame
 with col1:
-    st.subheader("Sales by Rep")
     st.plotly_chart(chart_sales_by_rep, use_container_width=True)
     with st.expander("Data - Sales by Rep"):
         st.dataframe(df_grouped)
@@ -127,7 +126,6 @@ with col1:
 chart_sales_by_category = get_sales_by_category()
 if chart_sales_by_category:
     with col2:
-        st.subheader("Sales by Category")
         st.plotly_chart(chart_sales_by_category, use_container_width=True)
         with st.expander("Data - Sales by Category"):
             # Assuming you have a DataFrame for Sales by Category, you would display it here.
@@ -139,7 +137,6 @@ if chart_sales_by_category:
 chart_sales_by_month = get_sales_by_month()
 if chart_sales_by_month:
     with col3:
-        st.subheader("Sales by Month")
         st.plotly_chart(chart_sales_by_month, use_container_width=True)
         with st.expander("Data - Sales by Month"):
             # Assuming you have a DataFrame for Sales by Month, you would display it here.
