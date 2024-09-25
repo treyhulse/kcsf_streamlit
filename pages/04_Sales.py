@@ -35,7 +35,7 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-from kpi.sales_by_rep import get_sales_by_rep, fetch_restlet_data as fetch_rep_data
+from kpi.sales_by_rep import get_sales_by_rep
 from kpi.sales_by_category import get_sales_by_category
 from kpi.sales_by_month import get_sales_by_month
 
@@ -49,69 +49,71 @@ def calculate_kpis(df_grouped):
 
 # Load data for Sales by Rep and calculate KPIs
 chart_sales_by_rep, df_grouped = get_sales_by_rep()
-total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
 
-# Placeholder percentage change values for demo purposes
-percentage_change_orders = 5.0  # Change values as needed
-percentage_change_sales = 7.5
-percentage_change_average = 3.2
-percentage_change_needed = 4.0
+if df_grouped is not None:
+    total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
 
-# Display dynamic metric boxes with arrows and sub-numbers
-metrics = [
-    {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
-    {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
-    {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-    {"label": "Top Sales Rep", "value": top_sales_rep, "change": "N/A", "positive": True},  # No percentage change for this one
-]
+    # Placeholder percentage change values for demo purposes
+    percentage_change_orders = 5.0  # Change values as needed
+    percentage_change_sales = 7.5
+    percentage_change_average = 3.2
+    percentage_change_needed = 4.0
 
-# Styling for the boxes
-st.markdown("""
-<style>
-.metrics-box {
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-.metric-title {
-    margin: 0;
-    font-size: 20px;
-}
-.metric-value {
-    margin: 0;
-    font-size: 28px;
-    font-weight: bold;
-}
-.metric-change {
-    margin: 0;
-    font-size: 14px;
-}
-</style>
-""", unsafe_allow_html=True)
+    # Display dynamic metric boxes with arrows and sub-numbers
+    metrics = [
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+        {"label": "Top Sales Rep", "value": top_sales_rep, "change": "N/A", "positive": True},  # No percentage change for this one
+    ]
 
-# First row: metrics
-col1, col2, col3, col4 = st.columns(4)
+    # Styling for the boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .metric-change {
+        margin: 0;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-for col, metric in zip([col1, col2, col3, col4], metrics):
-    arrow = "↑" if metric["positive"] else "↓"
-    color = "green" if metric["positive"] else "red"
+    # First row: metrics
+    col1, col2, col3, col4 = st.columns(4)
 
-    with col:
-        st.markdown(f"""
-        <div class="metrics-box">
-            <h3 class="metric-title">{metric['label']}</h3>
-            <p class="metric-value">{metric['value']}</p>
-            <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
-        </div>
-        """, unsafe_allow_html=True)
+    for col, metric in zip([col1, col2, col3, col4], metrics):
+        arrow = "↑" if metric["positive"] else "↓"
+        color = "green" if metric["positive"] else "red"
 
-# Separation between metrics and visualizations
-st.write("")
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+                <p class="metric-change" style="color:{color};">{arrow} {metric['change']}%</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-# Display the first visualization (Sales by Rep)
-st.plotly_chart(chart_sales_by_rep, use_container_width=True)
+    # Separation between metrics and visualizations
+    st.write("")
+
+    # Display the first visualization (Sales by Rep)
+    st.plotly_chart(chart_sales_by_rep, use_container_width=True)
 
 # Display the second visualization (Sales by Category)
 chart_sales_by_category = get_sales_by_category()
