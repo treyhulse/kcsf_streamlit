@@ -7,6 +7,7 @@ import streamlit as st
 @st.cache_data(ttl=3600)  # Cache the data for 1 hour (TTL)
 def get_sales_by_category():
     df = fetch_restlet_data('customsearch5145')
+    df['Billed Amount'] = pd.to_numeric(df['Billed Amount'], errors='coerce')
     if df.empty:
         return None
 
