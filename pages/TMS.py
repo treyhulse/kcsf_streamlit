@@ -152,9 +152,10 @@ if selected_id:
             with col2:
                 st.write(f"**Shipping Method**: {trimmed_data['shippingMethod']}")
 
-            # Option to view the full raw JSON response
-            with st.expander("View Full Response"):
-                st.json(sales_order_data)
+        # Move the expander outside of any column structure
+        # Option to view the full raw JSON response outside any nested blocks
+        st.expander("View Full Response")
+        st.json(sales_order_data)
     else:
         st.error(f"Unable to fetch details for Sales Order ID: {selected_id}.")
 
