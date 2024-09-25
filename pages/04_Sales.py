@@ -40,10 +40,15 @@ from kpi.sales_by_category import get_sales_by_category, fetch_restlet_data as f
 from kpi.sales_by_month import get_sales_by_month, fetch_restlet_data as fetch_month_data
 import pandas as pd
 
-# Helper function to format currency
 def format_currency(df, column_name):
+    # Ensure the column is numeric, and fill any NaN values with 0
+    df[column_name] = pd.to_numeric(df[column_name], errors='coerce').fillna(0)
+    
+    # Apply currency formatting
     df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
+    
     return df
+
 
 st.title("Sales Dashboard")
 
