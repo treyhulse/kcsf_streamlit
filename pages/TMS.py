@@ -108,7 +108,7 @@ def parse_ship_address(ship_address):
 st.sidebar.header("Filters")
 
 # Title
-st.title("Sales Order Summary")
+st.title("Shipping Rate Quote Tool")
 
 # Fetch sales order data from saved search
 sales_order_data_raw = fetch_raw_data("customsearch5122")
