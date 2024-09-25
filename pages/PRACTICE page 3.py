@@ -49,15 +49,6 @@ import logging
 from utils.restlet import fetch_restlet_data
 from utils.suiteql import fetch_paginated_suiteql_data, base_url
 
-
-
-import streamlit as st
-import pandas as pd
-import requests
-from requests_oauthlib import OAuth1
-import logging
-from utils.restlet import fetch_restlet_data
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -135,49 +126,43 @@ with tab3:
     supply_demand_df = pd.merge(inventory_df, customsearch5141_data, on='Item', how='outer')
     supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
 
-    # Check columns after merging to verify correct columns are present
-    # After merging the data
-    st.write("Columns in the merged DataFrame:", supply_demand_df.columns)
+    # Combine the correct Warehouse column: use 'warehouse' or fallback to 'Warehouse_x' or 'Warehouse_y'
+    supply_demand_df['Warehouse'] = supply_demand_df['warehouse'].combine_first(supply_demand_df['Warehouse_x']).combine_first(supply_demand_df['Warehouse_y'])
 
-    # Display a few rows of the DataFrame to check the structure
-    st.write("First few rows of merged data:", supply_demand_df.head())
+    # Drop unnecessary columns
+    supply_demand_df.drop(columns=['warehouse', 'Warehouse_x', 'Warehouse_y'], inplace=True)
 
+    # Group by 'Item' and 'Warehouse' and sum the quantities
+    supply_demand_df = supply_demand_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
+        'Available Quantity': 'sum',
+        'On Hand Quantity': 'sum',
+        'Sales Ordered': 'sum',
+        'Sales Committed': 'sum',
+        'Sales Fulfilled': 'sum',
+        'Sales Back Ordered': 'sum',
+        'Purchase Ordered': 'sum',
+        'Purchase Fulfilled': 'sum',
+        'Purchase Not Received': 'sum'
+    })
 
-    # Ensure that 'Warehouse' and 'Item' exist in the merged DataFrame before grouping
-    if 'Item' in supply_demand_df.columns and 'Warehouse' in supply_demand_df.columns:
-        # Group by 'Item' and 'Warehouse' and sum the quantities
-        supply_demand_df = supply_demand_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
-            'Available Quantity': 'sum',
-            'On Hand Quantity': 'sum',
-            'Sales Ordered': 'sum',
-            'Sales Committed': 'sum',
-            'Sales Fulfilled': 'sum',
-            'Sales Back Ordered': 'sum',
-            'Purchase Ordered': 'sum',
-            'Purchase Fulfilled': 'sum',
-            'Purchase Not Received': 'sum'
-        })
+    # Add Net Inventory column
+    supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
+                                        (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
 
-        # Add Net Inventory column
-        supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
-                                            (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
+    # Fill NaN values with 0 for better visibility
+    supply_demand_df.fillna(0, inplace=True)
 
-        # Fill NaN values with 0 for better visibility
-        supply_demand_df.fillna(0, inplace=True)
+    # Add a filter for Warehouse
+    warehouse_options = supply_demand_df['Warehouse'].unique()
+    selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
 
-        # Add a filter for Warehouse
-        warehouse_options = supply_demand_df['Warehouse'].unique()
-        selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
+    # Filter by selected warehouse
+    filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
 
-        # Filter by selected warehouse
-        filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
+    # Display the filtered DataFrame in Streamlit
+    st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
+    st.dataframe(filtered_df)
 
-        # Display the filtered DataFrame in Streamlit
-        st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
-        st.dataframe(filtered_df)
-
-        # Option to download the data as CSV
-        csv = filtered_df.to_csv(index=False)
-        st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
-    else:
-        st.error("Required columns 'Item' or 'Warehouse' not found in the merged data.")
+    # Option to download the data as CSV
+    csv = filtered_df.to_csv(index=False)
+    st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
