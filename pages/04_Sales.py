@@ -39,13 +39,18 @@ import streamlit as st
 from kpi.sales_by_rep import get_sales_by_rep
 from kpi.sales_by_category import get_sales_by_category
 from kpi.sales_by_month import get_sales_by_month
+import pandas as pd
 
 # Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
     total_revenue = df_grouped['Billed Amount'].sum()
     
-    # Assuming there's an 'Orders' column to sum
-    total_orders = df_grouped['Orders'].sum() if 'Orders' in df_grouped.columns else 0
+    # Check if 'Orders' column exists and ensure it contains numeric values
+    if 'Orders' in df_grouped.columns:
+        df_grouped['Orders'] = pd.to_numeric(df_grouped['Orders'], errors='coerce').fillna(0)
+        total_orders = df_grouped['Orders'].sum()
+    else:
+        total_orders = 0  # Default to 0 if 'Orders' column doesn't exist
     
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
     top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
