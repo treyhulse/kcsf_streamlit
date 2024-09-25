@@ -116,7 +116,23 @@ if sales_order_data:
     if st.button("Get FedEx Rate Quote"):
         fedex_quote = get_fedex_rate_quote(trimmed_data)
         if "error" not in fedex_quote:
-            st.write("FedEx Rate Quote")
-            st.json(fedex_quote)
+            # Sort rate options by price
+            rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
+            sorted_rate_options = sorted(rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge']['amount'])
+
+            st.write(f"Found {len(sorted_rate_options)} shipping options")
+
+            # Display each shipping option in a card
+            for option in sorted_rate_options:
+                service_type = option['serviceType']
+                delivery_time = option.get('deliveryTimestamp', 'N/A')
+                net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']['amount']
+                currency = option['ratedShipmentDetails'][0]['totalNetCharge']['currency']
+
+                # Display as card-like UI
+                with st.expander(f"{service_type}: ${net_charge} {currency}"):
+                    st.write(f"**Service Type**: {service_type}")
+                    st.write(f"**Estimated Delivery Time**: {delivery_time}")
+                    st.write(f"**Total Net Charge**: ${net_charge} {currency}")
         else:
             st.error(fedex_quote["error"])
