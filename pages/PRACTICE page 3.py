@@ -97,12 +97,12 @@ purchase_orders_df = fetch_raw_data("customsearch5142")  # Example saved search 
 # Rename 'item id' in the inventory table to match 'Item' in sales/purchase orders
 inventory_df.rename(columns={'item id': 'Item'}, inplace=True)
 
-# Merge the data on 'Item' and 'Warehouse'
-merged_df = pd.merge(inventory_df, sales_orders_df, on=['Item', 'Warehouse'], how='outer')
-merged_df = pd.merge(merged_df, purchase_orders_df, on=['Item', 'Warehouse'], how='outer')
+# Merge the data on 'Item' and 'warehouse'
+merged_df = pd.merge(inventory_df, sales_orders_df, on=['Item', 'warehouse'], how='outer')
+merged_df = pd.merge(merged_df, purchase_orders_df, on=['Item', 'warehouse'], how='outer')
 
-# Group by 'Item' and 'Warehouse' and sum relevant columns
-supply_demand_df = merged_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
+# Group by 'Item' and 'warehouse' and sum relevant columns
+supply_demand_df = merged_df.groupby(['Item', 'warehouse'], as_index=False).agg({
     'Quantity Available': 'sum',
     'Quantity On Hand': 'sum',
     'Ordered_x': 'sum',  # Sales Ordered
@@ -115,7 +115,7 @@ supply_demand_df = merged_df.groupby(['Item', 'Warehouse'], as_index=False).agg(
 })
 
 # Rename columns for clarity
-supply_demand_df.columns = ['Item', 'Warehouse', 'Available Quantity', 'On Hand Quantity',
+supply_demand_df.columns = ['Item', 'warehouse', 'Available Quantity', 'On Hand Quantity',
                             'Sales Ordered', 'Sales Committed', 'Sales Fulfilled',
                             'Sales Back Ordered', 'Purchase Ordered', 'Purchase Fulfilled',
                             'Purchase Not Received']
@@ -128,11 +128,11 @@ supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + su
                                     (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
 
 # Add a filter for Warehouse
-warehouse_options = supply_demand_df['Warehouse'].unique()
+warehouse_options = supply_demand_df['warehouse'].unique()
 selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
 
 # Filter by the selected warehouse
-filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
+filtered_df = supply_demand_df[supply_demand_df['warehouse'] == selected_warehouse]
 
 # Display the filtered DataFrame
 st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
