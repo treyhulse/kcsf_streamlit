@@ -178,9 +178,9 @@ with tab1:
 
     # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
-        {"label": "Total Open Orders", "value": total_orders, "change": "", "positive": True},
-        {"label": "Tasked Orders", "value": tasked_orders_count, "change": "", "positive": tasked_orders_count > 0},
-        {"label": "Untasked Orders", "value": untasked_orders_count, "change": "", "positive": untasked_orders_count > 0},
+        {"label": "Total Open Orders", "value": total_orders},
+        {"label": "Tasked Orders", "value": tasked_orders_count},
+        {"label": "Untasked Orders", "value": untasked_orders_count},
     ]
 
     # Display metrics in columns
