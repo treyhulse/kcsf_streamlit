@@ -155,63 +155,44 @@ if sales_order_data:
     # Button to fetch FedEx rate quote
     if st.button("Get FedEx Rate Quote"):
         fedex_quote = get_fedex_rate_quote(trimmed_data)
-
+        
         if "error" not in fedex_quote:
             rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
-
+            
             # Ensure that rate options and necessary fields exist before sorting
             valid_rate_options = []
             for option in rate_options:
+                # Check if 'ratedShipmentDetails' exists and is non-empty
                 if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0:
                     shipment_details = option['ratedShipmentDetails'][0]
+                    
+                    # Check if 'totalNetCharge' exists and is a valid number
                     total_net_charge = shipment_details.get('totalNetCharge')
                     if total_net_charge is not None and isinstance(total_net_charge, (int, float)):
                         valid_rate_options.append(option)
 
+            # Sort the valid rate options by price (totalNetCharge)
             if valid_rate_options:
                 sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
-                top_rate_options = sorted_rate_options[:4]  # Display top 3-4 options
+                
+                # Limit to the top 3–4 options
+                top_rate_options = sorted_rate_options[:4]  # Adjust the number here (4 for top 4)
 
                 st.write(f"Found {len(top_rate_options)} shipping options")
 
-                # Store the available options in a dictionary for selection
-                option_dict = {}
-                for i, option in enumerate(top_rate_options):
+                # Display each shipping option in a card
+                for option in top_rate_options:
                     service_type = option.get('serviceType', 'N/A')
+                    delivery_time = option.get('deliveryTimestamp', 'N/A')
                     net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
                     currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
-                    option_dict[f"{service_type}: ${net_charge} {currency}"] = option
 
-                # Let the user select a shipping option
-                selected_rate = st.radio("Select a shipping option", list(option_dict.keys()))
-
-                # Extract the selected option data
-                selected_option = option_dict[selected_rate]
-
-                st.write(f"You selected: {selected_rate}")
+                    # Display as card-like UI
+                    with st.expander(f"{service_type}: ${net_charge} {currency}"):
+                        st.write(f"**Service Type**: {service_type}")
+                        st.write(f"**Estimated Delivery Time**: {delivery_time}")
+                        st.write(f"**Total Net Charge**: ${net_charge} {currency}")
             else:
                 st.write("No valid rate options found.")
         else:
             st.error(fedex_quote["error"])
-
-    # Update Sales Order with Selected Shipping Rate
-    if selected_rate:
-        if st.button("Send Rate to Sales Order"):
-            # Extract shipping cost and service type
-            selected_service_type = selected_option['serviceType']
-            selected_net_charge = selected_option['ratedShipmentDetails'][0]['totalNetCharge']
-
-            # Construct the payload to send back to the sales order
-            update_payload = {
-                "shippingCost": selected_net_charge,
-                "shippingMethod": selected_service_type
-            }
-
-            # Make the API call to update the sales order
-            response = make_netsuite_rest_api_request(f"salesOrder/{selected_id}", method="PUT", payload=update_payload)
-
-            # Check the response
-            if response.status_code == 200:
-                st.success(f"Successfully updated Sales Order {selected_id} with shipping cost: ${selected_net_charge}")
-            else:
-                st.error(f"Failed to update Sales Order {selected_id}. Error: {response.content}")
