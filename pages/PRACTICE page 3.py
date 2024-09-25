@@ -49,6 +49,7 @@ import logging
 from utils.restlet import fetch_restlet_data
 from utils.suiteql import fetch_paginated_suiteql_data, base_url
 
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -127,31 +128,40 @@ with tab3:
     supply_demand_df = pd.merge(inventory_df, customsearch5141_data, on='Item', how='outer')
     supply_demand_df = pd.merge(supply_demand_df, customsearch5142_data, on='Item', how='outer')
 
-    # Simplify the resulting DataFrame and add Net Inventory
-    supply_demand_df = supply_demand_df[['Item', 'bin number', 'warehouse', 'quantity available', 'quantity on hand',
-                                         'Ordered_x', 'Committed', 'Fulfilled_x', 'Back Ordered',
-                                         'Ordered_y', 'Fulfilled_y', 'Not Received']]
-
-    # Rename columns for clarity
-    supply_demand_df.columns = ['Item', 'Bin Number', 'Warehouse', 'Available Quantity', 'On Hand Quantity',
-                                'Sales Ordered', 'Sales Committed', 'Sales Fulfilled', 'Sales Back Ordered',
-                                'Purchase Ordered', 'Purchase Fulfilled', 'Purchase Not Received']
-
-    # Convert the relevant columns to numeric types to avoid type errors
-    numeric_cols = ['Available Quantity', 'On Hand Quantity', 'Sales Ordered', 'Sales Back Ordered', 'Purchase Ordered']
-    supply_demand_df[numeric_cols] = supply_demand_df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-
-    # Fill NaN values with 0 for better visibility
-    supply_demand_df.fillna(0, inplace=True)
+    # Remove 'Bin Number' and group by 'Item' and 'Warehouse'
+    supply_demand_df = supply_demand_df.drop(columns=['Bin Number'])
+    
+    # Group by 'Item' and 'Warehouse' and sum the quantities
+    supply_demand_df = supply_demand_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
+        'Available Quantity': 'sum',
+        'On Hand Quantity': 'sum',
+        'Sales Ordered': 'sum',
+        'Sales Committed': 'sum',
+        'Sales Fulfilled': 'sum',
+        'Sales Back Ordered': 'sum',
+        'Purchase Ordered': 'sum',
+        'Purchase Fulfilled': 'sum',
+        'Purchase Not Received': 'sum'
+    })
 
     # Add Net Inventory column
     supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
                                         (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
 
-    # Display the DataFrame in Streamlit
-    st.write("Supply and Demand Visibility with Net Inventory")
-    st.dataframe(supply_demand_df)
+    # Fill NaN values with 0 for better visibility
+    supply_demand_df.fillna(0, inplace=True)
+
+    # Add a filter for Warehouse
+    warehouse_options = supply_demand_df['Warehouse'].unique()
+    selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
+
+    # Filter by selected warehouse
+    filtered_df = supply_demand_df[supply_demand_df['Warehouse'] == selected_warehouse]
+
+    # Display the filtered DataFrame in Streamlit
+    st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
+    st.dataframe(filtered_df)
 
     # Option to download the data as CSV
-    csv = supply_demand_df.to_csv(index=False)
+    csv = filtered_df.to_csv(index=False)
     st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
