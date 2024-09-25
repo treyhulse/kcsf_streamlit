@@ -49,7 +49,6 @@ import logging
 from utils.restlet import fetch_restlet_data
 from utils.suiteql import fetch_paginated_suiteql_data, base_url
 
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -70,7 +69,7 @@ def fetch_inventory_data(suiteql_query, base_url):
 # Define the SuiteQL query for the inventory data
 suiteql_query = """
 SELECT
-    invbal.item AS "Item ID",
+    invbal.item AS "item id",
     item.displayname AS "Item",
     invbal.location AS "Warehouse",
     invbal.quantityonhand AS "Quantity On Hand",
@@ -95,15 +94,15 @@ inventory_df = fetch_inventory_data(suiteql_query, base_url)
 sales_orders_df = fetch_raw_data("customsearch5141")  # Example saved search for sales orders
 purchase_orders_df = fetch_raw_data("customsearch5142")  # Example saved search for purchase orders
 
-# Ensure column consistency by renaming 'item id' in the inventory table to match 'Item' in sales/purchase orders
-inventory_df.rename(columns={'Item ID': 'Item'}, inplace=True)
+# Rename 'item id' in the inventory table to match 'item' in sales/purchase orders
+inventory_df.rename(columns={'item id': 'item'}, inplace=True)
 
-# Merge the data on 'Item' and 'Warehouse'
-merged_df = pd.merge(inventory_df, sales_orders_df, on=['Item', 'Warehouse'], how='outer')
-merged_df = pd.merge(merged_df, purchase_orders_df, on=['Item', 'Warehouse'], how='outer')
+# Merge the data on 'item' and 'Warehouse'
+merged_df = pd.merge(inventory_df, sales_orders_df, on=['item', 'Warehouse'], how='outer')
+merged_df = pd.merge(merged_df, purchase_orders_df, on=['item', 'Warehouse'], how='outer')
 
-# Group by 'Item' and 'Warehouse' and sum relevant columns
-supply_demand_df = merged_df.groupby(['Item', 'Warehouse'], as_index=False).agg({
+# Group by 'item' and 'Warehouse' and sum relevant columns
+supply_demand_df = merged_df.groupby(['item', 'Warehouse'], as_index=False).agg({
     'Quantity Available': 'sum',
     'Quantity On Hand': 'sum',
     'Ordered_x': 'sum',  # Sales Ordered
