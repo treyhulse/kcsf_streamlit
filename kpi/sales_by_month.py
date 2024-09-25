@@ -4,7 +4,7 @@ import plotly.express as px
 import streamlit as st
 
 # KPI: Sales by Month
-@st.cache_data(ttl=3600)  # Cache the data for 1 hour (TTL)
+@st.cache_data(ttl=300)  # Cache the data for 1 hour (TTL)
 def get_sales_by_month():
     df = fetch_restlet_data('customsearch5146')
     df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)

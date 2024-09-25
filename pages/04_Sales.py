@@ -34,79 +34,20 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import pandas as pd
-from utils.restlet import fetch_restlet_data
-import plotly.express as px
 import streamlit as st
+from kpi.sales_by_rep import get_sales_by_rep, fetch_restlet_data as fetch_rep_data
+from kpi.sales_by_category import get_sales_by_category
+from kpi.sales_by_month import get_sales_by_month
 
-# KPI: Sales by Rep
-@st.cache_data(ttl=300)  # Cache the data for 1 hour (TTL)
-def get_sales_by_rep():
-    df = fetch_restlet_data('customsearch4963')
-
-    # Ensure 'Billed Amount' is numeric by removing any special characters and converting it to float
-    df['Billed Amount'] = pd.to_numeric(df['Billed Amount'], errors='coerce')
-
-    if df.empty:
-        return None
-
-    # Group by 'Sales Rep' and sum the 'Billed Amount'
-    df_grouped = df[['Sales Rep', 'Billed Amount']].groupby('Sales Rep').sum().reset_index()
-
-    # Sort by 'Billed Amount' and limit to top 10 sales reps
-    df_grouped = df_grouped.sort_values(by='Billed Amount', ascending=False).head(10)
-
-    # Create a bar chart using Plotly
-    fig = px.bar(df_grouped, x='Sales Rep', y='Billed Amount', title="Top 10 Sales by Sales Rep")
-    fig.update_layout(xaxis_title="Sales Rep", yaxis_title="Billed Amount")
-    
-    return fig, df_grouped
-
-# KPI: Sales by Category
-@st.cache_data(ttl=300)
-def get_sales_by_category():
-    df = fetch_restlet_data('customsearch5145')
-    if df.empty:
-        return None
-
-    df = df[['Category', 'Billed Amount']]
-    df_grouped = df.groupby('Category').sum().reset_index()
-
-    # Create a pie chart using Plotly
-    fig = px.pie(df_grouped, values='Billed Amount', names='Category', title="Sales by Category", hole=0.3)
-    return fig
-
-# KPI: Sales by Month
-@st.cache_data(ttl=300)
-def get_sales_by_month():
-    df = fetch_restlet_data('customsearch5146')
-    if df.empty:
-        return None
-
-    df['Year'] = pd.to_datetime(df['Period']).dt.year
-    df['Month'] = pd.to_datetime(df['Period']).dt.month
-    df_grouped = df.pivot_table(index='Month', columns='Year', values='Billed Amount', aggfunc='sum')
-
-    # Create a line chart using Plotly
-    fig = px.line(df_grouped, x=df_grouped.index, y=df_grouped.columns, title="Sales by Month", markers=True)
-    fig.update_layout(
-        xaxis_title="Month",
-        yaxis_title="Billed Amount",
-        xaxis=dict(tickmode="array", tickvals=list(range(1, 13)), ticktext=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']),
-        legend_title="Year"
-    )
-    return fig
-
-# Calculate the KPIs
+# Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
     total_revenue = df_grouped['Billed Amount'].sum()
-    total_orders = len(df_grouped)  # Assuming 1 row per order, or use another column
+    total_orders = len(df_grouped)  # Assuming 1 row per order, or use another column if available
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
     top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
-
     return total_revenue, total_orders, average_order_volume, top_sales_rep
 
-# Load data and calculate KPIs
+# Load data for Sales by Rep and calculate KPIs
 chart_sales_by_rep, df_grouped = get_sales_by_rep()
 total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
 
