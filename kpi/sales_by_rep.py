@@ -15,7 +15,7 @@ def get_sales_by_rep():
         return None, None  # Return None for both values if no data is fetched
 
     # Group by 'Sales Rep' and sum the 'Billed Amount'
-    df_grouped = df[['Sales Rep', 'Billed Amount']].groupby('Sales Rep').sum().reset_index()
+    df_grouped = df[['Sales Rep', 'Billed Amount', 'Orders']].groupby('Sales Rep').sum().reset_index()
 
     # Sort by 'Billed Amount' and limit to top 10 sales reps
     df_grouped = df_grouped.sort_values(by='Billed Amount', ascending=False).head(10)
