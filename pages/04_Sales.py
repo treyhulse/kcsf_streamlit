@@ -112,15 +112,38 @@ if df_grouped is not None:
     # Separation between metrics and visualizations
     st.write("")
 
-    # Display the first visualization (Sales by Rep)
-    st.plotly_chart(chart_sales_by_rep, use_container_width=True)
+# Create 3 columns for the visualizations and data frames
+col1, col2, col3 = st.columns(3)
 
-# Display the second visualization (Sales by Category)
+# Column 1: Sales by Rep visualization and DataFrame
+with col1:
+    st.subheader("Sales by Rep")
+    st.plotly_chart(chart_sales_by_rep, use_container_width=True)
+    st.subheader("Data - Sales by Rep")
+    st.dataframe(df_grouped)
+
+# Column 2: Sales by Category visualization and DataFrame
 chart_sales_by_category = get_sales_by_category()
 if chart_sales_by_category:
-    st.plotly_chart(chart_sales_by_category, use_container_width=True)
+    with col2:
+        st.subheader("Sales by Category")
+        st.plotly_chart(chart_sales_by_category, use_container_width=True)
 
-# Display the third visualization (Sales by Month)
+        # Assuming you have a DataFrame for Sales by Category, you would display it here.
+        df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
+        if not df_sales_by_category.empty:
+            st.subheader("Data - Sales by Category")
+            st.dataframe(df_sales_by_category)
+
+# Column 3: Sales by Month visualization and DataFrame
 chart_sales_by_month = get_sales_by_month()
 if chart_sales_by_month:
-    st.plotly_chart(chart_sales_by_month, use_container_width=True)
+    with col3:
+        st.subheader("Sales by Month")
+        st.plotly_chart(chart_sales_by_month, use_container_width=True)
+
+        # Assuming you have a DataFrame for Sales by Month, you would display it here.
+        df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
+        if not df_sales_by_month.empty:
+            st.subheader("Data - Sales by Month")
+            st.dataframe(df_sales_by_month)
