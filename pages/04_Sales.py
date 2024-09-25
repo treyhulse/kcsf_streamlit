@@ -41,6 +41,10 @@ from kpi.sales_by_category import get_sales_by_category
 from kpi.sales_by_month import get_sales_by_month
 import pandas as pd
 
+# Page title and subtitle
+st.title("Sales Dashboard")
+st.subheader("Overview of sales performance metrics from 01/01/2023")
+
 # Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
     total_revenue = df_grouped['Billed Amount'].sum()
