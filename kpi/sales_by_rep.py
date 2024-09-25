@@ -7,7 +7,6 @@ import streamlit as st
 @st.cache_data(ttl=3600)  # Cache the data for 1 hour (TTL)
 def get_sales_by_rep():
     df = fetch_restlet_data('customsearch4963')
-    df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
     if df.empty:
         return None
 

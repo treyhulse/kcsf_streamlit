@@ -38,6 +38,12 @@ import streamlit as st
 from kpi.sales_by_rep import get_sales_by_rep, fetch_restlet_data as fetch_rep_data
 from kpi.sales_by_category import get_sales_by_category, fetch_restlet_data as fetch_category_data
 from kpi.sales_by_month import get_sales_by_month, fetch_restlet_data as fetch_month_data
+import pandas as pd
+
+# Helper function to format currency
+def format_currency(df, column_name):
+    df[column_name] = df[column_name].apply(lambda x: "${:,.2f}".format(x))
+    return df
 
 st.title("Sales Dashboard")
 
@@ -54,6 +60,8 @@ with col1:
     # Show the DataFrame for Sales by Rep when expanded
     with st.expander("Drill Down - Sales by Rep"):
         df_sales_by_rep = fetch_rep_data('customsearch4963')
+        if 'Billed Amount' in df_sales_by_rep.columns:
+            df_sales_by_rep = format_currency(df_sales_by_rep, 'Billed Amount')
         st.dataframe(df_sales_by_rep)
 
 # Column 2: Sales by Category
@@ -66,6 +74,8 @@ with col2:
     # Show the DataFrame for Sales by Category when expanded
     with st.expander("Drill Down - Sales by Category"):
         df_sales_by_category = fetch_category_data('customsearch5145')
+        if 'Billed Amount' in df_sales_by_category.columns:
+            df_sales_by_category = format_currency(df_sales_by_category, 'Billed Amount')
         st.dataframe(df_sales_by_category)
 
 # Column 3: Sales by Month
@@ -78,4 +88,6 @@ with col3:
     # Show the DataFrame for Sales by Month when expanded
     with st.expander("Drill Down - Sales by Month"):
         df_sales_by_month = fetch_month_data('customsearch5146')
+        if 'Billed Amount' in df_sales_by_month.columns:
+            df_sales_by_month = format_currency(df_sales_by_month, 'Billed Amount')
         st.dataframe(df_sales_by_month)
