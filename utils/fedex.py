@@ -11,7 +11,7 @@ def create_fedex_rate_request(trimmed_data):
         "requestedShipment": {
             "shipper": {
                 "address": {
-                    "streetLines": ["10 FedEx Pkwy"],  # Static address or pull dynamically if needed
+                    "streetLines": ["10 FedEx Pkwy"],
                     "city": "Memphis",
                     "stateOrProvinceCode": "TN",
                     "postalCode": "38116",
@@ -20,11 +20,11 @@ def create_fedex_rate_request(trimmed_data):
             },
             "recipient": {
                 "address": {
-                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Adjust or pull from sales order
-                    "city": trimmed_data["shipCity"],
-                    "stateOrProvinceCode": trimmed_data["shipState"],
-                    "postalCode": trimmed_data["shipPostalCode"],
-                    "countryCode": trimmed_data["shipCountry"]
+                    "streetLines": ["1600 Pennsylvania Avenue NW"],  # Adjust to actual address if available
+                    "city": trimmed_data.get("shipCity", "Washington"),
+                    "stateOrProvinceCode": trimmed_data.get("shipState", "DC"),
+                    "postalCode": trimmed_data.get("shipPostalCode", "20500"),
+                    "countryCode": trimmed_data.get("shipCountry", "US")
                 }
             },
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
@@ -37,12 +37,12 @@ def create_fedex_rate_request(trimmed_data):
                     "groupPackageCount": 1,
                     "weight": {
                         "units": "LB",
-                        "value": trimmed_data["packageWeight"]
+                        "value": trimmed_data.get("packageWeight", 50)  # Ensure this value is valid
                     },
                     "dimensions": {
-                        "length": 20,  # Uniform dimension
-                        "width": 20,   # Uniform dimension
-                        "height": 20,  # Uniform dimension
+                        "length": 20,  # Uniform dimension (example)
+                        "width": 20,   # Uniform dimension (example)
+                        "height": 20,  # Uniform dimension (example)
                         "units": "IN"
                     }
                 }
@@ -60,9 +60,14 @@ def get_fedex_rate_quote(trimmed_data):
     
     payload = create_fedex_rate_request(trimmed_data)
     
+    # Print payload to debug
+    st.write("FedEx Request Payload:", payload)
+    
     response = requests.post(fedex_url, headers=headers, data=json.dumps(payload))
     
     if response.status_code == 200:
         return response.json()  # Return the FedEx rate quote response
     else:
+        st.error(f"Error fetching FedEx rate: {response.status_code}")
+        st.write("Response details:", response.text)  # Print full response to debug
         return {"error": f"Error fetching FedEx rate: {response.status_code}"}
