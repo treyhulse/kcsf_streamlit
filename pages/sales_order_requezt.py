@@ -11,8 +11,8 @@ sales_order_number = st.text_input("Enter Sales Order Number")
 if st.button("Fetch Sales Order"):
     
     if sales_order_number:
-        # 2. Fetch internal ID from the sales order number
-        endpoint_for_internal_id = f"salesOrder?transactionNumber={sales_order_number}"
+        # 2. Fetch internal ID from the sales order number using the 'q' parameter
+        endpoint_for_internal_id = f"salesOrder?q={sales_order_number}"
         search_result = make_netsuite_rest_api_request(endpoint_for_internal_id)
 
         if search_result and "id" in search_result:
