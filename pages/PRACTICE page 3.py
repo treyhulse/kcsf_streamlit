@@ -181,6 +181,7 @@ with tab1:
         {"label": "Total Open Orders", "value": total_orders},
         {"label": "Tasked Orders", "value": tasked_orders_count},
         {"label": "Untasked Orders", "value": untasked_orders_count},
+        {"label": "Tasked Percentage", "value": f"{tasked_orders_count / total_orders:.2%}"}
     ]
 
     # Display metrics in columns
