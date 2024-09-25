@@ -13,16 +13,13 @@ def fetch_raw_data(saved_search_id):
 
 # Function to parse shipAddress into components and convert country name to ISO code
 def parse_ship_address(ship_address):
-    # Split the address by new lines
+    # Split the address into lines
     address_lines = ship_address.split('\n')
     
-    # Assume the format is:
-    # Line 1: Name (ignored)
-    # Line 2: Company (ignored)
-    # Line 3: Street Address
-    # Line 4: City, State Postal Code
-    # Line 5: Country
-    
+    # Initialize default fields
+    street_address = city = state = postal_code = country = ""
+
+    # Extract street address, city, state, postal code, and country based on the format
     if len(address_lines) >= 5:
         street_address = address_lines[2]
         city_state_postal = address_lines[3].split()  # Split city, state, and postal code
@@ -36,7 +33,26 @@ def parse_ship_address(ship_address):
         city = " ".join(city_state_postal[:-2])
         state = city_state_postal[-2]
         postal_code = city_state_postal[-1]
+
+        return {
+            "streetAddress": street_address,
+            "city": city,
+            "state": state,
+            "postalCode": postal_code,
+            "country": country
+        }
+    elif len(address_lines) >= 3:
+        street_address = address_lines[1]
+        city_state_postal = address_lines[2].split()
+        country = address_lines[-1]
+
+        if country == "United States":
+            country = "US"
         
+        city = " ".join(city_state_postal[:-2])
+        state = city_state_postal[-2]
+        postal_code = city_state_postal[-1]
+
         return {
             "streetAddress": street_address,
             "city": city,
@@ -46,7 +62,6 @@ def parse_ship_address(ship_address):
         }
     else:
         return {}
-
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -80,17 +95,16 @@ if not sales_order_data_raw.empty:
 else:
     st.error("No sales orders available.")
 
-
 # Step 3: Fetch and display detailed information for the selected sales order
 if selected_id:
     st.write(f"Fetching details for Sales Order ID: {selected_id}...")
-    
+
     # Construct the endpoint URL with the selected sales order's 'id'
     endpoint = f"salesOrder/{selected_id}"
-    
+
     # Fetch the sales order details from the API
     sales_order_data = make_netsuite_rest_api_request(endpoint)
-    
+
     if sales_order_data:
         # Trimmed data for the display (you can adjust fields based on the response)
         trimmed_data = {
@@ -106,7 +120,7 @@ if selected_id:
             "shippingMethod": sales_order_data.get("shipMethod", {}).get("refName"),
             "currency": sales_order_data.get("currency", {}).get("refName")
         }
-        
+
         # Display the sales order data in a card-like format
         with st.expander(f"Sales Order #{trimmed_data['tranId']} (ID: {trimmed_data['id']})"):
             col1, col2 = st.columns(2)
@@ -137,10 +151,10 @@ if selected_id:
                 st.write(f"**Sales Rep**: {trimmed_data['salesRep']}")
             with col2:
                 st.write(f"**Shipping Method**: {trimmed_data['shippingMethod']}")
-        
-        # Option to view the full raw JSON response
-        with st.expander("View Full Response"):
-            st.json(sales_order_data)
+
+            # Option to view the full raw JSON response
+            with st.expander("View Full Response"):
+                st.json(sales_order_data)
     else:
         st.error(f"Unable to fetch details for Sales Order ID: {selected_id}.")
 
@@ -149,7 +163,7 @@ if sales_order_data:
     ship_address_str = sales_order_data.get("shipAddress", "")
     if ship_address_str:
         parsed_address = parse_ship_address(ship_address_str)
-        
+
         # Prepare the data to send to FedEx API
         trimmed_data = {
             "shipCity": parsed_address.get("city"),
@@ -160,21 +174,21 @@ if sales_order_data:
         }
     else:
         st.error("Shipping address not found in sales order data.")
-    
+
     # Button to fetch FedEx rate quote
     if st.button("Get FedEx Rate Quote"):
         fedex_quote = get_fedex_rate_quote(trimmed_data)
-        
+
         if "error" not in fedex_quote:
             rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
-            
+
             # Ensure that rate options and necessary fields exist before sorting
             valid_rate_options = []
             for option in rate_options:
                 # Check if 'ratedShipmentDetails' exists and is non-empty
                 if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0:
                     shipment_details = option['ratedShipmentDetails'][0]
-                    
+
                     # Check if 'totalNetCharge' exists and is a valid number
                     total_net_charge = shipment_details.get('totalNetCharge')
                     if total_net_charge is not None and isinstance(total_net_charge, (int, float)):
@@ -183,7 +197,7 @@ if sales_order_data:
             # Sort the valid rate options by price (totalNetCharge)
             if valid_rate_options:
                 sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
-                
+
                 # Limit to the top 3–4 options
                 top_rate_options = sorted_rate_options[:4]  # Adjust the number here (4 for top 4)
 
