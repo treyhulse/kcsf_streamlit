@@ -97,3 +97,26 @@ if selected_id:
             st.json(sales_order_data)
     else:
         st.error(f"Unable to fetch details for Sales Order ID: {selected_id}.")
+
+import streamlit as st
+from utils.fedex import get_fedex_rate_quote
+
+# Assuming you already have the sales order data pulled
+if sales_order_data:
+    # Extract shipping data from the sales order (e.g., "custbody128" for weight)
+    trimmed_data = {
+        "shipCity": sales_order_data.get("shipCity"),
+        "shipState": sales_order_data.get("shipState"),
+        "shipCountry": sales_order_data.get("shipCountry"),
+        "shipPostalCode": sales_order_data.get("shipPostalCode"),
+        "packageWeight": sales_order_data.get("custbody128")  # Package weight from custom field
+    }
+
+    # Button to fetch FedEx rate quote
+    if st.button("Get FedEx Rate Quote"):
+        fedex_quote = get_fedex_rate_quote(trimmed_data)
+        if "error" not in fedex_quote:
+            st.write("FedEx Rate Quote")
+            st.json(fedex_quote)
+        else:
+            st.error(fedex_quote["error"])
