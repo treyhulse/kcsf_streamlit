@@ -9,7 +9,7 @@ def get_netsuite_auth():
     token_key = st.secrets["token_key"]
     token_secret = st.secrets["token_secret"]
 
-    return OAuth1(consumer_key, consumer_secret, token_key, token_secret)
+    return OAuth1(consumer_key, consumer_secret, token_key, token_secret, signature_method='HMAC-SHA256')
 
 def make_netsuite_rest_api_request(endpoint):
     """Make an authenticated GET request to the NetSuite REST API"""
