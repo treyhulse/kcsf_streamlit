@@ -17,10 +17,10 @@ def create_fedex_rate_request(trimmed_data):
         "requestedShipment": {
             "shipper": {
                 "address": {
-                    "streetLines": ["10 FedEx Pkwy"],
-                    "city": "Memphis",
-                    "stateOrProvinceCode": "TN",
-                    "postalCode": "38116",
+                    "streetLines": ["7400 E 12th Street"],
+                    "city": "Kansas City",
+                    "stateOrProvinceCode": "MO",
+                    "postalCode": "64126",
                     "countryCode": "US",
                     "residential": False
                 }
