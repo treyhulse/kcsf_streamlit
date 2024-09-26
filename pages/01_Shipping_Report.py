@@ -275,7 +275,7 @@ with tab2:
     st.write("")
 
     # Expander for customsearch5147 data with record count in header
-    st.header("Our Truck Orders with No Ship Dates")
+    st.header("Our Truck Orders with No Ship Date")
     truck_order_count = len(our_truck_data)
-    with st.expander(f"All Our Truck Orders with No Ship Date ({truck_order_count} Orders)"):
+    with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
