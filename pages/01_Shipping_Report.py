@@ -279,6 +279,7 @@ with tab2:
 
     # Expander for customsearch5147 data with record count in header
     st.header("Our Truck Orders (with no ship date)")
+    st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
