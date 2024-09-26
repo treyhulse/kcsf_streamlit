@@ -49,7 +49,7 @@ def calculate_kpis(df_grouped):
         total_orders = 0  # Default to 0 if 'Orders' column doesn't exist
     
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
-    top_sales_rep = "John Doe"
+    top_sales_rep = "John Doe"  # Placeholder for the top sales rep
     
     return total_revenue, total_orders, average_order_volume, top_sales_rep
 
@@ -70,7 +70,7 @@ if df_grouped is not None:
         {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
         {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
         {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-        {"label": "Top Sales Rep", "value": top_sales_rep},  # No percentage change for this one
+        {"label": "Top Sales Rep", "value": top_sales_rep, "change": "N/A", "positive": True},  # No percentage change for this one
     ]
 
     # Styling for the boxes
