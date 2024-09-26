@@ -43,7 +43,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
 
-# Cache the raw data fetching process, reset cache every 5 minutes (300 seconds)
+# Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)
 @st.cache_data(ttl=120)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
@@ -246,5 +246,5 @@ with tab2:
     st.write("")
 
     # Add an expander for customsearch5147 data
-    with st.expander("Our Truck Orders with No Ship Date"):
+    with st.expander("All Our Truck Orders with No Ship Date"):
         st.write(our_truck_data)
