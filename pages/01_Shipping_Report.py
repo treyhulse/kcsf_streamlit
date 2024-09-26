@@ -53,6 +53,8 @@ def fetch_raw_data(saved_search_id):
 # Fetch raw data
 open_order_data = fetch_raw_data("customsearch5065") 
 pick_task_data = fetch_raw_data("customsearch5066") 
+our_truck_data = fetch_raw_data("customsearch5147")
+
 
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
@@ -236,3 +238,7 @@ with tab2:
             with col:
                 with st.expander(f"{day} ({len(day_orders)} Orders)"):
                     st.write(day_orders)
+
+    # Add an expander for customsearch5147 data
+    with st.expander("View customsearch5147 Results"):
+        st.write(our_truck_data)
