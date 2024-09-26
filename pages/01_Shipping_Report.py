@@ -241,7 +241,10 @@ with tab2:
     st.write("")
     st.write("")
     st.write("")
-
+    st.write("")
+    st.write("")
+    st.write("")
+    
     # Add an expander for customsearch5147 data
-    with st.expander("View Our Truck Orders with No Ship Date"):
+    with st.expander("Our Truck Orders with No Ship Date"):
         st.write(our_truck_data)
