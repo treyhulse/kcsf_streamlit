@@ -256,7 +256,12 @@ with tab2:
 
         for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], week_days):
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
-            formatted_date = specific_date.strftime('%B %d')
+            
+            # Ensure 'specific_date' is valid before formatting
+            if pd.isnull(specific_date):
+                formatted_date = 'No Date'
+            else:
+                formatted_date = specific_date.strftime('%B %d')
 
             with col:
                 if len(day_orders) > 0:
@@ -265,6 +270,7 @@ with tab2:
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
+
 
     st.write("")
 
