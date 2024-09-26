@@ -85,11 +85,17 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
-ship_via_filter = st.sidebar.multiselect(
-    'Ship Via', 
-    options=ship_via_list, 
-    default='All'
-)
+# **Add 'Our Truck' shortcut button**
+if st.sidebar.button('Our Truck'):
+    # If button is clicked, set the filter to include 'Our Truck' options
+    ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
+else:
+    # Otherwise, allow user to manually select filters
+    ship_via_filter = st.sidebar.multiselect(
+        'Ship Via', 
+        options=ship_via_list, 
+        default='All'
+    )
 
 # Ship Date filter with 'All Time' option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
@@ -280,4 +286,3 @@ with tab2:
     with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
-
