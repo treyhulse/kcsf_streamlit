@@ -211,7 +211,7 @@ with tab1:
         st.write("No data available for the selected filters.")
 
     # Display filtered DataFrame in an expander
-    with st.expander("View Filtered Data Table"):
+    with st.expander("View Orders"):
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
