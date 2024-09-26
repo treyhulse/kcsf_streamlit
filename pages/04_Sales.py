@@ -4,7 +4,15 @@ from utils.restlet import fetch_restlet_data
 
 st.set_page_config(layout="wide")
 
-
+# Custom CSS to hide the top bar and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Capture the user's email
 user_email = capture_user_email()
@@ -35,7 +43,7 @@ import pandas as pd
 
 # Page title and subtitle
 st.title("Sales Dashboard")
-st.subheader("Overview of sales performance metrics")
+st.subheader("Overview of sales performance metrics from 01/01/2023")
 
 # Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
@@ -49,7 +57,7 @@ def calculate_kpis(df_grouped):
         total_orders = 0  # Default to 0 if 'Orders' column doesn't exist
     
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
-    top_sales_rep = "John Doe"  # Placeholder for the top sales rep
+    top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
     
     return total_revenue, total_orders, average_order_volume, top_sales_rep
 
@@ -77,10 +85,10 @@ if df_grouped is not None:
     st.markdown("""
     <style>
     .metrics-box {
-        background-color: #262730;
+        background-color: #f9f9f9;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 2px 2px 15px rgba(128, 128, 128, 0.1);
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
         text-align: center;
     }
     .metric-title {
@@ -124,7 +132,7 @@ col1, col2, col3 = st.columns(3)
 # Column 1: Sales by Rep visualization and DataFrame
 with col1:
     st.plotly_chart(chart_sales_by_rep, use_container_width=True)
-    with st.expander("Drill Down Data - Sales by Rep"):
+    with st.expander("Data - Sales by Rep"):
         st.dataframe(df_grouped)
 
 # Column 2: Sales by Category visualization and DataFrame
@@ -132,7 +140,7 @@ chart_sales_by_category = get_sales_by_category()
 if chart_sales_by_category:
     with col2:
         st.plotly_chart(chart_sales_by_category, use_container_width=True)
-        with st.expander("Drill Down Data - Sales by Category"):
+        with st.expander("Data - Sales by Category"):
             # Assuming you have a DataFrame for Sales by Category, you would display it here.
             df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
             if not df_sales_by_category.empty:
@@ -143,7 +151,7 @@ chart_sales_by_month = get_sales_by_month()
 if chart_sales_by_month:
     with col3:
         st.plotly_chart(chart_sales_by_month, use_container_width=True)
-        with st.expander("Drill Down Data - Sales by Month"):
+        with st.expander("Data - Sales by Month"):
             # Assuming you have a DataFrame for Sales by Month, you would display it here.
             df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
             if not df_sales_by_month.empty:
