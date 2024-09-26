@@ -46,10 +46,6 @@ from utils.restlet import fetch_restlet_data
 import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
-from utils.mongo_connection import get_mongo_client, get_collection_data
-
-# Page header
-st.title("Shipping Report")
 
 # Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)
 @st.cache_data(ttl=120)
@@ -63,10 +59,6 @@ open_order_data = fetch_raw_data("customsearch5065")
 pick_task_data = fetch_raw_data("customsearch5066") 
 our_truck_data = fetch_raw_data("customsearch5147")
 
-# MongoDB Connection for fetching zip codes
-client = get_mongo_client()
-zipcodes_data = get_collection_data(client, 'zipcodes')
-valid_zipcodes = zipcodes_data['zipcode'].tolist()
 
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
@@ -82,7 +74,7 @@ st.sidebar.header('Filters')
 
 # Sales Rep filter with 'All' option
 sales_rep_list = merged_df['Sales Rep'].unique().tolist()
-sales_rep_list.insert(0, 'All')
+sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
 sales_rep_filter = st.sidebar.multiselect(
     'Sales Rep', 
@@ -92,7 +84,7 @@ sales_rep_filter = st.sidebar.multiselect(
 
 # Ship Via filter with 'All' option
 ship_via_list = merged_df['Ship Via'].unique().tolist()
-ship_via_list.insert(0, 'All')
+ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
 ship_via_filter = st.sidebar.multiselect(
     'Ship Via', 
@@ -114,17 +106,11 @@ else:
     start_date = None
     end_date = None
 
-# Tasked Orders checkbox
-tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
-
-# Untasked Orders checkbox
-untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
-
 # Apply Ship Date filter
-today = pd.to_datetime(datetime.today())
+today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
 
 if ship_date_filter == 'Today':
-    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]
+    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
 elif ship_date_filter == 'Past (including today)':
     merged_df = merged_df[merged_df['Ship Date'] <= today]
 elif ship_date_filter == 'Future':
@@ -132,6 +118,14 @@ elif ship_date_filter == 'Future':
 elif ship_date_filter == 'Custom Range' and start_date and end_date:
     merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
                           (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
+# No filter applied for 'All Time'
+
+
+# Tasked Orders checkbox
+tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
+
+# Untasked Orders checkbox
+untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
 
 # Apply Sales Rep filter
 if 'All' not in sales_rep_filter:
@@ -150,18 +144,6 @@ elif untasked_orders and not tasked_orders:
 # **Remove duplicate Order Numbers**
 merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
-# Check zip code validity using MongoDB zipcodes collection
-our_truck_data['Valid Zip'] = our_truck_data['Zip'].apply(lambda x: x in valid_zipcodes)
-
-# Conditional formatting: Red text for invalid zip codes
-def highlight_invalid_zip(val, is_valid):
-    color = 'red' if not is_valid else 'black'
-    return f'color: {color}'
-
-# Apply conditional formatting to 'Zip' column
-styled_truck_data = our_truck_data.style.apply(lambda x: [highlight_invalid_zip(v, our_truck_data['Valid Zip'][i]) 
-                                                  for i, v in enumerate(x)], subset=['Zip'])
-
 # Create tabs for Open Orders and Shipping Calendar
 tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
 
@@ -173,7 +155,7 @@ with tab1:
     untasked_orders_count = merged_df['Task ID'].isna().sum()
     task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
-    # Styling for the metrics boxes
+    # Styling for the metrics boxes (matching the previous example)
     st.markdown("""
     <style>
     .metrics-box {
@@ -214,10 +196,14 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
+    # Add visual separation
+    st.write("")
+
     # Display charts using Plotly
     if not merged_df.empty:
         col_chart, col_pie = st.columns([2, 1])
         with col_chart:
+            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
             ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
             fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
             st.plotly_chart(fig_line, use_container_width=True)
@@ -231,40 +217,50 @@ with tab1:
     else:
         st.write("No data available for the selected filters.")
 
-    # Display filtered DataFrame in an expander with the length of the DataFrame in the title
-    with st.expander(f"View Open Orders with a Ship Date ({len(merged_df)})"):
+    # Display filtered DataFrame in an expander
+    with st.expander("View Open Orders with a Ship Date"):
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
+from datetime import datetime, timedelta
+
 with tab2:
     st.header("Shipping Calendar")
 
     # Group orders by week and day
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
     merged_df['Week Start'] = merged_df['Ship Date'] - pd.to_timedelta(merged_df['Ship Date'].dt.weekday, unit='D')
     merged_df['Week End'] = merged_df['Week Start'] + timedelta(days=6)
 
+    # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
     # Display headers for the days of the week once at the top
     col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
-    for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
-        with col:
-            st.write(f"**{day}**")
+    with col_mon:
+        st.write("**Monday**")
+    with col_tue:
+        st.write("**Tuesday**")
+    with col_wed:
+        st.write("**Wednesday**")
+    with col_thu:
+        st.write("**Thursday**")
+    with col_fri:
+        st.write("**Friday**")
 
+    # Iterate through the unique weeks
     for _, week_row in unique_weeks.iterrows():
         week_start = week_row['Week Start']
-        week_days = [week_start + timedelta(days=i) for i in range(5)]
+        week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
 
-        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], week_days):
+        # Populate columns with orders for each day, including the specific date
+        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], 
+                                           ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 
+                                           week_days):
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
-            
-            # Ensure 'specific_date' is valid before formatting
-            if pd.isnull(specific_date):
-                formatted_date = 'No Date'
-            else:
-                formatted_date = specific_date.strftime('%B %d')
+            formatted_date = specific_date.strftime('%B %d')
 
             with col:
                 if len(day_orders) > 0:
@@ -274,12 +270,19 @@ with tab2:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
 
-
+        # Add visual separation between weeks
+        st.write("")
+        
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
     st.write("")
 
     # Expander for customsearch5147 data with record count in header
     st.header("Our Truck Orders with No Ship Date")
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders"):
-        st.write(styled_truck_data.to_html(escape=False), unsafe_allow_html=True)
+        st.write(our_truck_data)
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
