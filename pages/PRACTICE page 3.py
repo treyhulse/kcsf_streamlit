@@ -40,6 +40,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
 import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
@@ -238,10 +239,6 @@ with tab1:
 # Tab 2: Shipping Calendar
 with tab2:
     st.header("Shipping Calendar")
-
-    # Add a button to select specific Ship Via filters
-    if st.button("Select 'Our Truck' Filters"):
-        ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
 
     # Group orders by week and day
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
