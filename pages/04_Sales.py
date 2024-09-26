@@ -70,7 +70,7 @@ if df_grouped is not None:
         {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
         {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
         {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-        {"label": "Top Sales Rep", "value": top_sales_rep, "change": "N/A", "positive": True},  # No percentage change for this one
+        {"label": "Top Sales Rep", "value": top_sales_rep},  # No percentage change for this one
     ]
 
     # Styling for the boxes
