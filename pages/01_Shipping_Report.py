@@ -261,7 +261,7 @@ with tab2:
                     with st.expander(f"{formatted_date} ({len(day_orders)} Orders)"):
                         st.write(day_orders)
                 else:
-                    with st.expander(f"NO ORDERS ON {formatted_date}"):
+                    with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
 
         # Add visual separation between weeks
