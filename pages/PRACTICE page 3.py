@@ -228,13 +228,17 @@ with tab1:
     else:
         st.write("No data available for the selected filters.")
 
-    # Display filtered DataFrame in an expander
-    with st.expander("View Open Orders with a Ship Date"):
+    # Display filtered DataFrame in an expander with the length of the DataFrame in the title
+    with st.expander(f"View Open Orders with a Ship Date ({len(merged_df)})"):
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
 with tab2:
     st.header("Shipping Calendar")
+
+    # Add a button to select specific Ship Via filters
+    if st.button("Select 'Our Truck' Filters"):
+        ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
 
     # Group orders by week and day
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
@@ -270,7 +274,6 @@ with tab2:
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
-
 
     st.write("")
 
