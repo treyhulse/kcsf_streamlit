@@ -42,102 +42,235 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ################################################################################################
 
 import streamlit as st
-import pandas as pd
-import requests
-from requests_oauthlib import OAuth1
-import logging
 from utils.restlet import fetch_restlet_data
-from utils.suiteql import fetch_paginated_suiteql_data, base_url
+import pandas as pd
+from datetime import datetime, timedelta
+import plotly.express as px
+from utils.mongo_connection import get_mongo_client, get_collection_data
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Page title
-st.title("MRP Dashboard")
-
-# Cache the raw data fetching process (TTL: 900 seconds)
-@st.cache_data(ttl=900)
+# Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)
+@st.cache_data(ttl=120)
 def fetch_raw_data(saved_search_id):
-    return fetch_restlet_data(saved_search_id)
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
 
-# SuiteQL query function to fetch inventory data
-@st.cache_data(ttl=900)
-def fetch_inventory_data(suiteql_query, base_url):
-    return fetch_paginated_suiteql_data(suiteql_query, base_url)
+# Fetch raw data
+open_order_data = fetch_raw_data("customsearch5065") 
+pick_task_data = fetch_raw_data("customsearch5066") 
+our_truck_data = fetch_raw_data("customsearch5147")
 
-# Define the SuiteQL query for the inventory data
-suiteql_query = """
-SELECT
-    invbal.item AS "item id",
-    item.displayname AS "Item",
-    invbal.location AS "Warehouse",
-    invbal.quantityonhand AS "Quantity On Hand",
-    invbal.quantityavailable AS "Quantity Available"
-FROM
-    inventorybalance invbal
-JOIN
-    item ON invbal.item = item.id
-WHERE
-    item.isinactive = 'F'
-ORDER BY
-    item.displayname ASC;
-"""
+# MongoDB Connection for fetching zip codes
+client = get_mongo_client()
+zipcodes_data = get_collection_data(client, 'zipcodes')
+valid_zipcodes = zipcodes_data['zipcode'].tolist()
 
-# Base URL for SuiteQL API
-base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+# Select only 'Order Number' and 'Task ID' from pick_task_data
+pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 
-# Fetch the inventory data from SuiteQL query
-inventory_df = fetch_inventory_data(suiteql_query, base_url)
+# Merge the two dataframes on 'Order Number', keeping all rows from open_order_data
+merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='left')
 
-# Fetch sales order and purchase order data using saved search IDs
-sales_orders_df = fetch_raw_data("customsearch5141")  # Example saved search for sales orders
-purchase_orders_df = fetch_raw_data("customsearch5142")  # Example saved search for purchase orders
+# Convert 'Ship Date' to datetime format
+merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
 
-# Rename 'item id' in the inventory table to match 'Item' in sales/purchase orders
-inventory_df.rename(columns={'item id': 'Item'}, inplace=True)
+# Sidebar filters (global for both tabs)
+st.sidebar.header('Filters')
 
-# Merge the data on 'Item' and 'warehouse'
-merged_df = pd.merge(inventory_df, sales_orders_df, on=['Item', 'warehouse'], how='outer')
-merged_df = pd.merge(merged_df, purchase_orders_df, on=['Item', 'warehouse'], how='outer')
+# Sales Rep filter with 'All' option
+sales_rep_list = merged_df['Sales Rep'].unique().tolist()
+sales_rep_list.insert(0, 'All')
 
-# Group by 'Item' and 'warehouse' and sum relevant columns
-supply_demand_df = merged_df.groupby(['Item', 'warehouse'], as_index=False).agg({
-    'Quantity Available': 'sum',
-    'Quantity On Hand': 'sum',
-    'Ordered_x': 'sum',  # Sales Ordered
-    'Committed': 'sum',
-    'Fulfilled_x': 'sum',  # Sales Fulfilled
-    'Back Ordered': 'sum',
-    'Ordered_y': 'sum',  # Purchase Ordered
-    'Fulfilled_y': 'sum',  # Purchase Fulfilled
-    'Not Received': 'sum'
-})
+sales_rep_filter = st.sidebar.multiselect(
+    'Sales Rep', 
+    options=sales_rep_list, 
+    default='All'
+)
 
-# Rename columns for clarity
-supply_demand_df.columns = ['Item', 'warehouse', 'Available Quantity', 'On Hand Quantity',
-                            'Sales Ordered', 'Sales Committed', 'Sales Fulfilled',
-                            'Sales Back Ordered', 'Purchase Ordered', 'Purchase Fulfilled',
-                            'Purchase Not Received']
+# Ship Via filter with 'All' option
+ship_via_list = merged_df['Ship Via'].unique().tolist()
+ship_via_list.insert(0, 'All')
 
-# Fill NaN values with 0
-supply_demand_df.fillna(0, inplace=True)
+ship_via_filter = st.sidebar.multiselect(
+    'Ship Via', 
+    options=ship_via_list, 
+    default='All'
+)
 
-# Add Net Inventory column
-supply_demand_df['Net Inventory'] = (supply_demand_df['Available Quantity'] + supply_demand_df['Purchase Ordered']) - \
-                                    (supply_demand_df['Sales Ordered'] + supply_demand_df['Sales Back Ordered'])
+# Ship Date filter with custom range option
+date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
+ship_date_filter = st.sidebar.selectbox(
+    'Ship Date',
+    options=date_filter_options
+)
 
-# Add a filter for Warehouse
-warehouse_options = supply_demand_df['warehouse'].unique()
-selected_warehouse = st.selectbox("Select Warehouse", options=warehouse_options)
+if ship_date_filter == 'Custom Range':
+    start_date = st.sidebar.date_input('Start Date', datetime.today() - timedelta(days=7))
+    end_date = st.sidebar.date_input('End Date', datetime.today())
+else:
+    start_date = None
+    end_date = None
 
-# Filter by the selected warehouse
-filtered_df = supply_demand_df[supply_demand_df['warehouse'] == selected_warehouse]
+# Tasked Orders checkbox
+tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
 
-# Display the filtered DataFrame
-st.write(f"Supply and Demand Visibility for Warehouse {selected_warehouse}")
-st.dataframe(filtered_df)
+# Untasked Orders checkbox
+untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
 
-# Option to download the data as CSV
-csv = filtered_df.to_csv(index=False)
-st.download_button(label="Download data as CSV", data=csv, file_name='supply_demand_visibility.csv', mime='text/csv')
+# Apply Ship Date filter
+today = pd.to_datetime(datetime.today())
+
+if ship_date_filter == 'Today':
+    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]
+elif ship_date_filter == 'Past (including today)':
+    merged_df = merged_df[merged_df['Ship Date'] <= today]
+elif ship_date_filter == 'Future':
+    merged_df = merged_df[merged_df['Ship Date'] > today]
+elif ship_date_filter == 'Custom Range' and start_date and end_date:
+    merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
+                          (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
+
+# Apply Sales Rep filter
+if 'All' not in sales_rep_filter:
+    merged_df = merged_df[merged_df['Sales Rep'].isin(sales_rep_filter)]
+
+# Apply Ship Via filter
+if 'All' not in ship_via_filter:
+    merged_df = merged_df[merged_df['Ship Via'].isin(ship_via_filter)]
+
+# Apply Tasked/Untasked Orders filter
+if tasked_orders and not untasked_orders:
+    merged_df = merged_df[merged_df['Task ID'].notna()]
+elif untasked_orders and not tasked_orders:
+    merged_df = merged_df[merged_df['Task ID'].isna()]
+
+# **Remove duplicate Order Numbers**
+merged_df = merged_df.drop_duplicates(subset=['Order Number'])
+
+# Check zip code validity using MongoDB zipcodes collection
+our_truck_data['Valid Zip'] = our_truck_data['Ship Zip'].apply(lambda x: x in valid_zipcodes)
+
+# Conditional formatting: Red text for invalid zip codes
+def highlight_invalid_zip(val, is_valid):
+    color = 'red' if not is_valid else 'black'
+    return f'color: {color}'
+
+# Apply conditional formatting to 'Ship Zip' column
+styled_truck_data = our_truck_data.style.apply(lambda x: [highlight_invalid_zip(v, our_truck_data['Valid Zip'][i]) 
+                                                  for i, v in enumerate(x)], subset=['Ship Zip'])
+
+# Create tabs for Open Orders and Shipping Calendar
+tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
+
+# Tab 1: Open Orders
+with tab1:
+    # Metrics
+    total_orders = len(merged_df)
+    tasked_orders_count = merged_df['Task ID'].notna().sum()
+    untasked_orders_count = merged_df['Task ID'].isna().sum()
+    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
+
+    # Styling for the metrics boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Display dynamic metric boxes
+    metrics = [
+        {"label": "Total Open Orders", "value": total_orders},
+        {"label": "Tasked Orders", "value": tasked_orders_count},
+        {"label": "Untasked Orders", "value": untasked_orders_count},
+        {"label": "Successful Task Percentage", "value": f"{task_percentage:.2f}%"},
+    ]
+
+    # Display metrics in columns
+    col1, col2, col3, col4 = st.columns(4)
+    for col, metric in zip([col1, col2, col3, col4], metrics):
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Display charts using Plotly
+    if not merged_df.empty:
+        col_chart, col_pie = st.columns([2, 1])
+        with col_chart:
+            ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
+            fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+            st.plotly_chart(fig_line, use_container_width=True)
+        
+        with col_pie:
+            matched_orders = merged_df['Task ID'].notna().sum()
+            unmatched_orders = merged_df['Task ID'].isna().sum()
+            pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
+            fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
+            st.plotly_chart(fig_pie, use_container_width=True)
+    else:
+        st.write("No data available for the selected filters.")
+
+    # Display filtered DataFrame in an expander
+    with st.expander("View Open Orders with a Ship Date"):
+        st.write(merged_df)
+
+# Tab 2: Shipping Calendar
+with tab2:
+    st.header("Shipping Calendar")
+
+    # Group orders by week and day
+    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
+    merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
+    merged_df['Week Start'] = merged_df['Ship Date'] - pd.to_timedelta(merged_df['Ship Date'].dt.weekday, unit='D')
+    merged_df['Week End'] = merged_df['Week Start'] + timedelta(days=6)
+
+    unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
+
+    # Display headers for the days of the week once at the top
+    col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
+    for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
+        with col:
+            st.write(f"**{day}**")
+
+    for _, week_row in unique_weeks.iterrows():
+        week_start = week_row['Week Start']
+        week_days = [week_start + timedelta(days=i) for i in range(5)]
+
+        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], week_days):
+            day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
+            formatted_date = specific_date.strftime('%B %d')
+
+            with col:
+                if len(day_orders) > 0:
+                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)"):
+                        st.write(day_orders)
+                else:
+                    with st.expander(f"{formatted_date}: NO ORDERS"):
+                        st.write("No orders for this day.")
+
+    st.write("")
+
+    # Expander for customsearch5147 data with record count in header
+    st.header("Our Truck Orders with No Ship Date")
+    truck_order_count = len(our_truck_data)
+    with st.expander(f"{truck_order_count} Orders"):
+        st.write(styled_truck_data.to_html(escape=False), unsafe_allow_html=True)
+        st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
