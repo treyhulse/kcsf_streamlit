@@ -35,7 +35,7 @@ import pandas as pd
 
 # Page title and subtitle
 st.title("Sales Dashboard")
-st.subheader("Overview of sales performance metrics from 01/01/2023")
+st.subheader("Overview of sales performance metrics")
 
 # Calculate the KPIs (this will reference the Sales by Rep data)
 def calculate_kpis(df_grouped):
@@ -124,7 +124,7 @@ col1, col2, col3 = st.columns(3)
 # Column 1: Sales by Rep visualization and DataFrame
 with col1:
     st.plotly_chart(chart_sales_by_rep, use_container_width=True)
-    with st.expander("Data - Sales by Rep"):
+    with st.expander("Drill Down Data - Sales by Rep"):
         st.dataframe(df_grouped)
 
 # Column 2: Sales by Category visualization and DataFrame
@@ -132,7 +132,7 @@ chart_sales_by_category = get_sales_by_category()
 if chart_sales_by_category:
     with col2:
         st.plotly_chart(chart_sales_by_category, use_container_width=True)
-        with st.expander("Data - Sales by Category"):
+        with st.expander("Drill Down Data - Sales by Category"):
             # Assuming you have a DataFrame for Sales by Category, you would display it here.
             df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
             if not df_sales_by_category.empty:
@@ -143,7 +143,7 @@ chart_sales_by_month = get_sales_by_month()
 if chart_sales_by_month:
     with col3:
         st.plotly_chart(chart_sales_by_month, use_container_width=True)
-        with st.expander("Data - Sales by Month"):
+        with st.expander("Drill Down Data - Sales by Month"):
             # Assuming you have a DataFrame for Sales by Month, you would display it here.
             df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
             if not df_sales_by_month.empty:
