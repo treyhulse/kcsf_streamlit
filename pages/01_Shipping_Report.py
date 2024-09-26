@@ -237,7 +237,7 @@ with tab2:
         week_start = week_row['Week Start'].strftime('%b %d')
         week_end = week_row['Week End'].strftime('%b %d')
 
-        st.subheader(f"({week_start} - {week_end})")
+        st.subheader(f"{week_start} - {week_end}")
         # Create 5 columns representing Monday to Friday
         col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
 
