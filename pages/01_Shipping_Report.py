@@ -238,7 +238,10 @@ with tab2:
             with col:
                 with st.expander(f"{day} ({len(day_orders)} Orders)"):
                     st.write(day_orders)
+    st.write("")
+    st.write("")
+    st.write("")
 
     # Add an expander for customsearch5147 data
-    with st.expander("View customsearch5147 Results"):
+    with st.expander("View Our Truck Orders with No Ship Date"):
         st.write(our_truck_data)
