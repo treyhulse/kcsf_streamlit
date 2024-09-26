@@ -249,7 +249,8 @@ with tab2:
                     with st.expander(f"{day} ({len(day_orders)} Orders)"):
                         st.write(day_orders)
                 else:
-                    st.write(f"**{day}: NO ORDERS**")
+                    with st.expander(f"{day}: NO ORDERS"):
+                        st.write("No orders for this day.")
 
     st.write("")
     st.write("")
