@@ -80,7 +80,7 @@ if df_grouped is not None:
         background-color: #262730;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 2px 2px 15px rgba(128, 128, 128, 0.5);  /* Changed shadow color to grey */
+        box-shadow: 2px 2px 15px rgba(128, 128, 128, 0.0);
         text-align: center;
     }
     .metric-title {
