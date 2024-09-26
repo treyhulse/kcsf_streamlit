@@ -236,10 +236,6 @@ with tab1:
 with tab2:
     st.header("Shipping Calendar")
 
-    # Add a button to select specific Ship Via filters
-    if st.button("Select 'Our Truck' Filters"):
-        ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
-
     # Group orders by week and day
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
@@ -274,6 +270,7 @@ with tab2:
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
+
 
     st.write("")
 
