@@ -217,8 +217,6 @@ with tab1:
 
 # Tab 2: Shipping Calendar
 from datetime import datetime, timedelta
-
-# Tab 2: Shipping Calendar
 with tab2:
     st.header("Shipping Calendar")
 
@@ -233,24 +231,37 @@ with tab2:
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
     for _, week_row in unique_weeks.iterrows():
-        week = week_row['Week']
-        week_start = week_row['Week Start'].strftime('%b %d')
-        week_end = week_row['Week End'].strftime('%b %d')
+        week_start = week_row['Week Start']
+        week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
 
-        st.subheader(f"{week_start} - {week_end}")
-        # Create 5 columns representing Monday to Friday
+        # Create headers for each day of the week
         col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
+        with col_mon:
+            st.write("**Monday**")
+        with col_tue:
+            st.write("**Tuesday**")
+        with col_wed:
+            st.write("**Wednesday**")
+        with col_thu:
+            st.write("**Thursday**")
+        with col_fri:
+            st.write("**Friday**")
 
-        # Filter data by day for each column
-        for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
-            day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
+        # Populate columns with orders for each day, including the specific date
+        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], 
+                                           ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 
+                                           week_days):
+            day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
+            formatted_date = specific_date.strftime('%B %d')
+
             with col:
                 if len(day_orders) > 0:
-                    with st.expander(f"{day} ({len(day_orders)} Orders)"):
+                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)"):
                         st.write(day_orders)
                 else:
-                    with st.expander(f"{day}: NO ORDERS"):
+                    with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
+
         # Add visual separation between weeks
         st.write("")
         
