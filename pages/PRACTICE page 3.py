@@ -48,6 +48,9 @@ from datetime import datetime, timedelta
 import plotly.express as px
 from utils.mongo_connection import get_mongo_client, get_collection_data
 
+# Page header
+st.title("Shipping Report")
+
 # Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)
 @st.cache_data(ttl=120)
 def fetch_raw_data(saved_search_id):
