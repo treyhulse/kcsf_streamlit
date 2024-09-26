@@ -23,8 +23,3 @@ token = "your-mapbox-token"
 componentJsPath = "/path/to/components"
 # .streamlit/config.toml
 
-[theme]
-primaryColor="#c70039"
-backgroundColor="#f9f9f9"
-secondaryBackgroundColor="#e5e4e2"
-textColor="#000000"
