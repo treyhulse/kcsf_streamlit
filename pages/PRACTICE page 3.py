@@ -85,17 +85,18 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
-# **Add 'Our Truck' shortcut button**
+# **Pre-populate the Ship Via filter if the 'Our Truck' button is clicked**
 if st.sidebar.button('Our Truck'):
-    # If button is clicked, set the filter to include 'Our Truck' options
-    ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
+    default_ship_via = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
 else:
-    # Otherwise, allow user to manually select filters
-    ship_via_filter = st.sidebar.multiselect(
-        'Ship Via', 
-        options=ship_via_list, 
-        default='All'
-    )
+    default_ship_via = 'All'
+
+# Allow user to manually select Ship Via options but pre-populate if the button was clicked
+ship_via_filter = st.sidebar.multiselect(
+    'Ship Via', 
+    options=ship_via_list, 
+    default=default_ship_via
+)
 
 # Ship Date filter with 'All Time' option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
