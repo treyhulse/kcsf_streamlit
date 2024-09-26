@@ -219,22 +219,26 @@ with tab1:
 with tab2:
     st.header("Shipping Calendar")
 
-    # Group orders by week and day
-    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
-    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
+    # Convert 'Ship Date' to datetime if not already in that format
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
+    
+    # Group orders by week and day, and calculate the Monday of each week
+    merged_df['Week Start'] = merged_df['Ship Date'].dt.to_period('W').apply(lambda r: r.start_time)
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
 
-    # Get the unique weeks from the dataset
-    unique_weeks = merged_df['Week'].unique()
+    # Get the unique weeks (represented by the Monday of each week)
+    unique_weeks = merged_df['Week Start'].unique()
 
-    for week in unique_weeks:
-        st.subheader(f"Week {week}")
+    for week_start in unique_weeks:
+        week_end = week_start + timedelta(days=6)  # Calculate the end of the week
+        st.subheader(f"Week of {week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}")
+
         # Create 5 columns representing Monday to Friday
         col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
-        
+
         # Filter data by day for each column
         for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
-            day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
+            day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
             with col:
                 with st.expander(f"{day} ({len(day_orders)} Orders)"):
                     st.write(day_orders)
