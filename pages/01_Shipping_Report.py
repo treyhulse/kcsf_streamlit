@@ -51,10 +51,9 @@ def fetch_raw_data(saved_search_id):
     return df
 
 # Fetch raw data
-open_order_data = fetch_raw_data("customsearch5065") 
-pick_task_data = fetch_raw_data("customsearch5066") 
+open_order_data = fetch_raw_data("customsearch5065")
+pick_task_data = fetch_raw_data("customsearch5066")
 our_truck_data = fetch_raw_data("customsearch5147")
-
 
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
@@ -88,8 +87,8 @@ ship_via_filter = st.sidebar.multiselect(
     default='All'
 )
 
-# Ship Date filter with custom range option
-date_filter_options = ['Today', 'Past (including today)', 'Future', 'Custom Range']
+# Ship Date filter with 'All Time' option
+date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
     'Ship Date',
     options=date_filter_options
@@ -120,6 +119,7 @@ elif ship_date_filter == 'Future':
 elif ship_date_filter == 'Custom Range' and start_date and end_date:
     merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
                           (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
+# No filtering for 'All Time'
 
 # Apply Sales Rep filter
 if 'All' not in sales_rep_filter:
@@ -135,7 +135,7 @@ if tasked_orders and not untasked_orders:
 elif untasked_orders and not tasked_orders:
     merged_df = merged_df[merged_df['Task ID'].isna()]
 
-# **Remove duplicate Order Numbers**
+# Remove duplicate Order Numbers
 merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
 # Create tabs for Open Orders and Shipping Calendar
@@ -149,7 +149,7 @@ with tab1:
     untasked_orders_count = merged_df['Task ID'].isna().sum()
     task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
-    # Styling for the metrics boxes (matching the previous example)
+    # Styling for the metrics boxes
     st.markdown("""
     <style>
     .metrics-box {
@@ -216,8 +216,6 @@ with tab1:
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
-from datetime import datetime, timedelta
-
 with tab2:
     st.header("Shipping Calendar")
 
@@ -254,7 +252,12 @@ with tab2:
                                            ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 
                                            week_days):
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
-            formatted_date = specific_date.strftime('%B %d')
+
+            # Check if specific_date is valid before formatting
+            if pd.notna(specific_date):
+                formatted_date = specific_date.strftime('%B %d')
+            else:
+                formatted_date = "Invalid Date"
 
             with col:
                 if len(day_orders) > 0:
@@ -266,13 +269,6 @@ with tab2:
 
         # Add visual separation between weeks
         st.write("")
-        
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
-    st.write("")
 
     # Expander for customsearch5147 data with record count in header
     st.header("Our Truck Orders with No Ship Date")
@@ -280,3 +276,4 @@ with tab2:
     with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
+
