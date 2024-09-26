@@ -81,10 +81,17 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
+# **Pre-populate the Ship Via filter if the 'Our Truck' button is clicked**
+if st.sidebar.button('Our Truck'):
+    default_ship_via = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
+else:
+    default_ship_via = 'All'
+
+# Allow user to manually select Ship Via options but pre-populate if the button was clicked
 ship_via_filter = st.sidebar.multiselect(
     'Ship Via', 
     options=ship_via_list, 
-    default='All'
+    default=default_ship_via
 )
 
 # Ship Date filter with 'All Time' option
@@ -271,9 +278,8 @@ with tab2:
         st.write("")
 
     # Expander for customsearch5147 data with record count in header
-    st.header("Our Truck Orders with No Ship Date")
+    st.header("Our Truck Orders (with no ship date)")
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
-
