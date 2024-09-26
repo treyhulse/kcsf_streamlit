@@ -77,7 +77,7 @@ if df_grouped is not None:
     st.markdown("""
     <style>
     .metrics-box {
-        background-color: #CECECE;
+        background-color: #DADADA;
         padding: 20px;
         border-radius: 10px;
         box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
