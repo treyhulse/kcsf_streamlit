@@ -216,32 +216,41 @@ with tab1:
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
+from datetime import datetime, timedelta
+
+# Tab 2: Shipping Calendar
 with tab2:
     st.header("Shipping Calendar")
 
-    # Convert 'Ship Date' to datetime if not already in that format
-    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
-    
-    # Group orders by week and day, and calculate the Monday of each week
-    merged_df['Week Start'] = merged_df['Ship Date'].dt.to_period('W').apply(lambda r: r.start_time)
+    # Group orders by week and day
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
+    merged_df['Week Start'] = merged_df['Ship Date'] - pd.to_timedelta(merged_df['Ship Date'].dt.weekday, unit='D')
+    merged_df['Week End'] = merged_df['Week Start'] + timedelta(days=6)
 
-    # Get the unique weeks (represented by the Monday of each week)
-    unique_weeks = merged_df['Week Start'].unique()
+    # Get the unique weeks from the dataset
+    unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
-    for week_start in unique_weeks:
-        week_end = week_start + timedelta(days=6)  # Calculate the end of the week
-        st.subheader(f"Week of {week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}")
+    for _, week_row in unique_weeks.iterrows():
+        week = week_row['Week']
+        week_start = week_row['Week Start'].strftime('%b %d')
+        week_end = week_row['Week End'].strftime('%b %d')
 
+        st.subheader(f"Week {week} ({week_start} - {week_end})")
         # Create 5 columns representing Monday to Friday
         col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
 
         # Filter data by day for each column
         for col, day in zip([col_mon, col_tue, col_wed, col_thu, col_fri], ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']):
-            day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
+            day_orders = merged_df[(merged_df['Week'] == week) & (merged_df['Day'] == day)]
             with col:
-                with st.expander(f"{day} ({len(day_orders)} Orders)"):
-                    st.write(day_orders)
+                if len(day_orders) > 0:
+                    with st.expander(f"{day} ({len(day_orders)} Orders)"):
+                        st.write(day_orders)
+                else:
+                    st.write(f"**{day}: NO ORDERS**")
+
     st.write("")
     st.write("")
     st.write("")
@@ -249,6 +258,7 @@ with tab2:
     st.write("")
     st.write("")
 
-    # Add an expander for customsearch5147 data
-    with st.expander("All Our Truck Orders with No Ship Date"):
+    # Expander for customsearch5147 data with record count in header
+    truck_order_count = len(our_truck_data)
+    with st.expander(f"All Our Truck Orders with No Ship Date ({truck_order_count} Orders)"):
         st.write(our_truck_data)
