@@ -93,7 +93,7 @@ ship_via_filter = st.sidebar.multiselect(
     options=ship_via_list, 
     default=default_ship_via
 )
-
+    
 # Ship Date filter with 'All Time' option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
