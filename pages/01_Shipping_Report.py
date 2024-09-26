@@ -279,3 +279,4 @@ with tab2:
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
+        st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
