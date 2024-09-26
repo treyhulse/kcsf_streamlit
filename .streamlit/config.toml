@@ -7,13 +7,10 @@ hideTopBar = true
 runOnSave = false
 
 [theme]
-base = "dark"
-primaryColor = "#C70039"
-backgroundColor = "#f9f9f9"
-secondaryBackgroundColor = "#E5E4E2"
-textColor = "#000000"
-font = "sans serif"
-layout = "wide"
+primaryColor="#c70039"
+backgroundColor="#f9f9f9"
+secondaryBackgroundColor="#e5e4e2"
+textColor="#000000"
 
 [mapbox]
 token = "your-mapbox-token"
