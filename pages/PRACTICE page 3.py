@@ -148,16 +148,16 @@ elif untasked_orders and not tasked_orders:
 merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
 # Check zip code validity using MongoDB zipcodes collection
-our_truck_data['Valid Zip'] = our_truck_data['Ship Zip'].apply(lambda x: x in valid_zipcodes)
+our_truck_data['Valid Zip'] = our_truck_data['Zip'].apply(lambda x: x in valid_zipcodes)
 
 # Conditional formatting: Red text for invalid zip codes
 def highlight_invalid_zip(val, is_valid):
     color = 'red' if not is_valid else 'black'
     return f'color: {color}'
 
-# Apply conditional formatting to 'Ship Zip' column
+# Apply conditional formatting to 'Zip' column
 styled_truck_data = our_truck_data.style.apply(lambda x: [highlight_invalid_zip(v, our_truck_data['Valid Zip'][i]) 
-                                                  for i, v in enumerate(x)], subset=['Ship Zip'])
+                                                  for i, v in enumerate(x)], subset=['Zip'])
 
 # Create tabs for Open Orders and Shipping Calendar
 tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
