@@ -40,7 +40,6 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
@@ -91,11 +90,15 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')
 
-ship_via_filter = st.sidebar.multiselect(
-    'Ship Via', 
-    options=ship_via_list, 
-    default='All'
-)
+# Add a button to set the Ship Via filter to specific values for "Our Truck"
+if st.sidebar.button("Filter for 'Our Truck'"):
+    ship_via_filter = ['Our Truck', 'Our Truck - Large', 'Our Truck - Small']
+else:
+    ship_via_filter = st.sidebar.multiselect(
+        'Ship Via', 
+        options=ship_via_list, 
+        default='All'
+    )
 
 # Ship Date filter with custom range option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
@@ -236,6 +239,10 @@ with tab1:
 with tab2:
     st.header("Shipping Calendar")
 
+    # Add a button to select specific Ship Via filters
+    if st.button("Select 'Our Truck' Filters"):
+        ship_via_filter = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
+
     # Group orders by week and day
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
@@ -270,7 +277,6 @@ with tab2:
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
-
 
     st.write("")
 
