@@ -217,6 +217,7 @@ with tab1:
 
 # Tab 2: Shipping Calendar
 from datetime import datetime, timedelta
+
 with tab2:
     st.header("Shipping Calendar")
 
@@ -230,22 +231,23 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
+    # Display headers for the days of the week once at the top
+    col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
+    with col_mon:
+        st.write("**Monday**")
+    with col_tue:
+        st.write("**Tuesday**")
+    with col_wed:
+        st.write("**Wednesday**")
+    with col_thu:
+        st.write("**Thursday**")
+    with col_fri:
+        st.write("**Friday**")
+
+    # Iterate through the unique weeks
     for _, week_row in unique_weeks.iterrows():
         week_start = week_row['Week Start']
         week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
-
-        # Create headers for each day of the week
-        col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
-        with col_mon:
-            st.write("**Monday**")
-        with col_tue:
-            st.write("**Tuesday**")
-        with col_wed:
-            st.write("**Wednesday**")
-        with col_thu:
-            st.write("**Thursday**")
-        with col_fri:
-            st.write("**Friday**")
 
         # Populate columns with orders for each day, including the specific date
         for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], 
