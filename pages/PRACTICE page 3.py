@@ -91,15 +91,11 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')
 
-# Add a button to set the Ship Via filter to specific values for "Our Truck"
-if st.sidebar.button("Filter for 'Our Truck'"):
-    ship_via_filter = ['Our Truck', 'Our Truck - Large', 'Our Truck - Small']
-else:
-    ship_via_filter = st.sidebar.multiselect(
-        'Ship Via', 
-        options=ship_via_list, 
-        default='All'
-    )
+ship_via_filter = st.sidebar.multiselect(
+    'Ship Via', 
+    options=ship_via_list, 
+    default='All'
+)
 
 # Ship Date filter with custom range option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
@@ -274,6 +270,7 @@ with tab2:
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS"):
                         st.write("No orders for this day.")
+
 
     st.write("")
 
