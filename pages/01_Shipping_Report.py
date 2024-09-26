@@ -251,7 +251,9 @@ with tab2:
                 else:
                     with st.expander(f"{day}: NO ORDERS"):
                         st.write("No orders for this day.")
-
+        # Add visual separation between weeks
+        st.write("")
+        
     st.write("")
     st.write("")
     st.write("")
