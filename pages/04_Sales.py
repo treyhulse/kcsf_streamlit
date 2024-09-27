@@ -42,7 +42,7 @@ from kpi.sales_by_month import get_sales_by_month
 import pandas as pd
 import plotly.express as px
 
-# KPI: Sales by Month
+# Function to fetch data and group by month and year
 @st.cache_data(ttl=300)  # Cache the data for 1 hour (TTL)
 def get_sales_by_month():
     df = fetch_restlet_data('customsearch5146')
@@ -72,21 +72,35 @@ def get_sales_by_month():
     )
     return fig, net_difference, percentage_variance
 
-# Calculate KPIs based on grouped sales data
+# Calculate KPIs based on grouped sales data and calculate YoY variance for orders
 def calculate_kpis(df_grouped):
     total_revenue = df_grouped['Billed Amount'].sum()
     
-    # Check if 'Orders' column exists and ensure it contains numeric values
+    # Ensure 'Orders' column exists and is numeric
     if 'Orders' in df_grouped.columns:
         df_grouped['Orders'] = pd.to_numeric(df_grouped['Orders'], errors='coerce').fillna(0)
         total_orders = df_grouped['Orders'].sum()
     else:
-        total_orders = 0  # Default to 0 if 'Orders' column doesn't exist
+        total_orders = 0
+
+    # Calculate YoY variance for Orders
+    df_grouped['Year'] = pd.to_datetime(df_grouped['Period']).dt.year
+    orders_by_year = df_grouped.groupby('Year')['Orders'].sum()
+
+    # Get current year and previous year totals
+    current_year = orders_by_year.get(2024, 0)
+    previous_year = orders_by_year.get(2023, 0)
     
+    # Calculate YoY variance
+    if previous_year != 0:
+        orders_yoy_variance = ((current_year - previous_year) / previous_year) * 100
+    else:
+        orders_yoy_variance = 0
+
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
     top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
     
-    return total_revenue, total_orders, average_order_volume, top_sales_rep
+    return total_revenue, total_orders, average_order_volume, top_sales_rep, orders_yoy_variance
 
 # Page title and subtitle
 st.title("Sales Dashboard")
@@ -99,13 +113,13 @@ chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
 chart_sales_by_rep, df_grouped = get_sales_by_rep()
 
 if df_grouped is not None:
-    total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
+    total_revenue, total_orders, average_order_volume, top_sales_rep, orders_yoy_variance = calculate_kpis(df_grouped)
 
     # Placeholder percentage change values for demo purposes
-    percentage_change_orders = 5.0  # Change values as needed
-    percentage_change_sales = 7.5
-    percentage_change_average = 3.2
-    percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
+    percentage_change_sales = percentage_variance  # Use the calculated YoY variance for sales
+    percentage_change_orders = orders_yoy_variance  # Use the calculated YoY variance for total orders
+    percentage_change_average = 3.2  # Adjust as needed
+    percentage_change_yoy = percentage_variance  # Use the calculated YoY variance for revenue
 
     # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
