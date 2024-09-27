@@ -184,28 +184,18 @@ if chart_sales_by_category:
 if chart_sales_by_month:
     with col3:
         st.plotly_chart(chart_sales_by_month, use_container_width=True)
+
+        # Original monthly sales data
         with st.expander("Data - Sales by Month"):
-            # Assuming you have a DataFrame for Sales by Month, you would display it here.
             df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
             if not df_sales_by_month.empty:
                 st.dataframe(df_sales_by_month)
 
-            # Aggregate sales by year for 2023 and 2024
-            df_sales_by_month['Year'] = pd.to_datetime(df_sales_by_month['Period']).dt.year
-            yearly_sales = df_sales_by_month.groupby('Year')['Billed Amount'].sum().reset_index()
-            yearly_sales.columns = ['Year', 'Total Billed Amount']
+                # Aggregate sales by year for 2023 and 2024
+                df_sales_by_month['Year'] = pd.to_datetime(df_sales_by_month['Period']).dt.year
+                yearly_sales = df_sales_by_month.groupby('Year')['Billed Amount'].sum().reset_index()
+                yearly_sales.columns = ['Year', 'Total Billed Amount']
 
-            # Column 3: Sales by Month visualization and DataFrame
-            if chart_sales_by_month:
-                with col3:
-                    st.plotly_chart(chart_sales_by_month, use_container_width=True)
-                    
-                    # Original monthly sales data
-                    with st.expander("Data - Sales by Month"):
-                        if not df_sales_by_month.empty:
-                            st.dataframe(df_sales_by_month)
-
-                    # Aggregated yearly sales data
-                    with st.expander("Total Sales by Year (2023 vs 2024)"):
-                        st.dataframe(yearly_sales)
-
+                # Display aggregated yearly sales data
+                with st.expander("Total Sales by Year (2023 vs 2024)"):
+                    st.dataframe(yearly_sales)
