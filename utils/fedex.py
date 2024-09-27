@@ -1,6 +1,7 @@
 import requests
 import json
 import streamlit as st
+from utils.connections import connect_to_netsuite
 
 # Function to create the FedEx request payload
 def create_fedex_rate_request(trimmed_data):
@@ -88,10 +89,12 @@ def get_fedex_rate_quote(trimmed_data):
 
 
 
-# Function to update NetSuite Sales Order with Shipping Method and Shipping Cost
 def update_sales_order_shipping_details(sales_order_id, shipping_cost, ship_method_id):
-    # Construct the NetSuite Sales Order URL
-    url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/{sales_order_id}"
+    # Get the NetSuite base URL and headers from the connection function
+    netsuite_base_url, headers = connect_to_netsuite()
+    
+    # Construct the full NetSuite Sales Order URL
+    url = f"{netsuite_base_url}/services/rest/record/v1/salesOrder/{sales_order_id}"
     
     # Create the payload with shipping cost and ship method ID
     payload = {
@@ -103,13 +106,6 @@ def update_sales_order_shipping_details(sales_order_id, shipping_cost, ship_meth
 
     # Convert payload to JSON string
     json_payload = json.dumps(payload)
-
-    # Set up headers with authorization
-    headers = {
-        "Content-Type": "application/json",
-        "Prefer": "return-content",  # Optional, only if you want the updated record back
-        "Authorization": f"Bearer {st.secrets['netsuite_token']}"
-    }
 
     # Make the PATCH request to update the sales order
     response = requests.patch(url, headers=headers, data=json_payload)
