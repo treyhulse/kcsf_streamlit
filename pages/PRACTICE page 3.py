@@ -34,10 +34,11 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data
+from utils.rest import make_netsuite_rest_api_request
 from utils.fedex import get_fedex_rate_quote
 from requests_oauthlib import OAuth1
-import requests
 import json
+import requests
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -201,11 +202,10 @@ if not sales_order_data_raw.empty:
 
                 # Send the selected shipping option back to NetSuite using REST Web Services
                 if st.button("Submit Shipping Option to NetSuite"):
-                    # Ensure that the ship method ID is correctly passed instead of the name
                     netsuite_payload = {
                         "shippingCost": selected_option['net_charge'],
                         "shipMethod": {
-                            "id": "36"  # Example shipMethod ID, adjust according to your mappings
+                            "id": selected_option['service_type']  # Use the selected shipping service type
                         }
                     }
 
@@ -234,7 +234,7 @@ if not sales_order_data_raw.empty:
 
                     try:
                         # Update the NetSuite Sales Order with the selected shipping details
-                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], "36", headers, auth)
+                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['service_type'], headers, auth)
 
                         if response.status_code == 200:
                             st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully to NetSuite!")
