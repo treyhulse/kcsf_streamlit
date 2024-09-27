@@ -35,12 +35,12 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-import pandas as pd
-from utils.restlet import fetch_restlet_data
-import plotly.express as px
 import streamlit as st
-from kpi.revenue_from_quotes import get_sales_by_category
 from kpi.sales_by_rep import get_sales_by_rep
+from kpi.sales_by_category import get_sales_by_category
+from kpi.sales_by_month import get_sales_by_month
+import pandas as pd
+import plotly.express as px
 
 # KPI: Sales by Month
 @st.cache_data(ttl=300)  # Cache the data for 1 hour (TTL)
