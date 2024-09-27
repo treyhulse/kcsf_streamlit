@@ -223,6 +223,8 @@ with tab1:
     display_metrics(sales_order_metrics)
     # Display the sales order data with conditional formatting
     st.dataframe(sales_order_data.style.apply(highlight_conditions_column, axis=1))
+    # Add a link under the dataframe
+    st.markdown("[View detailed sales order data in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5122&whence=)")
 
 # Estimates tab (with the merged contents of Quote Data)
 with tab2:
@@ -263,6 +265,7 @@ with tab2:
     # Nest the quote data DataFrame inside an expander
     with st.expander("View Detailed Quote Data"):
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
+        st.markdown("[View detailed sales order data in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5127&whence=)")
 
 # Customsearch 5128 tab (no metrics)
 with tab3:
