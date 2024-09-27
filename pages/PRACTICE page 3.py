@@ -33,6 +33,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import streamlit as st
 import pandas as pd
+import json  # Import json for serialization
 from utils.restlet import fetch_restlet_data
 from utils.rest import make_netsuite_rest_api_request
 from utils.fedex import get_fedex_rate_quote
@@ -195,12 +196,15 @@ if not sales_order_data_raw.empty:
                     # Debugging: Print the payload to ensure it's correct before the request
                     st.write("NetSuite Payload:", netsuite_payload)
 
+                    # Serialize the payload to JSON string
+                    json_payload = json.dumps(netsuite_payload)
+
                     # Make a POST request to update the sales order with shipping details in NetSuite
                     try:
-                        # Adjust the function call to remove 'payload' and replace it with 'json' as per standard convention
+                        # Use the 'data' parameter and pass the JSON string
                         update_response = make_netsuite_rest_api_request(
                             endpoint=f"salesOrder/{selected_id}", 
-                            json=netsuite_payload,  # Using 'json' instead of 'payload'
+                            data=json_payload,  # Use 'data' with JSON string
                             method='PUT'
                         )
                         if update_response:
