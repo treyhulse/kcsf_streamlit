@@ -129,12 +129,16 @@ if not sales_order_data_raw.empty:
                 parsed_address = parse_ship_address(sales_order_data.get("shipAddress", ""))
 
                 with st.form("fedex_request_form"):
+                    # Add error handling for the package weight
+                    raw_package_weight = sales_order_data.get("custbody128")
+                    package_weight = raw_package_weight if isinstance(raw_package_weight, (int, float)) and raw_package_weight > 0 else 50.0
+
                     # Create fields that can be adjusted before sending to FedEx
                     ship_city = st.text_input("City", value=parsed_address.get("city", ""))
                     ship_state = st.text_input("State", value=parsed_address.get("state", ""))
                     ship_postal_code = st.text_input("Postal Code", value=parsed_address.get("postalCode", ""))
                     ship_country = st.text_input("Country", value=parsed_address.get("country", "US"))
-                    package_weight = st.number_input("Package Weight (LB)", min_value=0.1, value=sales_order_data.get("custbody128", 50.0))
+                    package_weight = st.number_input("Package Weight (LB)", min_value=0.1, value=package_weight)
 
                     # Submit button within the form
                     submitted = st.form_submit_button("Send to FedEx")
