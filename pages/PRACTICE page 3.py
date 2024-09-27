@@ -100,21 +100,18 @@ if not sales_order_data_raw.empty:
             ship_country = selected_row['Shipping Country Code']
             total_weight = selected_row['Total Weight']
 
+            # Convert total_weight to float if it is a string
+            try:
+                total_weight = float(total_weight)
+            except ValueError:
+                total_weight = 50.0  # Default to 50.0 if conversion fails
+
             # Parsed address for use in FedEx request
             parsed_address = parse_ship_address(ship_address, ship_city, ship_state, ship_postal_code, ship_country)
 
             st.markdown("### Modify Shipping Information")
 
             with st.form("fedex_request_form"):
-                # Add error handling for the package weight
-                raw_package_weight = selected_row.get('Total Weight')
-                
-                # Check if weight is valid and greater than 0
-                if isinstance(raw_package_weight, (int, float)) and raw_package_weight > 0:
-                    package_weight = raw_package_weight
-                else:
-                    package_weight = 50.0  # Set a default value if the weight is invalid or missing
-
                 # Create fields that can be adjusted before sending to FedEx
                 ship_city = st.text_input("City", value=parsed_address.get("city", ""))
                 ship_state = st.text_input("State", value=parsed_address.get("state", ""))
@@ -122,7 +119,7 @@ if not sales_order_data_raw.empty:
                 ship_country = st.text_input("Country", value=parsed_address.get("country", "US"))
                 
                 # Use validated package weight in the number input field
-                package_weight = st.number_input("Package Weight (LB)", min_value=0.1, value=package_weight)
+                package_weight = st.number_input("Package Weight (LB)", min_value=0.1, value=total_weight)
 
                 # Submit button within the form
                 submitted = st.form_submit_button("Send to FedEx")
@@ -194,11 +191,22 @@ if not sales_order_data_raw.empty:
                         "shippingCost": selected_option['net_charge'],
                         "id": selected_id  # Use the selected Sales Order ID for the POST request
                     }
-                    # Post request to NetSuite (Assuming a function `update_netsuite_sales_order` exists)
-                    update_response = make_netsuite_rest_api_request(endpoint=f"salesOrder/{selected_id}", payload=netsuite_payload, method='PUT')
-                    if update_response:
-                        st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully!")
-                    else:
-                        st.error("Failed to submit shipping option to NetSuite.")
+
+                    # Debugging: Print the payload to ensure it's correct before the request
+                    st.write("NetSuite Payload:", netsuite_payload)
+
+                    # Make a POST request to update the sales order with shipping details in NetSuite
+                    try:
+                        update_response = make_netsuite_rest_api_request(
+                            endpoint=f"salesOrder/{selected_id}", 
+                            payload=netsuite_payload, 
+                            method='PUT'
+                        )
+                        if update_response:
+                            st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully!")
+                        else:
+                            st.error("Failed to submit shipping option to NetSuite.")
+                    except Exception as e:
+                        st.error(f"Error updating NetSuite: {e}")
 else:
     st.error("No sales orders available.")
