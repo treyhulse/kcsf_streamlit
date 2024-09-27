@@ -91,7 +91,7 @@ def get_fedex_rate_quote(trimmed_data):
 # Function to update NetSuite Sales Order with Shipping Method and Shipping Cost
 def update_sales_order_shipping_details(sales_order_id, shipping_cost, ship_method_id):
     # Construct the NetSuite Sales Order URL
-    url = f"https://{st.secrets['netsuite_account_id']}.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/{sales_order_id}"
+    url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/{sales_order_id}"
     
     # Create the payload with shipping cost and ship method ID
     payload = {
