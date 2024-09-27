@@ -43,9 +43,11 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_restlet_data
-from utils.rest import make_netsuite_rest_api_request
-from utils.fedex import get_fedex_rate_quote
+from utils.restlet import fetch_restlet_data  # Custom module for fetching data from NetSuite
+from utils.fedex import get_fedex_rate_quote  # Custom module for fetching FedEx rate quotes
+from requests_oauthlib import OAuth1
+import requests
+import json
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)
@@ -63,6 +65,43 @@ def parse_ship_address(ship_address, city, state, postal_code, country):
         "postalCode": postal_code,
         "country": country
     }
+
+# Function to make a PATCH request to NetSuite to update the Sales Order
+def update_netsuite_sales_order(order_id, shipping_cost, ship_via, headers, auth):
+    url = f"https://3429264.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/{order_id}"
+    payload = json.dumps({
+        "shippingCost": shipping_cost,
+        "shipMethod": {
+            "id": ship_via
+        }
+    })
+    
+    response = requests.patch(url, headers=headers, data=payload, auth=auth)
+    return response
+
+# FedEx service rate code to NetSuite shipping method ID and name mapping
+fedex_service_mapping = {
+    "FEDEX_GROUND": {"netsuite_id": 36, "name": "Fed Ex Ground"},
+    "FEDEX_EXPRESS_SAVER": {"netsuite_id": 3655, "name": "Fed Ex Express Saver"},
+    "FEDEX_2_DAY": {"netsuite_id": 3657, "name": "Fed Ex 2Day"},
+    "STANDARD_OVERNIGHT": {"netsuite_id": 3, "name": "FedEx Standard Overnight"},
+    "PRIORITY_OVERNIGHT": {"netsuite_id": 3652, "name": "Fed Ex Priority Overnight"},
+    "FEDEX_2_DAY_AM": {"netsuite_id": 3656, "name": "Fed Ex 2Day AM"},
+    "FIRST_OVERNIGHT": {"netsuite_id": 3654, "name": "Fed Ex First Overnight"},
+    "FEDEX_INTERNATIONAL_PRIORITY": {"netsuite_id": 7803, "name": "Fed Ex International Priority"},
+    "FEDEX_FREIGHT_ECONOMY": {"netsuite_id": 16836, "name": "FedEx Freight Economy"},
+    "FEDEX_FREIGHT_PRIORITY": {"netsuite_id": 16839, "name": "FedEx Freight Priority"},
+    "FEDEX_INTERNATIONAL_GROUND": {"netsuite_id": 8993, "name": "FedEx International Ground"},
+    "FEDEX_INTERNATIONAL_ECONOMY": {"netsuite_id": 7647, "name": "FedEx International Economy"},
+}
+
+# Function to get the NetSuite internal ID from the FedEx rate code
+def get_netsuite_id(fedex_rate_code):
+    return fedex_service_mapping.get(fedex_rate_code, {}).get("netsuite_id", "Unknown ID")
+
+# Function to get the service name from the FedEx rate code
+def get_service_name(fedex_rate_code):
+    return fedex_service_mapping.get(fedex_rate_code, {}).get("name", "Unknown Service")
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -176,47 +215,72 @@ if not sales_order_data_raw.empty:
             with st.container():
                 for option in top_rate_options:
                     service_type = option.get('serviceType', 'N/A')
+                    service_name = get_service_name(service_type)
                     delivery_time = option.get('deliveryTimestamp', 'N/A')
                     net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
                     currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
 
                     # Display as a selectable card
-                    if st.button(f"{service_type}: ${net_charge} {currency}", key=service_type):
+                    if st.button(f"{service_name}: ${net_charge} {currency}", key=service_type):
                         selected_shipping_option = {
                             "service_type": service_type,
                             "net_charge": net_charge,
-                            "currency": currency
+                            "currency": currency,
+                            "netsuite_id": get_netsuite_id(service_type)  # Get the internal NetSuite ID for the service
                         }
                         st.session_state['selected_shipping_option'] = selected_shipping_option
 
             # Display the selected shipping option
             if 'selected_shipping_option' in st.session_state:
                 selected_option = st.session_state['selected_shipping_option']
-                st.markdown(f"### Selected Shipping Option: {selected_option['service_type']} (${selected_option['net_charge']} {selected_option['currency']})")
+                st.markdown(f"### Selected Shipping Option: {get_service_name(selected_option['service_type'])} (${selected_option['net_charge']} {selected_option['currency']})")
 
                 # Send the selected shipping option back to NetSuite using REST Web Services
                 if st.button("Submit Shipping Option to NetSuite"):
+                    # Create the payload using the selected shipping option's NetSuite ID
                     netsuite_payload = {
-                        "shipVia": selected_option['service_type'],
                         "shippingCost": selected_option['net_charge'],
-                        "id": selected_id  # Use the selected Sales Order ID for the POST request
+                        "shipMethod": {
+                            "id": selected_option['netsuite_id']  # Use the mapped NetSuite internal ID
+                        }
                     }
 
-                    # Debugging: Print the payload to ensure it's correct before the request
-                    st.write("NetSuite Payload:", netsuite_payload)
+                    # NetSuite credentials and setup
+                    consumer_key = st.secrets["consumer_key"]
+                    consumer_secret = st.secrets["consumer_secret"]
+                    token = st.secrets["token_key"]
+                    token_secret = st.secrets["token_secret"]
+                    realm = st.secrets["realm"]
 
-                    # Make a POST request to update the sales order with shipping details in NetSuite
+                    # OAuth1 authentication
+                    auth = OAuth1(
+                        client_key=consumer_key,
+                        client_secret=consumer_secret,
+                        resource_owner_key=token,
+                        resource_owner_secret=token_secret,
+                        realm=realm,
+                        signature_method='HMAC-SHA256'
+                    )
+
+                    # Headers for the request
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return-content'
+                    }
+
+                    # Replace the existing code block that handles the response from NetSuite after submission:
                     try:
-                        update_response = make_netsuite_rest_api_request(
-                            endpoint=f"salesOrder/{selected_id}", 
-                            payload=netsuite_payload, 
-                            method='PUT'
-                        )
-                        if update_response:
-                            st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully!")
+                        # Update the NetSuite Sales Order with the selected shipping details
+                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['netsuite_id'], headers, auth)
+
+                        # Handle 204 status code as a successful response
+                        if response.status_code in [200, 204]:  # Consider 204 as a successful response
+                            st.success(f"Shipping option '{get_service_name(selected_option['service_type'])}' submitted successfully to NetSuite!")
                         else:
-                            st.error("Failed to submit shipping option to NetSuite.")
+                            st.error(f"Failed to submit shipping option to NetSuite. Status Code: {response.status_code}")
+                            st.write("Response Text:", response.text)
                     except Exception as e:
-                        st.error(f"Error updating NetSuite: {e}")
+                        st.error(f"Error occurred while updating NetSuite: {str(e)}")
+
 else:
     st.error("No sales orders available.")
