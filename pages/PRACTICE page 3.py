@@ -34,8 +34,61 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 import streamlit as st
 import pandas as pd
 import json
+import requests
+from requests_oauthlib import OAuth1
 from utils.restlet import fetch_restlet_data
 from utils.fedex import get_fedex_rate_quote, update_sales_order_shipping_details
+
+# Get NetSuite credentials from secrets
+NETSUITE_BASE_URL = st.secrets["netsuite_base_url"]
+CONSUMER_KEY = st.secrets["consumer_key"]
+CONSUMER_SECRET = st.secrets["consumer_secret"]
+TOKEN_KEY = st.secrets["token_key"]
+TOKEN_SECRET = st.secrets["token_secret"]
+REALM = st.secrets["realm"]  # Account ID/Realm
+
+# Function to authenticate and make a PATCH request to NetSuite using OAuth 1.0 TBA
+def patch_sales_order(sales_order_id, shipping_cost, ship_method_id):
+    # NetSuite URL for the specific sales order
+    url = f"{NETSUITE_BASE_URL}/record/v1/salesOrder/{sales_order_id}"
+
+    # OAuth1 object for signing the request
+    auth = OAuth1(
+        client_key=CONSUMER_KEY,
+        client_secret=CONSUMER_SECRET,
+        resource_owner_key=TOKEN_KEY,
+        resource_owner_secret=TOKEN_SECRET,
+        signature_type='auth_header',
+        realm=REALM
+    )
+
+    # Request body with the fields you want to update
+    payload = {
+        "item": [
+            {
+                "customFieldList": [
+                    {
+                        "scriptId": "custcol_ship_method",  # Replace with the correct field ID for shipping method
+                        "value": ship_method_id
+                    },
+                    {
+                        "scriptId": "custcol_ship_cost",  # Replace with the correct field ID for shipping cost
+                        "value": shipping_cost
+                    }
+                ]
+            }
+        ]
+    }
+
+    # Making the PATCH request
+    try:
+        response = requests.patch(url, auth=auth, json=payload)
+        if response.status_code == 200:
+            return {"status": "success", "message": "Sales order updated successfully."}
+        else:
+            return {"status": "error", "message": response.text}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
@@ -166,15 +219,15 @@ if not sales_order_data_raw.empty:
                 st.markdown(f"### Selected Shipping Option: {selected_option['service_type']} (${selected_option['net_charge']} {selected_option['currency']})")
 
                 if st.button("Submit Shipping Option to NetSuite"):
-                    update_response = update_sales_order_shipping_details(
+                    update_response = patch_sales_order(
                         sales_order_id=selected_id,
                         shipping_cost=selected_option['net_charge'],
-                        ship_method_id="36"
+                        ship_method_id="36"  # Replace with the actual ship method ID in your NetSuite setup
                     )
 
-                    if update_response:
+                    if update_response.get("status") == "success":
                         st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully!")
                     else:
-                        st.error("Failed to submit shipping option to NetSuite.")
+                        st.error(f"Failed to submit shipping option to NetSuite: {update_response['message']}")
 else:
     st.error("No sales orders available.")

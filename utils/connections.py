@@ -9,6 +9,7 @@ def connect_to_netsuite():
                          f"oauth_token={st.secrets['token_key']}, "
                          f"oauth_signature_method=HMAC-SHA256, "
                          f"oauth_signature={st.secrets['consumer_secret']}&{st.secrets['token_secret']}",
+                         
         "Content-Type": "application/json"
     }
     netsuite_base_url = st.secrets['netsuite_base_url']
