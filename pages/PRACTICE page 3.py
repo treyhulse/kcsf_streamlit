@@ -258,16 +258,19 @@ if not sales_order_data_raw.empty:
                         'Prefer': 'return-content'
                     }
 
+                    # Replace the existing code block that handles the response from NetSuite after submission:
                     try:
                         # Update the NetSuite Sales Order with the selected shipping details
                         response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['netsuite_id'], headers, auth)
 
-                        if response.status_code == 200:
+                        # Handle 204 status code as a successful response
+                        if response.status_code in [200, 204]:  # Consider 204 as a successful response
                             st.success(f"Shipping option '{get_service_name(selected_option['service_type'])}' submitted successfully to NetSuite!")
                         else:
                             st.error(f"Failed to submit shipping option to NetSuite. Status Code: {response.status_code}")
                             st.write("Response Text:", response.text)
                     except Exception as e:
                         st.error(f"Error occurred while updating NetSuite: {str(e)}")
+
 else:
     st.error("No sales orders available.")
