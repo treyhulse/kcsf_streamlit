@@ -39,12 +39,7 @@ import plotly.express as px
 def get_sales_by_month():
     df = fetch_restlet_data('customsearch5146')
     df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
-    
-    # Print the columns for debugging
-    st.write("Sales by Month DataFrame columns:", df.columns)
-    
-    if df.empty or 'Period' not in df.columns:
-        st.warning("Data is empty or 'Period' column is missing.")
+    if df.empty:
         return None, None
 
     df['Year'] = pd.to_datetime(df['Period']).dt.year
@@ -71,12 +66,6 @@ def get_sales_by_month():
 
 # Calculate KPIs based on grouped sales data and calculate YoY variance for orders
 def calculate_kpis(df_grouped):
-    # Check for expected columns before proceeding
-    st.write("Columns in grouped DataFrame:", df_grouped.columns)
-    if 'Billed Amount' not in df_grouped.columns:
-        st.error("'Billed Amount' column is missing from the grouped DataFrame.")
-        return 0, 0, 0, "N/A", 0
-    
     total_revenue = df_grouped['Billed Amount'].sum()
     
     # Ensure 'Orders' column exists and is numeric
@@ -87,24 +76,21 @@ def calculate_kpis(df_grouped):
         total_orders = 0
 
     # Calculate YoY variance for Orders
-    if 'Period' in df_grouped.columns:
-        df_grouped['Year'] = pd.to_datetime(df_grouped['Period']).dt.year
-        orders_by_year = df_grouped.groupby('Year')['Orders'].sum()
+    df_grouped['Year'] = pd.to_datetime(df_grouped['Period']).dt.year
+    orders_by_year = df_grouped.groupby('Year')['Orders'].sum()
 
-        # Get current year and previous year totals
-        current_year = orders_by_year.get(2024, 0)
-        previous_year = orders_by_year.get(2023, 0)
-        
-        # Calculate YoY variance
-        if previous_year != 0:
-            orders_yoy_variance = ((current_year - previous_year) / previous_year) * 100
-        else:
-            orders_yoy_variance = 0
+    # Get current year and previous year totals
+    current_year = orders_by_year.get(2024, 0)
+    previous_year = orders_by_year.get(2023, 0)
+    
+    # Calculate YoY variance
+    if previous_year != 0:
+        orders_yoy_variance = ((current_year - previous_year) / previous_year) * 100
     else:
         orders_yoy_variance = 0
 
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
-    top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep'] if 'Sales Rep' in df_grouped.columns else "N/A"
+    top_sales_rep = df_grouped.loc[df_grouped['Billed Amount'].idxmax(), 'Sales Rep']
     
     return total_revenue, total_orders, average_order_volume, top_sales_rep, orders_yoy_variance
 
@@ -121,12 +107,18 @@ chart_sales_by_rep, df_grouped = get_sales_by_rep()
 if df_grouped is not None:
     total_revenue, total_orders, average_order_volume, top_sales_rep, orders_yoy_variance = calculate_kpis(df_grouped)
 
+    # Placeholder percentage change values for demo purposes
+    percentage_change_sales = percentage_variance  # Use the calculated YoY variance for sales
+    percentage_change_orders = orders_yoy_variance  # Use the calculated YoY variance for total orders
+    percentage_change_average = 3.2  # Adjust as needed
+    percentage_change_yoy = percentage_variance  # Use the calculated YoY variance for revenue
+
     # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
-        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_variance, "positive": percentage_variance > 0},
-        {"label": "Total Orders", "value": total_orders, "change": orders_yoy_variance, "positive": orders_yoy_variance > 0},
-        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": 3.2, "positive": 3.2 > 0},
-        {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_variance, "positive": net_difference > 0},
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+        {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
     ]
 
     # Styling for the boxes
@@ -173,3 +165,33 @@ if df_grouped is not None:
 
     # Separation between metrics and visualizations
     st.write("")
+
+# Create 3 columns for the visualizations and data frames
+col1, col2, col3 = st.columns(3)
+
+# Column 1: Sales by Rep visualization and DataFrame
+with col1:
+    st.plotly_chart(chart_sales_by_rep, use_container_width=True)
+    with st.expander("Data - Sales by Rep"):
+        st.dataframe(df_grouped)
+
+# Column 2: Sales by Category visualization and DataFrame
+chart_sales_by_category = get_sales_by_category()
+if chart_sales_by_category:
+    with col2:
+        st.plotly_chart(chart_sales_by_category, use_container_width=True)
+        with st.expander("Data - Sales by Category"):
+            # Assuming you have a DataFrame for Sales by Category, you would display it here.
+            df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
+            if not df_sales_by_category.empty:
+                st.dataframe(df_sales_by_category)
+
+# Column 3: Sales by Month visualization and DataFrame
+if chart_sales_by_month:
+    with col3:
+        st.plotly_chart(chart_sales_by_month, use_container_width=True)
+        with st.expander("Data - Sales by Month"):
+            # Assuming you have a DataFrame for Sales by Month, you would display it here.
+            df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
+            if not df_sales_by_month.empty:
+                st.dataframe(df_sales_by_month)
