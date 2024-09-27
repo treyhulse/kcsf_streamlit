@@ -40,10 +40,6 @@ import hashlib
 import base64
 import urllib.parse
 
-# Define the page configuration
-st.set_page_config(page_title="NetSuite API POST", page_icon="💼")
-
-# Create Streamlit page
 st.title("Post Data to NetSuite")
 
 # Display a status message
