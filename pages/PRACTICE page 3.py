@@ -33,8 +33,8 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_restlet_data
-from utils.fedex import get_fedex_rate_quote
+from utils.restlet import fetch_restlet_data  # Custom module for fetching data from NetSuite
+from utils.fedex import get_fedex_rate_quote  # Custom module for fetching FedEx rate quotes
 from requests_oauthlib import OAuth1
 import requests
 import json
@@ -68,6 +68,30 @@ def update_netsuite_sales_order(order_id, shipping_cost, ship_via, headers, auth
     
     response = requests.patch(url, headers=headers, data=payload, auth=auth)
     return response
+
+# FedEx service rate code to NetSuite shipping method ID and name mapping
+fedex_service_mapping = {
+    "FEDEX_GROUND": {"netsuite_id": 36, "name": "Fed Ex Ground"},
+    "FEDEX_EXPRESS_SAVER": {"netsuite_id": 3655, "name": "Fed Ex Express Saver"},
+    "FEDEX_2_DAY": {"netsuite_id": 3657, "name": "Fed Ex 2Day"},
+    "STANDARD_OVERNIGHT": {"netsuite_id": 3, "name": "FedEx Standard Overnight"},
+    "PRIORITY_OVERNIGHT": {"netsuite_id": 3652, "name": "Fed Ex Priority Overnight"},
+    "FEDEX_2_DAY_AM": {"netsuite_id": 3656, "name": "Fed Ex 2Day AM"},
+    "FIRST_OVERNIGHT": {"netsuite_id": 3654, "name": "Fed Ex First Overnight"},
+    "FEDEX_INTERNATIONAL_PRIORITY": {"netsuite_id": 7803, "name": "Fed Ex International Priority"},
+    "FEDEX_FREIGHT_ECONOMY": {"netsuite_id": 16836, "name": "FedEx Freight Economy"},
+    "FEDEX_FREIGHT_PRIORITY": {"netsuite_id": 16839, "name": "FedEx Freight Priority"},
+    "FEDEX_INTERNATIONAL_GROUND": {"netsuite_id": 8993, "name": "FedEx International Ground"},
+    "FEDEX_INTERNATIONAL_ECONOMY": {"netsuite_id": 7647, "name": "FedEx International Economy"},
+}
+
+# Function to get the NetSuite internal ID from the FedEx rate code
+def get_netsuite_id(fedex_rate_code):
+    return fedex_service_mapping.get(fedex_rate_code, {}).get("netsuite_id", "Unknown ID")
+
+# Function to get the service name from the FedEx rate code
+def get_service_name(fedex_rate_code):
+    return fedex_service_mapping.get(fedex_rate_code, {}).get("name", "Unknown Service")
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -181,31 +205,33 @@ if not sales_order_data_raw.empty:
             with st.container():
                 for option in top_rate_options:
                     service_type = option.get('serviceType', 'N/A')
+                    service_name = get_service_name(service_type)
                     delivery_time = option.get('deliveryTimestamp', 'N/A')
                     net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
                     currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
 
                     # Display as a selectable card
-                    if st.button(f"{service_type}: ${net_charge} {currency}", key=service_type):
+                    if st.button(f"{service_name}: ${net_charge} {currency}", key=service_type):
                         selected_shipping_option = {
                             "service_type": service_type,
                             "net_charge": net_charge,
-                            "currency": currency
+                            "currency": currency,
+                            "netsuite_id": get_netsuite_id(service_type)  # Get the internal NetSuite ID for the service
                         }
                         st.session_state['selected_shipping_option'] = selected_shipping_option
 
             # Display the selected shipping option
             if 'selected_shipping_option' in st.session_state:
                 selected_option = st.session_state['selected_shipping_option']
-                st.markdown(f"### Selected Shipping Option: {selected_option['service_type']} (${selected_option['net_charge']} {selected_option['currency']})")
+                st.markdown(f"### Selected Shipping Option: {get_service_name(selected_option['service_type'])} (${selected_option['net_charge']} {selected_option['currency']})")
 
                 # Send the selected shipping option back to NetSuite using REST Web Services
                 if st.button("Submit Shipping Option to NetSuite"):
-                    # Ensure that the ship method ID is correctly passed instead of the name
+                    # Create the payload using the selected shipping option's NetSuite ID
                     netsuite_payload = {
                         "shippingCost": selected_option['net_charge'],
                         "shipMethod": {
-                            "id": "36"  # Example shipMethod ID, adjust according to your mappings
+                            "id": selected_option['netsuite_id']  # Use the mapped NetSuite internal ID
                         }
                     }
 
@@ -234,10 +260,10 @@ if not sales_order_data_raw.empty:
 
                     try:
                         # Update the NetSuite Sales Order with the selected shipping details
-                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], "36", headers, auth)
+                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['netsuite_id'], headers, auth)
 
                         if response.status_code == 200:
-                            st.success(f"Shipping option '{selected_option['service_type']}' submitted successfully to NetSuite!")
+                            st.success(f"Shipping option '{get_service_name(selected_option['service_type'])}' submitted successfully to NetSuite!")
                         else:
                             st.error(f"Failed to submit shipping option to NetSuite. Status Code: {response.status_code}")
                             st.write("Response Text:", response.text)
