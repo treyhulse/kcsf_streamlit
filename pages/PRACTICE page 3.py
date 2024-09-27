@@ -76,7 +76,6 @@ auth = OAuth1(
 # Headers for the request
 headers = {
     'Content-Type': 'application/json',
-    'Prefer': 'return-content'
 }
 
 # Display button for user to trigger the request
