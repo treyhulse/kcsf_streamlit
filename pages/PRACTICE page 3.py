@@ -35,8 +35,7 @@ import streamlit as st
 import pandas as pd
 import json
 from utils.restlet import fetch_restlet_data
-from utils.fedex import get_fedex_rate_quote
-from utils.netsuite import update_sales_order_shipping_details
+from utils.fedex import get_fedex_rate_quote, update_sales_order_shipping_details
 
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
