@@ -37,7 +37,7 @@ import json
 import requests
 from requests_oauthlib import OAuth1
 from utils.restlet import fetch_restlet_data
-from utils.fedex import get_fedex_rate_quote, update_sales_order_shipping_details
+from utils.fedex import get_fedex_rate_quote
 
 # Get NetSuite credentials from secrets
 NETSUITE_BASE_URL = st.secrets["netsuite_base_url"]
@@ -45,9 +45,9 @@ CONSUMER_KEY = st.secrets["consumer_key"]
 CONSUMER_SECRET = st.secrets["consumer_secret"]
 TOKEN_KEY = st.secrets["token_key"]
 TOKEN_SECRET = st.secrets["token_secret"]
-REALM = st.secrets["realm"]  # Account ID/Realm
+REALM = st.secrets["realm"]
 
-# Function to authenticate and make a PATCH request to NetSuite using OAuth 1.0 TBA
+# Function to replicate the successful Postman request in Streamlit using OAuth 1.0 TBA
 def patch_sales_order(sales_order_id, shipping_cost, ship_method_id):
     # NetSuite URL for the specific sales order
     url = f"{NETSUITE_BASE_URL}/record/v1/salesOrder/{sales_order_id}"
@@ -59,31 +59,33 @@ def patch_sales_order(sales_order_id, shipping_cost, ship_method_id):
         resource_owner_key=TOKEN_KEY,
         resource_owner_secret=TOKEN_SECRET,
         signature_type='auth_header',
-        realm=REALM
+        realm=REALM,
+        signature_method='HMAC-SHA256'
     )
 
-    # Request body with the fields you want to update
+    # Headers and payload
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+
     payload = {
-        "item": [
+        "customFieldList": [
             {
-                "customFieldList": [
-                    {
-                        "scriptId": "custcol_ship_method",  # Replace with the correct field ID for shipping method
-                        "value": ship_method_id
-                    },
-                    {
-                        "scriptId": "custcol_ship_cost",  # Replace with the correct field ID for shipping cost
-                        "value": shipping_cost
-                    }
-                ]
+                "scriptId": "custcol_ship_method",  # Replace with the correct field ID for shipping method
+                "value": ship_method_id
+            },
+            {
+                "scriptId": "custcol_ship_cost",  # Replace with the correct field ID for shipping cost
+                "value": shipping_cost
             }
         ]
     }
 
     # Making the PATCH request
     try:
-        response = requests.patch(url, auth=auth, json=payload)
-        if response.status_code == 200:
+        response = requests.patch(url, headers=headers, auth=auth, json=payload)
+        if response.status_code in [200, 201]:
             return {"status": "success", "message": "Sales order updated successfully."}
         else:
             return {"status": "error", "message": response.text}
@@ -92,11 +94,9 @@ def patch_sales_order(sales_order_id, shipping_cost, ship_method_id):
 
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Function to parse shipAddress into components and convert country name to ISO code
 def parse_ship_address(ship_address, city, state, postal_code, country):
     return {
         "streetAddress": ship_address,
@@ -107,11 +107,8 @@ def parse_ship_address(ship_address, city, state, postal_code, country):
     }
 
 st.sidebar.header("Filters")
-
-# Title
 st.title("Shipping Rate Quote Tool")
 
-# Fetch sales order data from the new saved search
 sales_order_data_raw = fetch_raw_data("customsearch5149")
 
 if not sales_order_data_raw.empty:
@@ -123,7 +120,6 @@ if not sales_order_data_raw.empty:
 
     top_row = st.columns(2)
 
-    # Left column: Order Search
     with top_row[0]:
         selected_order_info = st.selectbox(
             "Select a Sales Order by ID and Customer",
@@ -134,7 +130,6 @@ if not sales_order_data_raw.empty:
         selected_id = selected_row['id']
         st.write(f"Selected Sales Order ID: {selected_id}")
 
-    # Right column: Order Information/Form to be sent to FedEx
     with top_row[1]:
         if selected_id:
             st.write(f"Fetching details for Sales Order ID: {selected_id}...")
@@ -222,7 +217,7 @@ if not sales_order_data_raw.empty:
                     update_response = patch_sales_order(
                         sales_order_id=selected_id,
                         shipping_cost=selected_option['net_charge'],
-                        ship_method_id="36"  # Replace with the actual ship method ID in your NetSuite setup
+                        ship_method_id="36"
                     )
 
                     if update_response.get("status") == "success":
