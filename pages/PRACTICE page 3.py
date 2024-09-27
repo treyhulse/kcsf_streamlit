@@ -30,58 +30,16 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import streamlit as st
 import requests
 import json
-import time
-import hmac
-import hashlib
-import base64
-import urllib.parse
+from requests_oauthlib import OAuth1
+
 
 st.title("Post Data to NetSuite")
 
 # Display a status message
 status_placeholder = st.empty()
-
-# Function to generate OAuth1.0 headers for the request
-def generate_oauth_header(url, method, consumer_key, consumer_secret, token, token_secret):
-    oauth_nonce = base64.b64encode(bytes(str(time.time()), 'utf-8')).decode('utf-8')
-    oauth_timestamp = str(int(time.time()))
-    base_url = urllib.parse.urlparse(url).scheme + "://" + urllib.parse.urlparse(url).hostname
-
-    # Create the signature base string
-    signature_base_string = f"{method}&{urllib.parse.quote_plus(url)}"
-    signature_params = {
-        "oauth_consumer_key": consumer_key,
-        "oauth_token": token,
-        "oauth_signature_method": "HMAC-SHA256",
-        "oauth_timestamp": oauth_timestamp,
-        "oauth_nonce": oauth_nonce,
-        "oauth_version": "1.0"
-    }
-    signature_base_string += "&" + urllib.parse.quote_plus('&'.join([f"{k}={v}" for k, v in sorted(signature_params.items())]))
-
-    # Create the signing key
-    signing_key = f"{consumer_secret}&{token_secret}"
-
-    # Create the signature
-    hashed = hmac.new(bytes(signing_key, 'latin-1'), bytes(signature_base_string, 'latin-1'), hashlib.sha256)
-    oauth_signature = base64.b64encode(hashed.digest()).decode()
-
-    # Create the OAuth header
-    oauth_header = (
-        f'OAuth realm="{base_url}",'
-        f'oauth_consumer_key="{consumer_key}",'
-        f'oauth_token="{token}",'
-        f'oauth_signature_method="HMAC-SHA256",'
-        f'oauth_timestamp="{oauth_timestamp}",'
-        f'oauth_nonce="{oauth_nonce}",'
-        f'oauth_version="1.0",'
-        f'oauth_signature="{urllib.parse.quote_plus(oauth_signature)}"'
-    )
-    return oauth_header
 
 # Replace these variables with your own secrets
 url = "https://3429264.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/9318465"
@@ -89,6 +47,7 @@ consumer_key = st.secrets["consumer_key"]
 consumer_secret = st.secrets["consumer_secret"]
 token = st.secrets["token_key"]
 token_secret = st.secrets["token_secret"]
+realm = st.secrets["realm"]
 
 # Create the request payload
 payload = {
@@ -104,21 +63,27 @@ st.write("Payload to be sent:", payload)
 # Convert payload to JSON
 payload_json = json.dumps(payload)
 
-# Generate OAuth header
-oauth_header = generate_oauth_header(url, "PATCH", consumer_key, consumer_secret, token, token_secret)
+# Create OAuth1 object
+auth = OAuth1(
+    client_key=consumer_key,
+    client_secret=consumer_secret,
+    resource_owner_key=token,
+    resource_owner_secret=token_secret,
+    realm=realm,
+    signature_method='HMAC-SHA256'
+)
 
 # Headers for the request
 headers = {
     'Content-Type': 'application/json',
-    'Prefer': 'return-content',
-    'Authorization': oauth_header
+    'Prefer': 'return-content'
 }
 
 # Display button for user to trigger the request
 if st.button("Post to NetSuite"):
     try:
         # Make the API request
-        response = requests.patch(url, headers=headers, data=payload_json)
+        response = requests.patch(url, headers=headers, data=payload_json, auth=auth)
 
         # Display the response
         if response.status_code == 200:
