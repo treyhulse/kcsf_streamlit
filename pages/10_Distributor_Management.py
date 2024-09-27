@@ -39,6 +39,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from utils.restlet import fetch_restlet_data
+# Set the page title
+st.title("Distributor Management System")
 
 # Cache the raw data fetching process with a 10-minute expiration
 @st.cache_data(ttl=600)
@@ -97,7 +99,7 @@ if not customsearch5135_data_raw.empty:
 
     # ---- Tab 1: Distributor Overview ----
     with tab1:
-        st.header("Distributor Overview")
+        st.header("Overview")
 
         # Master line chart aggregating all sales by month, with dots and interactivity
         monthly_sales_data = customsearch5135_data_raw.resample('M', on='Date Created').agg(
