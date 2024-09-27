@@ -187,8 +187,8 @@ if not sales_order_data_raw.empty:
                 # Send the selected shipping option back to NetSuite using REST Web Services
                 if st.button("Submit Shipping Option to NetSuite"):
                     netsuite_payload = {
-                        "shipVia": selected_option['service_type'],
-                        "shippingCost": selected_option['net_charge'],
+                        "shipmethod": selected_option['service_type'],  # Use the correct field ID for Ship Via
+                        "shippingcost": selected_option['net_charge'],  # Use the correct field ID for Shipping Cost
                         "id": selected_id  # Use the selected Sales Order ID for the POST request
                     }
 
@@ -197,9 +197,10 @@ if not sales_order_data_raw.empty:
 
                     # Make a POST request to update the sales order with shipping details in NetSuite
                     try:
+                        # Adjust the function call to remove 'payload' and replace it with 'json' as per standard convention
                         update_response = make_netsuite_rest_api_request(
                             endpoint=f"salesOrder/{selected_id}", 
-                            payload=netsuite_payload, 
+                            json=netsuite_payload,  # Using 'json' instead of 'payload'
                             method='PUT'
                         )
                         if update_response:
