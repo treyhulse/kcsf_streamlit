@@ -189,3 +189,16 @@ if chart_sales_by_month:
             df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
             if not df_sales_by_month.empty:
                 st.dataframe(df_sales_by_month)
+                
+                # Calculate total sales for 2023 and 2024
+                total_sales_2023 = df_sales_by_month[df_sales_by_month['Year'] == 2023]['Billed Amount'].sum()
+                total_sales_2024 = df_sales_by_month[df_sales_by_month['Year'] == 2024]['Billed Amount'].sum()
+                
+                # Create a summary DataFrame
+                summary_df = pd.DataFrame({
+                    'Year': [2023, 2024],
+                    'Total Sales': [total_sales_2023, total_sales_2024]
+                })
+                
+                st.write("### Total Sales Summary")
+                st.dataframe(summary_df)
