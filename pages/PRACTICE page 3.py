@@ -92,9 +92,20 @@ with tab1:
     percentage_change_average = 3.2
     percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
 
-    # Ensure `net_difference` is valid for display
-    if net_difference is None:
-        net_difference = 0
+    # Ensure that `net_difference` is a float before formatting
+    try:
+        net_difference = float(net_difference)
+    except (ValueError, TypeError):
+        net_difference = 0  # Set to 0 if conversion fails
+
+    # Create the metrics with corrected formatting
+    metrics = [
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+        {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
+    ]
+
 
     # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
