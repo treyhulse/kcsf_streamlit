@@ -39,6 +39,57 @@ from kpi.website_sales_by_month import get_website_revenue_by_month
 from kpi.amazon_sales_by_month import get_amazon_revenue_by_month  # Import Amazon Sales function
 import html
 
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+
+# Helper function to check if the figure is a valid Plotly figure
+def is_valid_plotly_figure(figure):
+    return isinstance(figure, dict) or hasattr(figure, 'data')
+
+# Safe function to render Plotly charts in Streamlit
+def safe_plotly_chart(figure, container_width=True):
+    if is_valid_plotly_figure(figure):
+        st.plotly_chart(figure, use_container_width=container_width)
+    else:
+        st.warning("The chart could not be rendered. The figure is not a valid Plotly figure or the data might be empty.")
+
+# Example usage with Plotly figures
+def generate_sales_dashboard():
+    # Load data and generate charts with error handling
+    try:
+        chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
+    except Exception as e:
+        st.error(f"Failed to load or generate 'Sales by Month' chart: {e}")
+        chart_sales_by_month = None
+
+    try:
+        chart_sales_by_rep, df_grouped = get_sales_by_rep()
+    except Exception as e:
+        st.error(f"Failed to load or generate 'Sales by Rep' chart: {e}")
+        chart_sales_by_rep = None
+
+    try:
+        chart_sales_by_category = get_sales_by_category()
+    except Exception as e:
+        st.error(f"Failed to load or generate 'Sales by Category' chart: {e}")
+        chart_sales_by_category = None
+
+    # Render the charts safely
+    st.subheader("Sales by Month")
+    safe_plotly_chart(chart_sales_by_month)
+
+    st.subheader("Sales by Rep")
+    safe_plotly_chart(chart_sales_by_rep)
+
+    st.subheader("Sales by Category")
+    safe_plotly_chart(chart_sales_by_category)
+
+# Call the function to generate the dashboard
+generate_sales_dashboard()
+
+
 # Define a function to calculate KPIs based on grouped sales data
 def calculate_kpis(df_grouped):
     # Ensure that all columns in df_grouped are numeric, ignoring errors for non-convertible values
