@@ -173,31 +173,6 @@ with tab2:
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume, amazon_total_revenue = get_amazon_revenue_by_month()
     st.write(f"Amazon Total Revenue: ${amazon_total_revenue:,.2f}")
 
-    # Calculate Website KPIs if the DataFrame is not empty
-    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
-    else:
-        st.warning("Website revenue data is unavailable or empty.")
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
-
-    # Calculate Amazon KPIs if the DataFrame is not empty
-    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
-    else:
-        st.warning("Amazon revenue data is unavailable or empty.")
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
-
-    # Ensure website_total_revenue and amazon_total_revenue are float values before formatting
-    try:
-        website_total_revenue = float(website_total_revenue)
-    except (ValueError, TypeError):
-        website_total_revenue = 0.0
-
-    try:
-        amazon_total_revenue = float(amazon_total_revenue)
-    except (ValueError, TypeError):
-        amazon_total_revenue = 0.0
-
     # Metrics for Website and Amazon sections with formatted values
     website_metrics = [
         {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
