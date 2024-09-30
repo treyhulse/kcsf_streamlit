@@ -215,7 +215,7 @@ with tab2:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
-
+    st.write("")
     # Display Website revenue chart and data
     st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
     with st.expander("Data - Website Revenue by Month"):
@@ -238,7 +238,7 @@ with tab2:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
-
+    st.write("")
     # Display Amazon revenue chart and data
     st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
     with st.expander("Data - Amazon Revenue by Month"):
