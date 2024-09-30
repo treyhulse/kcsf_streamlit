@@ -62,12 +62,12 @@ def calculate_kpis(df_grouped):
 
     return total_revenue, total_orders, average_order_volume, top_sales_rep
 
-# Create tabs for different KPIs
-tabs = st.tabs(["Sales Dashboard", "Website & Amazon Sales"])
+# Create tabs for different KPIs as the main content
+tab1, tab2 = st.tabs(["Sales Dashboard", "Website & Amazon Sales"])
 
 # =========================== Sales Dashboard Tab ===========================
-with tabs[0]:
-    # Page title and subtitle
+with tab1:
+    # Page title and subtitle specific to the Sales Dashboard
     st.title("Sales Dashboard")
     st.subheader("Overview of sales performance metrics from 01/01/2023")
 
@@ -83,12 +83,18 @@ with tabs[0]:
     else:
         st.warning("Sales data is unavailable or empty.")
         total_revenue, total_orders, average_order_volume, top_sales_rep = 0, 0, 0, "N/A"
+        net_difference = 0
+        percentage_variance = 0
 
     # Placeholder percentage change values for demo purposes
     percentage_change_orders = 5.0  # Change values as needed
     percentage_change_sales = 7.5
     percentage_change_average = 3.2
     percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
+
+    # Ensure `net_difference` is valid for display
+    if net_difference is None:
+        net_difference = 0
 
     # Display dynamic metric boxes with arrows and sub-numbers
     metrics = [
@@ -140,7 +146,7 @@ with tabs[0]:
             </div>
             """, unsafe_allow_html=True)
 
-    # Create 3 columns for the visualizations and data frames
+    # Visualizations for Sales Dashboard (Sales by Rep, Sales by Category, Sales by Month)
     col1, col2, col3 = st.columns(3)
 
     # Column 1: Sales by Rep visualization and DataFrame
@@ -155,7 +161,6 @@ with tabs[0]:
         with col2:
             st.plotly_chart(chart_sales_by_category, use_container_width=True)
             with st.expander("Data - Sales by Category"):
-                # Assuming you have a DataFrame for Sales by Category, you would display it here.
                 df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
                 if not df_sales_by_category.empty:
                     st.dataframe(df_sales_by_category)
@@ -165,13 +170,12 @@ with tabs[0]:
         with col3:
             st.plotly_chart(chart_sales_by_month, use_container_width=True)
             with st.expander("Data - Sales by Month"):
-                # Assuming you have a DataFrame for Sales by Month, you would display it here.
                 df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
                 if not df_sales_by_month.empty:
                     st.dataframe(df_sales_by_month)
 
 # =========================== Website & Amazon Sales Tab ===========================
-with tabs[1]:
+with tab2:
     # Load data for Website Revenue by Month and get grouped data
     chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
 
@@ -242,8 +246,7 @@ with tabs[1]:
     # Visualizations for Website & Amazon Sales
     col1, col2 = st.columns(2)
 
-    # Column 1: Website
-        # Column 1: Website Revenue visualization
+    # Column 1: Website Revenue visualization
     with col1:
         st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
         with st.expander("Data - Website Revenue by Month"):
@@ -260,4 +263,3 @@ with tabs[1]:
                 st.dataframe(amazon_sales_df_grouped)
             else:
                 st.warning("No Amazon revenue data available for display.")
-
