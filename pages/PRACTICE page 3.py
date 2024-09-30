@@ -163,7 +163,7 @@ with tab1:
 
 # =========================== Website and Amazon Tab ===========================
 with tab2:
-    st.header("Website and Amazon Sales Metrics")
+    st.header("Website and Amazon")
 
     chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped = get_amazon_revenue_by_month()
@@ -194,7 +194,7 @@ with tab2:
         {"label": "Top Amazon Sales Rep", "value": top_amazon_sales_rep, "change": 0.0, "positive": True},  
     ]
 
-    st.subheader("Website Sales Metrics")
+    st.subheader("Website Metrics")
     col1, col2, col3, col4 = st.columns(4)
     for col, metric in zip([col1, col2, col3, col4], website_metrics):
         arrow = "↑" if metric["positive"] else "↓"
@@ -216,7 +216,7 @@ with tab2:
         else:
             st.warning("No website revenue data available for display.")
 
-    st.subheader("Amazon Sales Metrics")
+    st.subheader("Amazon Metrics")
     col1, col2, col3, col4 = st.columns(4)
     for col, metric in zip([col1, col2, col3, col4], amazon_metrics):
         arrow = "↑" if metric["positive"] else "↓"
