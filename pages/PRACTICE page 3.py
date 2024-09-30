@@ -243,3 +243,21 @@ with tabs[1]:
     col1, col2 = st.columns(2)
 
     # Column 1: Website
+        # Column 1: Website Revenue visualization
+    with col1:
+        st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
+        with st.expander("Data - Website Revenue by Month"):
+            if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+                st.dataframe(website_revenue_df_grouped)
+            else:
+                st.warning("No website revenue data available for display.")
+
+    # Column 2: Amazon Revenue visualization
+    with col2:
+        st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
+        with st.expander("Data - Amazon Revenue by Month"):
+            if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
+                st.dataframe(amazon_sales_df_grouped)
+            else:
+                st.warning("No Amazon revenue data available for display.")
+
