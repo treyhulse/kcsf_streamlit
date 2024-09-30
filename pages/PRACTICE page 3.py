@@ -162,11 +162,15 @@ with tab1:
                     st.dataframe(df_sales_by_month)
 
 # =========================== Website and Amazon Tab ===========================
+
+
+# =========================== Website and Amazon Tab ===========================
 with tab2:
     st.header("Website and Amazon")
 
-    chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
-    chart_amazon_sales_by_month, amazon_sales_df_grouped = get_amazon_revenue_by_month()
+    # Retrieve data and KPI metrics
+    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
+    chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
         website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
@@ -183,15 +187,13 @@ with tab2:
     website_metrics = [
         {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
         {"label": "Website Orders", "value": website_total_orders, "change": 5.0, "positive": 5.0 > 0},
-        {"label": "Avg Order Volume (Website)", "value": f"${website_average_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
-        {"label": "Top Website Sales Rep", "value": top_website_sales_rep, "change": 0.0, "positive": True},  
+        {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
     ]
 
     amazon_metrics = [
         {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": 7.0, "positive": 7.0 > 0},
         {"label": "Amazon Orders", "value": amazon_total_orders, "change": 4.0, "positive": 4.0 > 0},
-        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_average_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
-        {"label": "Top Amazon Sales Rep", "value": top_amazon_sales_rep, "change": 0.0, "positive": True},  
+        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
     ]
 
     st.subheader("Website Metrics")

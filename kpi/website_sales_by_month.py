@@ -8,11 +8,17 @@ import streamlit as st
 def get_website_revenue_by_month():
     # Fetch data from the custom search 'customsearch4978'
     df = fetch_restlet_data('customsearch4978')
-    
-    # Ensure 'Billed Amount' is in the correct format for numerical calculations
+
+    # Ensure 'Billed Amount' and 'Orders' columns are in the correct format
     df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
+    df['Orders'] = pd.to_numeric(df['Orders'], errors='coerce').fillna(0)
     if df.empty:
-        return None, None
+        return None, None, 0, 0  # Return None, None for charts and 0, 0 for metrics
+
+    # Calculate total revenue and total orders
+    total_revenue = df['Billed Amount'].sum()
+    total_orders = df['Orders'].sum()
+    avg_order_volume = total_revenue / total_orders if total_orders > 0 else 0
 
     # Extract year and month from the 'Period' column
     df['Year'] = pd.to_datetime(df['Period']).dt.year
@@ -29,5 +35,5 @@ def get_website_revenue_by_month():
         xaxis=dict(tickmode="array", tickvals=list(range(1, 13)), ticktext=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']),
         legend_title="Year"
     )
-    
-    return fig, df_grouped
+
+    return fig, df_grouped, total_orders, avg_order_volume
