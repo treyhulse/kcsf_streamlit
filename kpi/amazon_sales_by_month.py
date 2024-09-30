@@ -36,4 +36,4 @@ def get_amazon_revenue_by_month():
     # Calculate average order volume based on the raw 'Billed Amount' values
     amazon_avg_order_volume = amazon_total_revenue / amazon_total_orders if amazon_total_orders > 0 else 0
 
-    return fig, df_grouped, amazon_total_orders, amazon_avg_order_volume, amazon_total_revenue
+    return fig, df_grouped, amazon_total_orders, amazon_avg_order_volume
