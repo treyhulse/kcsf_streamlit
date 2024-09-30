@@ -197,9 +197,6 @@ with tab1:
                 if not df_sales_by_month.empty:
                     st.dataframe(df_sales_by_month)
 
-# =========================== Website & Amazon Sales Tab ===========================
-# (Rest of the code remains the same as you provided)
-
 
 # =========================== Website & Amazon Sales Tab ===========================
 with tab2:
@@ -244,7 +241,6 @@ with tab2:
     for col, metric in zip([col1, col2, col3, col4], website_metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
-
         with col:
             st.markdown(f"""
             <div class="metrics-box">
@@ -253,6 +249,14 @@ with tab2:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
+
+    # Full-width Website Revenue Visualization
+    st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
+    with st.expander("Data - Website Revenue by Month"):
+        if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+            st.dataframe(website_revenue_df_grouped)
+        else:
+            st.warning("No website revenue data available for display.")
 
     # Display Amazon KPI metric boxes in a row
     st.subheader("Amazon Sales Metrics")
@@ -260,7 +264,6 @@ with tab2:
     for col, metric in zip([col1, col2, col3, col4], amazon_metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
-
         with col:
             st.markdown(f"""
             <div class="metrics-box">
@@ -270,23 +273,10 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
 
-    # Visualizations for Website & Amazon Sales
-    col1, col2 = st.columns(2)
-
-    # Column 1: Website Revenue visualization
-    with col1:
-        st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
-        with st.expander("Data - Website Revenue by Month"):
-            if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-                st.dataframe(website_revenue_df_grouped)
-            else:
-                st.warning("No website revenue data available for display.")
-
-    # Column 2: Amazon Revenue visualization
-    with col2:
-        st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
-        with st.expander("Data - Amazon Revenue by Month"):
-            if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-                st.dataframe(amazon_sales_df_grouped)
-            else:
-                st.warning("No Amazon revenue data available for display.")
+    # Full-width Amazon Revenue Visualization
+    st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
+    with st.expander("Data - Amazon Revenue by Month"):
+        if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
+            st.dataframe(amazon_sales_df_grouped)
+        else:
+            st.warning("No Amazon revenue data available for display.")
