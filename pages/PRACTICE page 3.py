@@ -142,20 +142,36 @@ with tab1:
     """, unsafe_allow_html=True)
 
     # First row: metrics
-    col1, col2, col3, col4 = st.columns(4)
+    import html  # Add this import for escaping special characters
 
+    # Ensure all values are properly formatted and escaped
     for col, metric in zip([col1, col2, col3, col4], metrics):
-        arrow = "↑" if metric["positive"] else "↓"
-        color = "green" if metric["positive"] else "red"
+        # Escape any special characters in the metric values
+        label = html.escape(metric['label'])
+        value = html.escape(str(metric['value']))  # Convert to string and escape
+        change = metric['change']  # Keep as is since it's a number
+        positive = metric['positive']
+
+        # Use the arrow and color as before
+        arrow = "↑" if positive else "↓"
+        color = "green" if positive else "red"
+
+        # Print the values to check for any issues before rendering (for debugging)
+        print(f"Rendering metric: label={label}, value={value}, change={change}, positive={positive}")
 
         with col:
-            st.markdown(f"""
-            <div class="metrics-box">
-                <h3 class="metric-title">{metric['label']}</h3>
-                <p class="metric-value">{metric['value']}</p>
-                <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
-            </div>
-            """, unsafe_allow_html=True)
+            try:
+                # Use st.markdown safely with validated inputs
+                st.markdown(f"""
+                <div class="metrics-box">
+                    <h3 class="metric-title">{label}</h3>
+                    <p class="metric-value">{value}</p>
+                    <p class="metric-change" style="color:{color};">{arrow} {change:.2f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            except ValueError as e:
+                st.error(f"Failed to render metric box for label '{label}'. Error: {e}")
+
 
     # Visualizations for Sales Dashboard (Sales by Rep, Sales by Category, Sales by Month)
     col1, col2, col3 = st.columns(3)
