@@ -1,8 +1,6 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 from utils.restlet import fetch_restlet_data
-import pandas as pd
-import plotly.express as px
 
 # Set the page configuration
 st.set_page_config(
