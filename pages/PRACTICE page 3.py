@@ -39,6 +39,7 @@ from kpi.sales_by_category import get_sales_by_category
 from kpi.sales_by_month import get_sales_by_month
 from kpi.website_sales_by_month import get_website_revenue_by_month
 from kpi.amazon_sales_by_month import get_amazon_revenue_by_month  # Import Amazon Sales function
+import html
 
 # Define a function to calculate KPIs based on grouped sales data
 def calculate_kpis(df_grouped):
@@ -106,15 +107,6 @@ with tab1:
         {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
     ]
 
-
-    # Display dynamic metric boxes with arrows and sub-numbers
-    metrics = [
-        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
-        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
-        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-        {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
-    ]
-
     # Styling for the boxes
     st.markdown("""
     <style>
@@ -141,10 +133,10 @@ with tab1:
     </style>
     """, unsafe_allow_html=True)
 
-    # First row: metrics
-    import html  # Add this import for escaping special characters
+    # Define the columns before using them in the metrics loop
+    col1, col2, col3, col4 = st.columns(4)  # This line should be moved here
 
-    # Ensure all values are properly formatted and escaped
+    # Display dynamic metric boxes with arrows and sub-numbers
     for col, metric in zip([col1, col2, col3, col4], metrics):
         # Escape any special characters in the metric values
         label = html.escape(metric['label'])
@@ -200,6 +192,10 @@ with tab1:
                 df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
                 if not df_sales_by_month.empty:
                     st.dataframe(df_sales_by_month)
+
+# =========================== Website & Amazon Sales Tab ===========================
+# (Rest of the code remains the same as you provided)
+
 
 # =========================== Website & Amazon Sales Tab ===========================
 with tab2:
