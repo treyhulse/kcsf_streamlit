@@ -264,7 +264,7 @@ with tab2:
     st.markdown("[View detailed sales order data in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5127&whence=)")
     
     # Nest the quote data DataFrame inside an expander
-    with st.expander("View Detailed Quote Data"):
+    with st.expander("Quote Cycle Times"):
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
 
 
