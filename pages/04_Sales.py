@@ -66,7 +66,7 @@ tab1, tab2 = st.tabs(["Sales", "Website and Amazon"])
 
 # =========================== Sales Tab ===========================
 with tab1:
-    st.subheader("Sales Performance Metrics from 01/01/2023")
+    st.subheader("Sales metrics from 01/01/2023")
 
     chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
@@ -226,6 +226,8 @@ with tab2:
             st.dataframe(website_revenue_df_grouped)
         else:
             st.warning("No website revenue data available for display.")
+
+    st.write("")
 
     # Display Amazon metrics in columns
     st.header("Amazon Metrics")
