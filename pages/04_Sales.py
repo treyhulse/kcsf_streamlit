@@ -166,20 +166,24 @@ with tab1:
                 df_sales_by_month = fetch_restlet_data('customsearch5146')
                 if not df_sales_by_month.empty:
                     st.dataframe(df_sales_by_month)
-
 # =========================== Website and Amazon Tab ===========================
-
 
 with tab2:
     st.header("Website and Amazon")
+
+    # Define the year to filter by (e.g., current year)
+    filter_year = 2024  # Replace with the desired year, or use a dynamic approach to set this value.
 
     # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
-    # Ensure 'website_total_orders' and 'amazon_total_orders' are correctly set
-    website_total_orders = website_total_orders if website_total_orders > 0 else 0
-    amazon_total_orders = amazon_total_orders if amazon_total_orders > 0 else 0
+    # Filter data by the specified year to avoid summing across years
+    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+        website_revenue_df_grouped = website_revenue_df_grouped[website_revenue_df_grouped['Year'] == filter_year]
+    
+    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
+        amazon_sales_df_grouped = amazon_sales_df_grouped[amazon_sales_df_grouped['Year'] == filter_year]
 
     # Calculate Website and Amazon KPIs if dataframes are not empty
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
