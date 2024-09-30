@@ -17,8 +17,8 @@ def get_amazon_revenue_by_month():
 
     # Calculate total revenue and total orders
     total_revenue = df['Billed Amount'].sum()
-    total_orders = df['Orders'].sum()
-    avg_order_volume = total_revenue / total_orders if total_orders > 0 else 0
+    amazon_orders = df['Orders'].sum()
+    avg_order_volume = total_revenue / amazon_orders if amazon_orders > 0 else 0
 
     # Extract year and month from 'Period'
     df['Year'] = pd.to_datetime(df['Period']).dt.year
@@ -36,4 +36,4 @@ def get_amazon_revenue_by_month():
         legend_title="Year"
     )
 
-    return fig, df_grouped, total_orders, avg_order_volume
+    return fig, df_grouped, amazon_orders, avg_order_volume
