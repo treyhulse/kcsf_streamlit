@@ -38,9 +38,13 @@ from kpi.sales_by_rep import get_sales_by_rep
 from kpi.sales_by_category import get_sales_by_category
 from kpi.sales_by_month import get_sales_by_month
 from kpi.website_sales_by_month import get_website_revenue_by_month
+from kpi.amazon_sales_by_month import get_amazon_revenue_by_month  # Import Amazon Sales function
 
 # Define a function to calculate KPIs based on grouped sales data
 def calculate_kpis(df_grouped):
+    # Ensure that all columns in df_grouped are numeric, ignoring errors for non-convertible values
+    df_grouped = df_grouped.apply(pd.to_numeric, errors='coerce').fillna(0)
+
     # Calculate total revenue
     total_revenue = df_grouped.sum().sum()  # Sum across all months and years
 
@@ -80,64 +84,61 @@ with tabs[0]:
         st.warning("Sales data is unavailable or empty.")
         total_revenue, total_orders, average_order_volume, top_sales_rep = 0, 0, 0, "N/A"
 
-        # Placeholder percentage change values for demo purposes
-        percentage_change_orders = 5.0  # Change values as needed
-        percentage_change_sales = 7.5
-        percentage_change_average = 3.2
-        percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
+    # Placeholder percentage change values for demo purposes
+    percentage_change_orders = 5.0  # Change values as needed
+    percentage_change_sales = 7.5
+    percentage_change_average = 3.2
+    percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
 
-        # Display dynamic metric boxes with arrows and sub-numbers
-        metrics = [
-            {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
-            {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
-            {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
-            {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
-        ]
+    # Display dynamic metric boxes with arrows and sub-numbers
+    metrics = [
+        {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+        {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+        {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+        {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
+    ]
 
-        # Styling for the boxes
-        st.markdown("""
-        <style>
-        .metrics-box {
-            background-color: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .metric-title {
-            margin: 0;
-            font-size: 20px;
-        }
-        .metric-value {
-            margin: 0;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .metric-change {
-            margin: 0;
-            font-size: 14px;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+    # Styling for the boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .metric-change {
+        margin: 0;
+        font-size: 14px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-        # First row: metrics
-        col1, col2, col3, col4 = st.columns(4)
+    # First row: metrics
+    col1, col2, col3, col4 = st.columns(4)
 
-        for col, metric in zip([col1, col2, col3, col4], metrics):
-            arrow = "↑" if metric["positive"] else "↓"
-            color = "green" if metric["positive"] else "red"
+    for col, metric in zip([col1, col2, col3, col4], metrics):
+        arrow = "↑" if metric["positive"] else "↓"
+        color = "green" if metric["positive"] else "red"
 
-            with col:
-                st.markdown(f"""
-                <div class="metrics-box">
-                    <h3 class="metric-title">{metric['label']}</h3>
-                    <p class="metric-value">{metric['value']}</p>
-                    <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-        # Separation between metrics and visualizations
-        st.write("")
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+                <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Create 3 columns for the visualizations and data frames
     col1, col2, col3 = st.columns(3)
@@ -174,36 +175,21 @@ with tabs[1]:
     # Load data for Website Revenue by Month and get grouped data
     chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
 
-    # Check if the website revenue data is available and structured correctly
+    # Load data for Amazon Revenue by Month and get grouped data
+    chart_amazon_sales_by_month, amazon_sales_df_grouped = get_amazon_revenue_by_month()
+
+    # Calculate KPIs for Website Sales
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        # Debugging: Inspect website_revenue_df_grouped
-        st.write("Debug: Structure of website_revenue_df_grouped")
-        st.write(website_revenue_df_grouped)
-
-        # Ensure numeric columns and handle NaNs
-        website_revenue_df_grouped = website_revenue_df_grouped.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-        # Calculate KPIs for Website Sales
         website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
     else:
         st.warning("Website revenue data is unavailable or empty.")
         website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
-    # Assuming we have another KPI function for Amazon Sales (similar to Website Revenue)
-    # Replace with the actual function if it exists
-    # For demonstration, reusing get_sales_by_month (modify with correct Amazon Sales function)
-    chart_amazon_sales_by_month, amazon_sales_df_grouped = get_sales_by_month()
-
-    # Calculate KPIs for Website Sales
-    if website_revenue_df_grouped is not None:
-        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
-    else:
-        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
-
     # Calculate KPIs for Amazon Sales
-    if amazon_sales_df_grouped is not None:
+    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
         amazon_total_revenue, amazon_total_orders, amazon_average_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
     else:
+        st.warning("Amazon revenue data is unavailable or empty.")
         amazon_total_revenue, amazon_total_orders, amazon_average_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
 
     # Define KPI metrics for Website & Amazon Sales
@@ -256,18 +242,4 @@ with tabs[1]:
     # Visualizations for Website & Amazon Sales
     col1, col2 = st.columns(2)
 
-    # Column 1: Website Revenue visualization
-    with col1:
-        st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
-        with st.expander("Data - Website Revenue by Month"):
-            df_website_revenue = fetch_restlet_data('customsearch4978')  # Fetch data if needed
-            if not df_website_revenue.empty:
-                st.dataframe(df_website_revenue)
-
-    # Column 2: Amazon Sales visualization
-    with col2:
-        st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
-        with st.expander("Data - Amazon Sales by Month"):
-            df_amazon_sales = fetch_restlet_data('customsearch5156')  # Fetch data if needed
-            if not df_amazon_sales.empty:
-                st.dataframe(df_amazon_sales)
+    # Column 1: Website
