@@ -73,8 +73,12 @@ with tabs[0]:
     # Load data for Sales by Rep and calculate KPIs
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
 
-    if df_grouped is not None:
+    # Check the structure of df_grouped to ensure it has data
+    if df_grouped is not None and not df_grouped.empty:
         total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
+    else:
+        st.warning("Sales data is unavailable or empty.")
+        total_revenue, total_orders, average_order_volume, top_sales_rep = 0, 0, 0, "N/A"
 
         # Placeholder percentage change values for demo purposes
         percentage_change_orders = 5.0  # Change values as needed
@@ -167,12 +171,23 @@ with tabs[0]:
 
 # =========================== Website & Amazon Sales Tab ===========================
 with tabs[1]:
-    # Page title and subtitle for Website & Amazon Sales
-    st.title("Website & Amazon Sales Dashboard")
-    st.subheader("KPIs and visualizations for Website and Amazon Sales")
-
     # Load data for Website Revenue by Month and get grouped data
     chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
+
+    # Check if the website revenue data is available and structured correctly
+    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+        # Debugging: Inspect website_revenue_df_grouped
+        st.write("Debug: Structure of website_revenue_df_grouped")
+        st.write(website_revenue_df_grouped)
+
+        # Ensure numeric columns and handle NaNs
+        website_revenue_df_grouped = website_revenue_df_grouped.apply(pd.to_numeric, errors='coerce').fillna(0)
+
+        # Calculate KPIs for Website Sales
+        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
+    else:
+        st.warning("Website revenue data is unavailable or empty.")
+        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
     # Assuming we have another KPI function for Amazon Sales (similar to Website Revenue)
     # Replace with the actual function if it exists
