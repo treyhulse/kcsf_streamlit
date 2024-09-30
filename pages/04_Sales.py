@@ -46,34 +46,17 @@ from kpi.amazon_sales_by_month import get_amazon_revenue_by_month
 import html
 
 # Define a function to calculate KPIs based on grouped sales data
-# Define a function to calculate KPIs based on grouped sales data
 def calculate_kpis(df_grouped):
-    # Print the column names to verify that 'Orders' exists
-    st.write("DataFrame Columns: ", df_grouped.columns)
-    st.write("Preview of Data: ", df_grouped.head())
-
-    # Convert all columns to numeric and handle errors gracefully
     df_grouped = df_grouped.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-    # Check if 'Orders' column is present and calculate total_orders
+    total_revenue = df_grouped.sum().sum()
     if 'Orders' in df_grouped.columns:
-        st.write(f"'Orders' column found. Calculating sum...")
         df_grouped['Orders'] = pd.to_numeric(df_grouped['Orders'], errors='coerce').fillna(0)
         total_orders = df_grouped['Orders'].sum()
-        st.write(f"Total Orders Calculated: {total_orders}")
     else:
-        st.warning("'Orders' column not found in the DataFrame.")
-        total_orders = 0
-
-    # Calculate total revenue and average order volume
-    total_revenue = df_grouped.sum().sum()
+        total_orders = 0  
     average_order_volume = total_revenue / total_orders if total_orders > 0 else 0
-
-    # Check the top sales rep (if applicable)
     top_sales_rep = "Placeholder Rep" if 'Sales Rep' not in df_grouped.columns else df_grouped['Sales Rep'].mode().values[0]
-    
     return total_revenue, total_orders, average_order_volume, top_sales_rep
-
 
 # Create the page title and subtitle outside of the tabs
 st.title("Sales Dashboard")
