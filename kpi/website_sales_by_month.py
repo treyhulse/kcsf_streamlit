@@ -31,11 +31,3 @@ def get_website_revenue_by_month():
     )
     
     return fig, df_grouped
-
-# Display the KPI in Streamlit
-st.title("Website Revenue Dashboard")
-website_revenue_chart, website_revenue_data = get_website_revenue_by_month()
-if website_revenue_chart:
-    st.plotly_chart(website_revenue_chart)
-else:
-    st.warning("No revenue data available for the selected period.")
