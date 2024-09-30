@@ -33,244 +33,177 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import streamlit as st
 import pandas as pd
-from utils.restlet import fetch_restlet_data  # Custom module for fetching data from NetSuite
-from utils.fedex import get_fedex_rate_quote  # Custom module for fetching FedEx rate quotes
-from requests_oauthlib import OAuth1
-import requests
-import json
+import plotly.express as px
+from kpi.sales_by_rep import get_sales_by_rep
+from kpi.sales_by_category import get_sales_by_category
+from kpi.sales_by_month import get_sales_by_month
+from kpi.website_sales_by_month import get_website_revenue_by_month  # Import the new KPI function for website revenue
 
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=900)
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
-    df = fetch_restlet_data(saved_search_id)
-    return df
+# Create tabs for different KPIs
+tabs = st.tabs(["Sales Dashboard", "Website & Amazon Sales"])
 
-# Function to parse shipAddress into components and convert country name to ISO code
-def parse_ship_address(ship_address, city, state, postal_code, country):
-    return {
-        "streetAddress": ship_address,
-        "city": city,
-        "state": state,
-        "postalCode": postal_code,
-        "country": country
-    }
+# =========================== Sales Dashboard Tab ===========================
+with tabs[0]:
+    # Page title and subtitle
+    st.title("Sales Dashboard")
+    st.subheader("Overview of sales performance metrics from 01/01/2023")
 
-# Function to make a PATCH request to NetSuite to update the Sales Order
-def update_netsuite_sales_order(order_id, shipping_cost, ship_via, headers, auth):
-    url = f"https://3429264.suitetalk.api.netsuite.com/services/rest/record/v1/salesOrder/{order_id}"
-    payload = json.dumps({
-        "shippingCost": shipping_cost,
-        "shipMethod": {
-            "id": ship_via
-        }
-    })
-    
-    response = requests.patch(url, headers=headers, data=payload, auth=auth)
-    return response
+    # Load data for Sales by Month and get YoY variance
+    chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
 
-# FedEx service rate code to NetSuite shipping method ID and name mapping
-fedex_service_mapping = {
-    "FEDEX_GROUND": {"netsuite_id": 36, "name": "Fed Ex Ground"},
-    "FEDEX_EXPRESS_SAVER": {"netsuite_id": 3655, "name": "Fed Ex Express Saver"},
-    "FEDEX_2_DAY": {"netsuite_id": 3657, "name": "Fed Ex 2Day"},
-    "STANDARD_OVERNIGHT": {"netsuite_id": 3, "name": "FedEx Standard Overnight"},
-    "PRIORITY_OVERNIGHT": {"netsuite_id": 3652, "name": "Fed Ex Priority Overnight"},
-    "FEDEX_2_DAY_AM": {"netsuite_id": 3656, "name": "Fed Ex 2Day AM"},
-    "FIRST_OVERNIGHT": {"netsuite_id": 3654, "name": "Fed Ex First Overnight"},
-    "FEDEX_INTERNATIONAL_PRIORITY": {"netsuite_id": 7803, "name": "Fed Ex International Priority"},
-    "FEDEX_FREIGHT_ECONOMY": {"netsuite_id": 16836, "name": "FedEx Freight Economy"},
-    "FEDEX_FREIGHT_PRIORITY": {"netsuite_id": 16839, "name": "FedEx Freight Priority"},
-    "FEDEX_INTERNATIONAL_GROUND": {"netsuite_id": 8993, "name": "FedEx International Ground"},
-    "FEDEX_INTERNATIONAL_ECONOMY": {"netsuite_id": 7647, "name": "FedEx International Economy"},
-}
+    # Load data for Sales by Rep and calculate KPIs
+    chart_sales_by_rep, df_grouped = get_sales_by_rep()
 
-# Function to get the NetSuite internal ID from the FedEx rate code
-def get_netsuite_id(fedex_rate_code):
-    return fedex_service_mapping.get(fedex_rate_code, {}).get("netsuite_id", "Unknown ID")
+    if df_grouped is not None:
+        total_revenue, total_orders, average_order_volume, top_sales_rep = calculate_kpis(df_grouped)
 
-# Function to get the service name from the FedEx rate code
-def get_service_name(fedex_rate_code):
-    return fedex_service_mapping.get(fedex_rate_code, {}).get("name", "Unknown Service")
+        # Placeholder percentage change values for demo purposes
+        percentage_change_orders = 5.0  # Change values as needed
+        percentage_change_sales = 7.5
+        percentage_change_average = 3.2
+        percentage_change_yoy = percentage_variance  # Use the calculated YoY variance
 
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Title
-st.title("Shipping Rate Quote Tool")
-
-# Fetch sales order data from the new saved search
-sales_order_data_raw = fetch_raw_data("customsearch5149")
-
-# Check if data is available
-if not sales_order_data_raw.empty:
-    st.write("Sales Orders List")
-
-    # Display all columns and create a combined column to display both Sales Order and Customer in the dropdown
-    sales_order_data_raw['sales_order_and_customer'] = sales_order_data_raw.apply(
-        lambda row: f"Order: {row['Sales Order']} - Customer: {row['Customer']}", axis=1
-    )
-
-    # Top row with two columns: Order Search (left) and Order Information (right)
-    top_row = st.columns(2)
-
-    # Left column: Order Search
-    with top_row[0]:
-        selected_order_info = st.selectbox(
-            "Select a Sales Order by ID and Customer",
-            sales_order_data_raw['sales_order_and_customer']
-        )
-
-        # Find the selected sales order row
-        selected_row = sales_order_data_raw[sales_order_data_raw['sales_order_and_customer'] == selected_order_info].iloc[0]
-        selected_id = selected_row['id']  # Extract the actual Sales Order ID for further processing
-        st.write(f"Selected Sales Order ID: {selected_id}")
-
-    # Right column: Order Information/Form to be sent to FedEx
-    with top_row[1]:
-        if selected_id:
-            st.write(f"Fetching details for Sales Order ID: {selected_id}...")
-
-            # Extract the required columns for the form and API request
-            ship_address = selected_row['Shipping Address']
-            ship_city = selected_row['Shipping City']
-            ship_state = selected_row['Shipping State/Province']
-            ship_postal_code = selected_row['Shipping Zip']
-            ship_country = selected_row['Shipping Country Code']
-            total_weight = selected_row['Total Weight']
-
-            # Convert total_weight to float if it is a string
-            try:
-                total_weight = float(total_weight)
-            except ValueError:
-                total_weight = 50.0  # Default to 50.0 if conversion fails
-
-            # Parsed address for use in FedEx request
-            parsed_address = parse_ship_address(ship_address, ship_city, ship_state, ship_postal_code, ship_country)
-
-            st.markdown("### Modify Shipping Information")
-
-            with st.form("fedex_request_form"):
-                # Create fields that can be adjusted before sending to FedEx
-                ship_city = st.text_input("City", value=parsed_address.get("city", ""))
-                ship_state = st.text_input("State", value=parsed_address.get("state", ""))
-                ship_postal_code = st.text_input("Postal Code", value=parsed_address.get("postalCode", ""))
-                ship_country = st.text_input("Country", value=parsed_address.get("country", "US"))
-                
-                # Use validated package weight in the number input field
-                package_weight = st.number_input("Package Weight (LB)", min_value=0.1, value=total_weight)
-
-                # Submit button within the form
-                submitted = st.form_submit_button("Send to FedEx")
-                if submitted:
-                    fedex_data = {
-                        "shipCity": ship_city,
-                        "shipState": ship_state,
-                        "shipCountry": ship_country,
-                        "shipPostalCode": ship_postal_code,
-                        "packageWeight": package_weight
-                    }
-                    # Fetch FedEx rate quote using the modified data
-                    fedex_quote = get_fedex_rate_quote(fedex_data)
-
-                    if "error" not in fedex_quote:
-                        st.success("FedEx quote fetched successfully!")
-                        st.session_state['fedex_response'] = fedex_quote  # Store the response in session state
-                    else:
-                        st.error(fedex_quote["error"])
-
-    # Bottom row: FedEx Shipping Options
-    if 'fedex_response' in st.session_state and st.session_state['fedex_response']:
-        fedex_quote = st.session_state['fedex_response']
-        st.markdown("### Available Shipping Options")
-
-        rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
-        valid_rate_options = [
-            option for option in rate_options
-            if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0
+        # Display dynamic metric boxes with arrows and sub-numbers
+        metrics = [
+            {"label": "Total Revenue", "value": f"${total_revenue:,.2f}", "change": percentage_change_sales, "positive": percentage_change_sales > 0},
+            {"label": "Total Orders", "value": total_orders, "change": percentage_change_orders, "positive": percentage_change_orders > 0},
+            {"label": "Avg Order Volume", "value": f"${average_order_volume:,.2f}", "change": percentage_change_average, "positive": percentage_change_average > 0},
+            {"label": "YoY Sales (Net)", "value": f"${net_difference:,.2f}", "change": percentage_change_yoy, "positive": net_difference > 0},
         ]
 
-        if valid_rate_options:
-            sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
+        # Styling for the boxes
+        st.markdown("""
+        <style>
+        .metrics-box {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .metric-title {
+            margin: 0;
+            font-size: 20px;
+        }
+        .metric-value {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .metric-change {
+            margin: 0;
+            font-size: 14px;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
-            # Limit to the top options
-            top_rate_options = sorted_rate_options[:8]
+        # First row: metrics
+        col1, col2, col3, col4 = st.columns(4)
 
-            st.write(f"Found {len(top_rate_options)} shipping options")
+        for col, metric in zip([col1, col2, col3, col4], metrics):
+            arrow = "↑" if metric["positive"] else "↓"
+            color = "green" if metric["positive"] else "red"
 
-            # Create an empty container to hold the selected option
-            selected_shipping_option = None
+            with col:
+                st.markdown(f"""
+                <div class="metrics-box">
+                    <h3 class="metric-title">{metric['label']}</h3>
+                    <p class="metric-value">{metric['value']}</p>
+                    <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-            # Create a container for the cards and allow selection
-            with st.container():
-                for option in top_rate_options:
-                    service_type = option.get('serviceType', 'N/A')
-                    service_name = get_service_name(service_type)
-                    delivery_time = option.get('deliveryTimestamp', 'N/A')
-                    net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
-                    currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
+        # Separation between metrics and visualizations
+        st.write("")
 
-                    # Display as a selectable card
-                    if st.button(f"{service_name}: ${net_charge} {currency}", key=service_type):
-                        selected_shipping_option = {
-                            "service_type": service_type,
-                            "net_charge": net_charge,
-                            "currency": currency,
-                            "netsuite_id": get_netsuite_id(service_type)  # Get the internal NetSuite ID for the service
-                        }
-                        st.session_state['selected_shipping_option'] = selected_shipping_option
+    # Create 3 columns for the visualizations and data frames
+    col1, col2, col3 = st.columns(3)
 
-            # Display the selected shipping option
-            if 'selected_shipping_option' in st.session_state:
-                selected_option = st.session_state['selected_shipping_option']
-                st.markdown(f"### Selected Shipping Option: {get_service_name(selected_option['service_type'])} (${selected_option['net_charge']} {selected_option['currency']})")
+    # Column 1: Sales by Rep visualization and DataFrame
+    with col1:
+        st.plotly_chart(chart_sales_by_rep, use_container_width=True)
+        with st.expander("Data - Sales by Rep"):
+            st.dataframe(df_grouped)
 
-                # Send the selected shipping option back to NetSuite using REST Web Services
-                if st.button("Submit Shipping Option to NetSuite"):
-                    # Create the payload using the selected shipping option's NetSuite ID
-                    netsuite_payload = {
-                        "shippingCost": selected_option['net_charge'],
-                        "shipMethod": {
-                            "id": selected_option['netsuite_id']  # Use the mapped NetSuite internal ID
-                        }
-                    }
+    # Column 2: Sales by Category visualization and DataFrame
+    chart_sales_by_category = get_sales_by_category()
+    if chart_sales_by_category:
+        with col2:
+            st.plotly_chart(chart_sales_by_category, use_container_width=True)
+            with st.expander("Data - Sales by Category"):
+                # Assuming you have a DataFrame for Sales by Category, you would display it here.
+                df_sales_by_category = fetch_restlet_data('customsearch5145')  # Fetch data if needed
+                if not df_sales_by_category.empty:
+                    st.dataframe(df_sales_by_category)
 
-                    # NetSuite credentials and setup
-                    consumer_key = st.secrets["consumer_key"]
-                    consumer_secret = st.secrets["consumer_secret"]
-                    token = st.secrets["token_key"]
-                    token_secret = st.secrets["token_secret"]
-                    realm = st.secrets["realm"]
+    # Column 3: Sales by Month visualization and DataFrame
+    if chart_sales_by_month:
+        with col3:
+            st.plotly_chart(chart_sales_by_month, use_container_width=True)
+            with st.expander("Data - Sales by Month"):
+                # Assuming you have a DataFrame for Sales by Month, you would display it here.
+                df_sales_by_month = fetch_restlet_data('customsearch5146')  # Fetch data if needed
+                if not df_sales_by_month.empty:
+                    st.dataframe(df_sales_by_month)
 
-                    # OAuth1 authentication
-                    auth = OAuth1(
-                        client_key=consumer_key,
-                        client_secret=consumer_secret,
-                        resource_owner_key=token,
-                        resource_owner_secret=token_secret,
-                        realm=realm,
-                        signature_method='HMAC-SHA256'
-                    )
+# =========================== Website & Amazon Sales Tab ===========================
+with tabs[1]:
+    # Page title and subtitle for Website & Amazon Sales
+    st.title("Website & Amazon Sales Dashboard")
+    st.subheader("KPIs and visualizations for Website and Amazon Sales")
 
-                    # Headers for the request
-                    headers = {
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return-content'
-                    }
+    # Load data for Website Revenue by Month
+    chart_website_revenue_by_month = get_website_revenue_by_month()
 
-                    # Replace the existing code block that handles the response from NetSuite after submission:
-                    try:
-                        # Update the NetSuite Sales Order with the selected shipping details
-                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['netsuite_id'], headers, auth)
+    # Assuming we have another KPI function for Amazon Sales (similar to Website Revenue)
+    # Replace with the actual function if it exists
+    # For demonstration, reusing get_sales_by_month (modify with correct Amazon Sales function)
+    chart_amazon_sales_by_month = get_sales_by_month()[0]
 
-                        # Handle 204 status code as a successful response
-                        if response.status_code in [200, 204]:  # Consider 204 as a successful response
-                            st.success(f"Shipping option '{get_service_name(selected_option['service_type'])}' submitted successfully to NetSuite!")
-                        else:
-                            st.error(f"Failed to submit shipping option to NetSuite. Status Code: {response.status_code}")
-                            st.write("Response Text:", response.text)
-                    except Exception as e:
-                        st.error(f"Error occurred while updating NetSuite: {str(e)}")
+    # Placeholder metrics for Website and Amazon Sales
+    website_total_revenue = 500000  # Placeholder value
+    amazon_total_revenue = 300000   # Placeholder value
+    website_percentage_change = 8.0  # Placeholder percentage
+    amazon_percentage_change = 5.0   # Placeholder percentage
 
-else:
-    st.error("No sales orders available.")
+    # Define KPI metrics for Website & Amazon Sales
+    website_metrics = [
+        {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": website_percentage_change, "positive": website_percentage_change > 0},
+        {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": amazon_percentage_change, "positive": amazon_percentage_change > 0},
+        {"label": "Avg Order Value (Website)", "value": f"${(website_total_revenue/1000):,.2f}", "change": 2.5, "positive": 2.5 > 0},  # Placeholder calculation
+        {"label": "Avg Order Value (Amazon)", "value": f"${(amazon_total_revenue/800):,.2f}", "change": 1.5, "positive": 1.5 > 0},   # Placeholder calculation
+    ]
+
+    # Display KPI metric boxes in a row
+    col1, col2, col3, col4 = st.columns(4)
+    for col, metric in zip([col1, col2, col3, col4], website_metrics):
+        arrow = "↑" if metric["positive"] else "↓"
+        color = "green" if metric["positive"] else "red"
+
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+                <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Visualizations for Website & Amazon Sales
+    col1, col2 = st.columns(2)
+
+    # Column 1: Website Revenue visualization
+    with col1:
+        st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
+        with st.expander("Data - Website Revenue by Month"):
+            df_website_revenue = fetch_restlet_data('customsearch4978')  # Fetch data if needed
+            if not df_website_revenue.empty:
+                st.dataframe(df_website_revenue)
+
+    # Column 2: Amazon Sales visualization
+    with col2:
+        st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
+        with st.expander("Data - Amazon Sales by Month"):
+            df_amazon_sales = fetch_restlet_data('customsearch4979')  # Fetch data if needed
+            if not df_amazon_sales.empty:
+                st.dataframe(df_amazon_sales)
