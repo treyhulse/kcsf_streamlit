@@ -200,7 +200,7 @@ with tab2:
     
     # Display Website revenue chart and data
     st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
-    with st.expander("Data - Website Revenue by Month"):
+    with st.expander("Website Revenue by Month"):
         if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
             st.dataframe(website_revenue_df_grouped)
         else:
@@ -236,8 +236,9 @@ with tab2:
     with st.expander("Item Sales Margins"):
         df_raw_sales_data = fetch_restlet_data('customsearch4990')
         if df_raw_sales_data is not None and not df_raw_sales_data.empty:
+            # Check if the column exists and round it to 2 decimal places
             if 'Average Shipping Cost Per Unit' in df_raw_sales_data.columns:
-                df_raw_sales_data['Average Shipping Cost Per Unit'] = df_raw_sales_data['Average Shipping Cost Per Unit'].round(2)
+                df_raw_sales_data['Average Shipping Cost Per Unit'] = df_raw_sales_data['Average Shipping Cost Per Unit'].apply(lambda x: round(x, 2))
             st.dataframe(df_raw_sales_data)
         else:
             st.warning("No raw sales data available for display.")
