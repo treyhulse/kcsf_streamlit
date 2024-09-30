@@ -322,6 +322,6 @@ with tabs[1]:
     with col2:
         st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
         with st.expander("Data - Amazon Sales by Month"):
-            df_amazon_sales = fetch_restlet_data('customsearch4979')  # Fetch data if needed
+            df_amazon_sales = fetch_restlet_data('customsearch5156')  # Fetch data if needed
             if not df_amazon_sales.empty:
                 st.dataframe(df_amazon_sales)
