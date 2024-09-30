@@ -175,41 +175,52 @@ with tab2:
     st.header("Website and Amazon")
 
     # Retrieve data and KPI metrics with updated variable names
-    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume, website_total_revenue = get_website_revenue_by_month()
+    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
-    # Check for duplicate rows or inflated data
-    st.write("Preview of Amazon Revenue Data (Before Grouping):", amazon_sales_df_grouped)
+    # Ensure 'website_total_orders' and 'amazon_total_orders' are correctly set
+    website_total_orders = website_total_orders if website_total_orders > 0 else 0
+    amazon_total_orders = amazon_total_orders if amazon_total_orders > 0 else 0
 
-    # Remove any duplicate rows (if any)
-    amazon_sales_df_grouped = amazon_sales_df_grouped.drop_duplicates()
+    # Ensure website_total_revenue and amazon_total_revenue are numeric types
+    try:
+        website_total_revenue = float(website_total_revenue)
+    except (ValueError, TypeError):
+        website_total_revenue = 0.0
 
-    # Double-check the 'Billed Amount' column values before summing
-    st.write("Unique Billed Amounts in Amazon Data (After Duplicates Removal):", amazon_sales_df_grouped['Billed Amount'].unique())
+    try:
+        amazon_total_revenue = float(amazon_total_revenue)
+    except (ValueError, TypeError):
+        amazon_total_revenue = 0.0
 
-    # Calculate the total revenue again using only unique 'Billed Amount' entries
-    amazon_total_revenue = amazon_sales_df_grouped['Billed Amount'].sum()
-    amazon_total_orders = amazon_sales_df_grouped['Orders'].sum()
+    # Calculate Website and Amazon KPIs if dataframes are not empty
+    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
+    else:
+        st.warning("Website revenue data is unavailable or empty.")
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
-    # Calculate the average order volume based on the unique 'Billed Amount' values
-    amazon_avg_order_volume = amazon_total_revenue / amazon_total_orders if amazon_total_orders > 0 else 0
+    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
+    else:
+        st.warning("Amazon revenue data is unavailable or empty.")
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
 
-    # Check and display the recalculated values to ensure correctness
-    st.write(f"Recalculated Amazon Total Revenue: {amazon_total_revenue}")
-    st.write(f"Recalculated Amazon Total Orders: {amazon_total_orders}")
-    st.write(f"Recalculated Average Order Volume: {amazon_avg_order_volume}")
+    # Ensure revenue values are formatted correctly for display
+    website_revenue_display = f"${website_total_revenue:,.2f}" if website_total_revenue else "$0.00"
+    amazon_revenue_display = f"${amazon_total_revenue:,.2f}" if amazon_total_revenue else "$0.00"
 
     # Metrics for Website and Amazon sections with dynamic data
     website_metrics = [
-        {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
+        {"label": "Website Revenue", "value": website_revenue_display, "change": 8.0, "positive": 8.0 > 0},
         {"label": "Website Orders", "value": f"{website_total_orders:,}", "change": 5.0, "positive": 5.0 > 0},
-        {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
+        {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}" if website_avg_order_volume else "$0.00", "change": 2.5, "positive": 2.5 > 0},
     ]
 
     amazon_metrics = [
-        {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": 7.0, "positive": 7.0 > 0},
+        {"label": "Amazon Revenue", "value": amazon_revenue_display, "change": 7.0, "positive": 7.0 > 0},
         {"label": "Amazon Orders", "value": f"{amazon_total_orders:,}", "change": 4.0, "positive": 4.0 > 0},
-        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
+        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}" if amazon_avg_order_volume else "$0.00", "change": 1.5, "positive": 1.5 > 0},
     ]
 
     # Display Website metrics in columns
