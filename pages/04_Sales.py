@@ -168,21 +168,33 @@ with tab1:
                     st.dataframe(df_sales_by_month)
 
 # =========================== Website and Amazon Tab ===========================
-
 # =========================== Website and Amazon Tab ===========================
 
 with tab2:
     st.header("Website and Amazon")
 
+    # Initialize variables to ensure they are defined
+    website_total_revenue, website_total_orders, website_avg_order_volume, amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume = 0, 0, 0, 0, 0, 0
+
     # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
-    # Ensure 'website_total_orders' and 'amazon_total_orders' are correctly set
-    website_total_orders = website_total_orders if website_total_orders > 0 else 0
-    amazon_total_orders = amazon_total_orders if amazon_total_orders > 0 else 0
+    # Calculate Website KPIs if the DataFrame is not empty
+    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
+    else:
+        st.warning("Website revenue data is unavailable or empty.")
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
-    # Ensure website_total_revenue and amazon_total_revenue are numeric types
+    # Calculate Amazon KPIs if the DataFrame is not empty
+    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
+    else:
+        st.warning("Amazon revenue data is unavailable or empty.")
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
+
+    # Ensure website_total_revenue and amazon_total_revenue are float values before formatting
     try:
         website_total_revenue = float(website_total_revenue)
     except (ValueError, TypeError):
@@ -193,32 +205,15 @@ with tab2:
     except (ValueError, TypeError):
         amazon_total_revenue = 0.0
 
-    # Calculate Website and Amazon KPIs if dataframes are not empty
-    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
-    else:
-        st.warning("Website revenue data is unavailable or empty.")
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
-
-    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
-    else:
-        st.warning("Amazon revenue data is unavailable or empty.")
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
-
-    # Ensure revenue values are formatted correctly for display
-    website_revenue_display = f"${website_total_revenue:,.2f}" if website_total_revenue else "$0.00"
-    amazon_revenue_display = f"${amazon_total_revenue:,.2f}" if amazon_total_revenue else "$0.00"
-
-    # Metrics for Website and Amazon sections with dynamic data
+    # Metrics for Website and Amazon sections with formatted values
     website_metrics = [
-        {"label": "Website Revenue", "value": website_revenue_display, "change": 8.0, "positive": 8.0 > 0},
+        {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
         {"label": "Website Orders", "value": f"{website_total_orders:,}", "change": 5.0, "positive": 5.0 > 0},
         {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}" if website_avg_order_volume else "$0.00", "change": 2.5, "positive": 2.5 > 0},
     ]
 
     amazon_metrics = [
-        {"label": "Amazon Revenue", "value": amazon_revenue_display, "change": 7.0, "positive": 7.0 > 0},
+        {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": 7.0, "positive": 7.0 > 0},
         {"label": "Amazon Orders", "value": f"{amazon_total_orders:,}", "change": 4.0, "positive": 4.0 > 0},
         {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}" if amazon_avg_order_volume else "$0.00", "change": 1.5, "positive": 1.5 > 0},
     ]
@@ -238,6 +233,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
     st.write("")
+    
     # Display Website revenue chart and data
     st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
     with st.expander("Data - Website Revenue by Month"):
@@ -261,6 +257,7 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
     st.write("")
+
     # Display Amazon revenue chart and data
     st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
     with st.expander("Data - Amazon Revenue by Month"):
