@@ -163,7 +163,7 @@ if not customsearch5135_data_raw.empty:
             st.altair_chart(stacked_bar_chart, use_container_width=True)
 
             # Display the raw data in an expander
-            with st.expander("View Raw Data"):
+            with st.expander("View All Orders"):
                 st.dataframe(filtered_data)
 
         else:
