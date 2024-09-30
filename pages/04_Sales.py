@@ -166,37 +166,38 @@ with tab1:
                 df_sales_by_month = fetch_restlet_data('customsearch5146')
                 if not df_sales_by_month.empty:
                     st.dataframe(df_sales_by_month)
+
+# =========================== Website and Amazon Tab ===========================
+
 # =========================== Website and Amazon Tab ===========================
 
 with tab2:
     st.header("Website and Amazon")
 
-    # Define the year to filter by (e.g., current year)
-    filter_year = 2024  # Replace with the desired year, or use a dynamic approach to set this value.
-
     # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
-    # Filter data by the specified year to avoid summing across years
-    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        website_revenue_df_grouped = website_revenue_df_grouped[website_revenue_df_grouped['Year'] == filter_year]
-    
-    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-        amazon_sales_df_grouped = amazon_sales_df_grouped[amazon_sales_df_grouped['Year'] == filter_year]
+    # Check for duplicate rows or inflated data
+    st.write("Preview of Amazon Revenue Data (Before Grouping):", amazon_sales_df_grouped)
 
-    # Calculate Website and Amazon KPIs if dataframes are not empty
-    if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
-    else:
-        st.warning("Website revenue data is unavailable or empty.")
-        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
+    # Remove any duplicate rows (if any)
+    amazon_sales_df_grouped = amazon_sales_df_grouped.drop_duplicates()
 
-    if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
-    else:
-        st.warning("Amazon revenue data is unavailable or empty.")
-        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
+    # Double-check the 'Billed Amount' column values before summing
+    st.write("Unique Billed Amounts in Amazon Data (After Duplicates Removal):", amazon_sales_df_grouped['Billed Amount'].unique())
+
+    # Calculate the total revenue again using only unique 'Billed Amount' entries
+    amazon_total_revenue = amazon_sales_df_grouped['Billed Amount'].sum()
+    amazon_total_orders = amazon_sales_df_grouped['Orders'].sum()
+
+    # Calculate the average order volume based on the unique 'Billed Amount' values
+    amazon_avg_order_volume = amazon_total_revenue / amazon_total_orders if amazon_total_orders > 0 else 0
+
+    # Check and display the recalculated values to ensure correctness
+    st.write(f"Recalculated Amazon Total Revenue: {amazon_total_revenue}")
+    st.write(f"Recalculated Amazon Total Orders: {amazon_total_orders}")
+    st.write(f"Recalculated Average Order Volume: {amazon_avg_order_volume}")
 
     # Metrics for Website and Amazon sections with dynamic data
     website_metrics = [
