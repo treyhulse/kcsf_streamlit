@@ -60,13 +60,14 @@ def calculate_kpis(df_grouped):
 
 # Create the page title and subtitle outside of the tabs
 st.title("Sales Dashboard")
+st.subheader("Overview of sales performance")
 
 # Create tabs for different KPIs as the main content
 tab1, tab2 = st.tabs(["Sales", "Website and Amazon"])
 
 # =========================== Sales Tab ===========================
 with tab1:
-    st.subheader("Sales Performance Metrics from 01/01/2023")
+    st.header("Sales Performance Metrics from 01/01/2023")
 
     chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
@@ -167,9 +168,13 @@ with tab1:
                     st.dataframe(df_sales_by_month)
 
 # =========================== Website and Amazon Tab ===========================
+
 with tab2:
-    chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
-    chart_amazon_sales_by_month, amazon_sales_df_grouped = get_amazon_revenue_by_month()
+    st.header("Website and Amazon")
+
+    # Retrieve data and KPI metrics with updated variable names
+    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
+    chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
         website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
@@ -186,18 +191,16 @@ with tab2:
     website_metrics = [
         {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
         {"label": "Website Orders", "value": website_total_orders, "change": 5.0, "positive": 5.0 > 0},
-        {"label": "Avg Order Volume (Website)", "value": f"${website_average_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
-        {"label": "Top Website Sales Rep", "value": top_website_sales_rep, "change": 0.0, "positive": True},  
+        {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
     ]
 
     amazon_metrics = [
         {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": 7.0, "positive": 7.0 > 0},
         {"label": "Amazon Orders", "value": amazon_total_orders, "change": 4.0, "positive": 4.0 > 0},
-        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_average_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
-        {"label": "Top Amazon Sales Rep", "value": top_amazon_sales_rep, "change": 0.0, "positive": True},  
+        {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
     ]
 
-    st.header("Website")
+    st.subheader("Website Metrics")
     col1, col2, col3, col4 = st.columns(4)
     for col, metric in zip([col1, col2, col3, col4], website_metrics):
         arrow = "↑" if metric["positive"] else "↓"
@@ -219,7 +222,7 @@ with tab2:
         else:
             st.warning("No website revenue data available for display.")
 
-    st.header("Amazon")
+    st.subheader("Amazon Metrics")
     col1, col2, col3, col4 = st.columns(4)
     for col, metric in zip([col1, col2, col3, col4], amazon_metrics):
         arrow = "↑" if metric["positive"] else "↓"
