@@ -169,7 +169,7 @@ with tab2:
     website_total_revenue, website_total_orders, website_avg_order_volume, amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume = 0, 0, 0, 0, 0, 0
 
     # Retrieve data and KPI metrics with updated variable names
-    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
+    chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume, website_total_revenue = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume, amazon_total_revenue = get_amazon_revenue_by_month()
     st.write(f"Amazon Total Revenue: ${amazon_total_revenue:,.2f}")
 

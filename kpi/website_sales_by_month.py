@@ -34,4 +34,4 @@ def get_website_revenue_by_month():
     website_total_revenue = df['Billed Amount'].sum()
     website_avg_order_volume = website_total_revenue / website_total_orders if website_total_orders > 0 else 0
 
-    return fig, df_grouped, website_total_orders, website_avg_order_volume
+    return fig, df_grouped, website_total_orders, website_avg_order_volume, website_total_revenue
