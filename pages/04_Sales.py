@@ -168,8 +168,6 @@ with tab1:
 
 # =========================== Website and Amazon Tab ===========================
 with tab2:
-    st.header("Website and Amazon")
-
     chart_website_revenue_by_month, website_revenue_df_grouped = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped = get_amazon_revenue_by_month()
 
