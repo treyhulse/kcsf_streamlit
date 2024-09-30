@@ -9,16 +9,27 @@ def get_amazon_revenue_by_month():
     # Fetch data from the custom search 'customsearch5156'
     df = fetch_restlet_data('customsearch5156')
 
-    # Ensure 'Billed Amount' and 'Orders' columns are in the correct format
-    df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
-    df['Orders'] = pd.to_numeric(df['Orders'], errors='coerce').fillna(0)
     if df.empty:
-        return None, None, 0, 0  # Return None, None for charts and 0, 0 for metrics
+        return None, None, 0, 0  # Return None for charts and 0, 0 for metrics
 
-    # Calculate total revenue and total orders
-    total_revenue = df['Billed Amount'].sum()
-    total_orders = df['Orders'].sum()
-    avg_order_volume = total_revenue / total_orders if total_orders > 0 else 0
+    # Ensure 'Billed Amount' and 'Orders' columns are in the correct format
+    try:
+        df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
+    except KeyError:
+        print("Error: 'Billed Amount' column not found in the data.")
+        return None, None, 0, 0  # Return 0 if column is not present
+
+    # Check and ensure 'Orders' column is in the DataFrame
+    if 'Orders' in df.columns:
+        df['Orders'] = pd.to_numeric(df['Orders'], errors='coerce').fillna(0)
+        amazon_total_orders = df['Orders'].sum()  # Unique variable for Amazon Orders
+    else:
+        print("Warning: 'Orders' column not found in the data. Setting amazon total orders to 0.")
+        amazon_total_orders = 0
+
+    # Calculate total revenue and average order volume
+    amazon_total_revenue = df['Billed Amount'].sum()
+    amazon_avg_order_volume = amazon_total_revenue / amazon_total_orders if amazon_total_orders > 0 else 0
 
     # Extract year and month from 'Period'
     df['Year'] = pd.to_datetime(df['Period']).dt.year
@@ -36,4 +47,4 @@ def get_amazon_revenue_by_month():
         legend_title="Year"
     )
 
-    return fig, df_grouped, total_orders, avg_order_volume
+    return fig, df_grouped, amazon_total_orders, amazon_avg_order_volume

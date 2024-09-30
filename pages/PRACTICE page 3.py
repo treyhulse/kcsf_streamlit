@@ -163,12 +163,10 @@ with tab1:
 
 # =========================== Website and Amazon Tab ===========================
 
-
-
 with tab2:
     st.header("Website and Amazon")
 
-    # Retrieve data and KPI metrics
+    # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
@@ -195,7 +193,20 @@ with tab2:
         {"label": "Amazon Orders", "value": amazon_total_orders, "change": 4.0, "positive": 4.0 > 0},
         {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
     ]
+    # Display the updated metrics for Website
+    st.subheader("Website Metrics")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Website Orders", f"{website_total_orders}")
+    col2.metric("Avg Order Volume (Website)", f"${website_avg_order_volume:,.2f}")
+    col3.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
 
+    # Display the updated metrics for Amazon
+    st.subheader("Amazon Metrics")
+    col4, col5, col6 = st.columns(3)
+    col4.metric("Amazon Orders", f"{amazon_total_orders}")
+    col5.metric("Avg Order Volume (Amazon)", f"${amazon_avg_order_volume:,.2f}")
+    col6.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
+    
     st.subheader("Website Metrics")
     col1, col2, col3, col4 = st.columns(4)
     for col, metric in zip([col1, col2, col3, col4], website_metrics):
