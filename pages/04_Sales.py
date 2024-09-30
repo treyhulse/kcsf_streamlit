@@ -233,3 +233,11 @@ with tab2:
             st.dataframe(amazon_sales_df_grouped)
         else:
             st.warning("No Amazon revenue data available for display.")
+
+    # Add an expander to display a dataframe from a saved search
+    with st.expander("Data - Raw Sales Data"):
+        df_raw_sales_data = fetch_restlet_data('customsearch4990')
+        if df_raw_sales_data is not None and not df_raw_sales_data.empty:
+            st.dataframe(df_raw_sales_data)
+        else:
+            st.warning("No raw sales data available for display.")
