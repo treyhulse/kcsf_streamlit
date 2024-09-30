@@ -44,18 +44,6 @@ import pandas as pd
 import plotly.express as px
 
 
-# Helper function to check if the figure is a valid Plotly figure
-def is_valid_plotly_figure(figure):
-    return isinstance(figure, dict) or hasattr(figure, 'data')
-
-# Safe function to render Plotly charts in Streamlit
-def safe_plotly_chart(figure, container_width=True):
-    if is_valid_plotly_figure(figure):
-        st.plotly_chart(figure, use_container_width=container_width)
-    else:
-        st.warning("The chart could not be rendered. The figure is not a valid Plotly figure or the data might be empty.")
-
-
 # Define a function to calculate KPIs based on grouped sales data
 def calculate_kpis(df_grouped):
     # Ensure that all columns in df_grouped are numeric, ignoring errors for non-convertible values
