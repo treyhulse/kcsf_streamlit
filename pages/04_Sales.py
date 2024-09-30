@@ -236,9 +236,11 @@ with tab2:
     with st.expander("Item Sales Margins"):
         df_raw_sales_data = fetch_restlet_data('customsearch4990')
         if df_raw_sales_data is not None and not df_raw_sales_data.empty:
-            # Check if the column exists and round it to 2 decimal places
             if 'Average Shipping Cost Per Unit' in df_raw_sales_data.columns:
-                df_raw_sales_data['Average Shipping Cost Per Unit'] = df_raw_sales_data['Average Shipping Cost Per Unit'].apply(lambda x: round(x, 2))
+                # Convert the column to numeric, forcing errors to NaN (in case there are non-numeric values)
+                df_raw_sales_data['Average Shipping Cost Per Unit'] = pd.to_numeric(
+                    df_raw_sales_data['Average Shipping Cost Per Unit'], errors='coerce'
+                ).round(2)
             st.dataframe(df_raw_sales_data)
         else:
             st.warning("No raw sales data available for display.")
