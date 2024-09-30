@@ -167,7 +167,7 @@ with tab1:
             except ValueError as e:
                 st.error(f"Failed to render metric box for label '{label}'. Error: {e}")
 
-
+    st.write("")
     # Visualizations for Sales Dashboard (Sales by Rep, Sales by Category, Sales by Month)
     col1, col2, col3 = st.columns(3)
 
@@ -249,7 +249,7 @@ with tab2:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
-
+    st.write("")
     # Full-width Website Revenue Visualization
     st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
     with st.expander("Data - Website Revenue by Month"):
@@ -272,7 +272,7 @@ with tab2:
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
-
+    st.write("")
     # Full-width Amazon Revenue Visualization
     st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
     with st.expander("Data - Amazon Revenue by Month"):
