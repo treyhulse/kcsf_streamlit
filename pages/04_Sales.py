@@ -180,11 +180,11 @@ with tab2:
         website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
     # Calculate Amazon KPIs if the DataFrame is not empty
-    # Calculate Amazon KPIs if the DataFrame is not empty
     if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
         amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
-        st.write(f"Debug - Amazon Total Revenue: {amazon_total_revenue}")
-
+    else:
+        st.warning("Amazon revenue data is unavailable or empty.")
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
 
     # Ensure website_total_revenue and amazon_total_revenue are float values before formatting
     try:
