@@ -163,6 +163,8 @@ with tab1:
 
 # =========================== Website and Amazon Tab ===========================
 
+# =========================== Website and Amazon Tab ===========================
+
 with tab2:
     st.header("Website and Amazon")
 
@@ -170,51 +172,52 @@ with tab2:
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
-    website_total_orders = website_total_orders if website_total_orders > 0 else 0  # Set to 0 if it's negative or null
+    # Ensure 'website_total_orders' and 'amazon_total_orders' are correctly set
+    website_total_orders = website_total_orders if website_total_orders > 0 else 0
     amazon_total_orders = amazon_total_orders if amazon_total_orders > 0 else 0
 
-    st.metric("Website Orders", f"{website_total_orders:,}")
-    st.metric("Amazon Orders", f"{amazon_total_orders:,}")
-
+    # Calculate Website and Amazon KPIs if dataframes are not empty
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
-        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
     else:
         st.warning("Website revenue data is unavailable or empty.")
-        website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
+        website_total_revenue, website_total_orders, website_avg_order_volume, top_website_sales_rep = 0, 0, 0, "N/A"
 
     if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
-        amazon_total_revenue, amazon_total_orders, amazon_average_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = calculate_kpis(amazon_sales_df_grouped)
     else:
         st.warning("Amazon revenue data is unavailable or empty.")
-        amazon_total_revenue, amazon_total_orders, amazon_average_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
+        amazon_total_revenue, amazon_total_orders, amazon_avg_order_volume, top_amazon_sales_rep = 0, 0, 0, "N/A"
 
+    # Metrics for Website and Amazon sections with dynamic data
     website_metrics = [
         {"label": "Website Revenue", "value": f"${website_total_revenue:,.2f}", "change": 8.0, "positive": 8.0 > 0},
-        {"label": "Website Orders", "value": website_total_orders, "change": 5.0, "positive": 5.0 > 0},
+        {"label": "Website Orders", "value": f"{website_total_orders:,}", "change": 5.0, "positive": 5.0 > 0},
         {"label": "Avg Order Volume (Website)", "value": f"${website_avg_order_volume:,.2f}", "change": 2.5, "positive": 2.5 > 0},
     ]
 
     amazon_metrics = [
         {"label": "Amazon Revenue", "value": f"${amazon_total_revenue:,.2f}", "change": 7.0, "positive": 7.0 > 0},
-        {"label": "Amazon Orders", "value": amazon_total_orders, "change": 4.0, "positive": 4.0 > 0},
+        {"label": "Amazon Orders", "value": f"{amazon_total_orders:,}", "change": 4.0, "positive": 4.0 > 0},
         {"label": "Avg Order Volume (Amazon)", "value": f"${amazon_avg_order_volume:,.2f}", "change": 1.5, "positive": 1.5 > 0},
     ]
 
+    # Display Website metrics in columns
     st.subheader("Website Metrics")
-    col1, col2, col3, col4 = st.columns(4)
-    for col, metric in zip([col1, col2, col3, col4], website_metrics):
+    col1, col2, col3 = st.columns(3)
+    for col, metric in zip([col1, col2, col3], website_metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
         with col:
             st.markdown(f"""
             <div class="metrics-box">
-                <h3 class="metric-title">{metric['label']}</h3>
-                <p class="metric-value">{metric['value']}</p>
+                <h3 class="metric-title">{html.escape(metric['label'])}</h3>
+                <p class="metric-value">{html.escape(str(metric['value']))}</p>
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
 
-    st.write("")
+    # Display Website revenue chart and data
     st.plotly_chart(chart_website_revenue_by_month, use_container_width=True)
     with st.expander("Data - Website Revenue by Month"):
         if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
@@ -222,21 +225,22 @@ with tab2:
         else:
             st.warning("No website revenue data available for display.")
 
+    # Display Amazon metrics in columns
     st.subheader("Amazon Metrics")
-    col1, col2, col3, col4 = st.columns(4)
-    for col, metric in zip([col1, col2, col3, col4], amazon_metrics):
+    col1, col2, col3 = st.columns(3)
+    for col, metric in zip([col1, col2, col3], amazon_metrics):
         arrow = "↑" if metric["positive"] else "↓"
         color = "green" if metric["positive"] else "red"
         with col:
             st.markdown(f"""
             <div class="metrics-box">
-                <h3 class="metric-title">{metric['label']}</h3>
-                <p class="metric-value">{metric['value']}</p>
+                <h3 class="metric-title">{html.escape(metric['label'])}</h3>
+                <p class="metric-value">{html.escape(str(metric['value']))}</p>
                 <p class="metric-change" style="color:{color};">{arrow} {metric['change']:.2f}%</p>
             </div>
             """, unsafe_allow_html=True)
 
-    st.write("")
+    # Display Amazon revenue chart and data
     st.plotly_chart(chart_amazon_sales_by_month, use_container_width=True)
     with st.expander("Data - Amazon Revenue by Month"):
         if amazon_sales_df_grouped is not None and not amazon_sales_df_grouped.empty:
