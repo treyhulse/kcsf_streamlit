@@ -3,42 +3,30 @@ from utils.restlet import fetch_restlet_data
 import plotly.express as px
 import streamlit as st
 
-# KPI: Amazon Revenue by Month
-@st.cache_data(ttl=300)  # Cache the data for 1 hour (TTL)
+@st.cache_data(ttl=300)  # Cache the data for 5 minutes (TTL)
 def get_amazon_revenue_by_month():
-    # Fetch data from the custom search 'customsearch5156'
     df = fetch_restlet_data('customsearch5156')
 
     if df.empty:
-        return None, None, 0, 0  # Return None for charts and 0, 0 for metrics
+        return None, None, 0, 0  # Return 0s if no data is available
 
     # Ensure 'Billed Amount' and 'Orders' columns are in the correct format
-    try:
-        df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
-    except KeyError:
-        print("Error: 'Billed Amount' column not found in the data.")
-        return None, None, 0, 0  # Return 0 if column is not present
+    df['Billed Amount'] = df.get('Billed Amount', 0).replace('[\$,]', '', regex=True).astype(float).fillna(0)
+    df['Orders'] = pd.to_numeric(df.get('Orders', 0), errors='coerce').fillna(0)
 
-    # Check and ensure 'Orders' column is in the DataFrame
-    if 'Orders' in df.columns:
-        df['Orders'] = pd.to_numeric(df['Orders'], errors='coerce').fillna(0)
-        amazon_total_orders = df['Orders'].sum()  # Unique variable for Amazon Orders
-    else:
-        print("Warning: 'Orders' column not found in the data. Setting amazon total orders to 0.")
-        amazon_total_orders = 0
-
-    # Calculate total revenue and average order volume
+    # Calculate metrics
     amazon_total_revenue = df['Billed Amount'].sum()
+    amazon_total_orders = df['Orders'].sum()  # Sum of 'Orders'
     amazon_avg_order_volume = amazon_total_revenue / amazon_total_orders if amazon_total_orders > 0 else 0
 
     # Extract year and month from 'Period'
     df['Year'] = pd.to_datetime(df['Period']).dt.year
     df['Month'] = pd.to_datetime(df['Period']).dt.month
 
-    # Group and pivot the data to get the total Billed Amount per month and year
+    # Group and pivot the data for visualizations
     df_grouped = df.pivot_table(index='Month', columns='Year', values='Billed Amount', aggfunc='sum')
 
-    # Create a line chart using Plotly
+    # Create line chart
     fig = px.line(df_grouped, x=df_grouped.index, y=df_grouped.columns, title="Amazon Revenue by Month", markers=True)
     fig.update_layout(
         xaxis_title="Month",

@@ -170,6 +170,12 @@ with tab2:
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume = get_amazon_revenue_by_month()
 
+    website_total_orders = website_total_orders if website_total_orders > 0 else 0  # Set to 0 if it's negative or null
+    amazon_total_orders = amazon_total_orders if amazon_total_orders > 0 else 0
+
+    st.metric("Website Orders", f"{website_total_orders:,}")
+    st.metric("Amazon Orders", f"{amazon_total_orders:,}")
+
     if website_revenue_df_grouped is not None and not website_revenue_df_grouped.empty:
         website_total_revenue, website_total_orders, website_average_order_volume, top_website_sales_rep = calculate_kpis(website_revenue_df_grouped)
     else:
