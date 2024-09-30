@@ -9,8 +9,8 @@ def get_website_revenue_by_month():
     # Fetch data from the custom search 'customsearch4978'
     df = fetch_restlet_data('customsearch4978')
     
-    # Ensure 'Revenue' is in the correct format for numerical calculations
-    df['Revenue'] = df['Revenue'].replace('[\$,]', '', regex=True).astype(float)
+    # Ensure 'Billed Amount' is in the correct format for numerical calculations
+    df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
     if df.empty:
         return None
 
@@ -18,14 +18,14 @@ def get_website_revenue_by_month():
     df['Year'] = pd.to_datetime(df['Period']).dt.year
     df['Month'] = pd.to_datetime(df['Period']).dt.month
 
-    # Group and pivot data to create a summary table of revenue by month and year
-    df_grouped = df.pivot_table(index='Month', columns='Year', values='Revenue', aggfunc='sum')
+    # Group and pivot data to create a summary table of Billed Amount by month and year
+    df_grouped = df.pivot_table(index='Month', columns='Year', values='Billed Amount', aggfunc='sum')
 
     # Create a line chart using Plotly
-    fig = px.line(df_grouped, x=df_grouped.index, y=df_grouped.columns, title="Website Revenue by Month", markers=True)
+    fig = px.line(df_grouped, x=df_grouped.index, y=df_grouped.columns, title="Website Revenue Amount by Month", markers=True)
     fig.update_layout(
         xaxis_title="Month",
-        yaxis_title="Revenue",
+        yaxis_title="Billed Amount",
         xaxis=dict(tickmode="array", tickvals=list(range(1, 13)), ticktext=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']),
         legend_title="Year"
     )
