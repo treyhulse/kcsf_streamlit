@@ -12,7 +12,7 @@ def get_website_revenue_by_month():
     # Ensure 'Billed Amount' is in the correct format for numerical calculations
     df['Billed Amount'] = df['Billed Amount'].replace('[\$,]', '', regex=True).astype(float)
     if df.empty:
-        return None
+        return None, None
 
     # Extract year and month from the 'Period' column
     df['Year'] = pd.to_datetime(df['Period']).dt.year
@@ -29,11 +29,12 @@ def get_website_revenue_by_month():
         xaxis=dict(tickmode="array", tickvals=list(range(1, 13)), ticktext=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']),
         legend_title="Year"
     )
-    return fig
+    
+    return fig, df_grouped
 
 # Display the KPI in Streamlit
 st.title("Website Revenue Dashboard")
-website_revenue_chart = get_website_revenue_by_month()
+website_revenue_chart, website_revenue_data = get_website_revenue_by_month()
 if website_revenue_chart:
     st.plotly_chart(website_revenue_chart)
 else:
