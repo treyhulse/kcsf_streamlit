@@ -54,14 +54,14 @@ def calculate_kpis(df_grouped):
 
 # Create the page title and subtitle outside of the tabs
 st.title("Sales Dashboard")
-st.subheader("Overview of sales performance metrics from 01/01/2023")
+st.subheader("Overview of sales performance")
 
 # Create tabs for different KPIs as the main content
 tab1, tab2 = st.tabs(["Sales", "Website and Amazon"])
 
 # =========================== Sales Tab ===========================
 with tab1:
-    st.header("Sales Performance Metrics")
+    st.header("Sales Performance Metrics from 01/01/2023")
 
     chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
