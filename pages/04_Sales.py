@@ -60,14 +60,13 @@ def calculate_kpis(df_grouped):
 
 # Create the page title and subtitle outside of the tabs
 st.title("Sales Dashboard")
-st.subheader("Overview of sales performance")
 
 # Create tabs for different KPIs as the main content
 tab1, tab2 = st.tabs(["Sales", "Website and Amazon"])
 
 # =========================== Sales Tab ===========================
 with tab1:
-    st.header("Sales Performance Metrics from 01/01/2023")
+    st.subheader("Sales Performance Metrics from 01/01/2023")
 
     chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
@@ -170,7 +169,6 @@ with tab1:
 # =========================== Website and Amazon Tab ===========================
 
 with tab2:
-    st.header("Website and Amazon")
 
     # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume = get_website_revenue_by_month()
@@ -207,7 +205,7 @@ with tab2:
     ]
 
     # Display Website metrics in columns
-    st.subheader("Website Metrics")
+    st.header("Website Metrics")
     col1, col2, col3 = st.columns(3)
     for col, metric in zip([col1, col2, col3], website_metrics):
         arrow = "↑" if metric["positive"] else "↓"
@@ -230,7 +228,7 @@ with tab2:
             st.warning("No website revenue data available for display.")
 
     # Display Amazon metrics in columns
-    st.subheader("Amazon Metrics")
+    st.header("Amazon Metrics")
     col1, col2, col3 = st.columns(3)
     for col, metric in zip([col1, col2, col3], amazon_metrics):
         arrow = "↑" if metric["positive"] else "↓"
