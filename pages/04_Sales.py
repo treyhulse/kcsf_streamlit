@@ -168,7 +168,6 @@ with tab2:
     # Retrieve data and KPI metrics with updated variable names
     chart_website_revenue_by_month, website_revenue_df_grouped, website_total_orders, website_avg_order_volume, website_total_revenue = get_website_revenue_by_month()
     chart_amazon_sales_by_month, amazon_sales_df_grouped, amazon_total_orders, amazon_avg_order_volume, amazon_total_revenue = get_amazon_revenue_by_month()
-    st.write(f"Amazon Total Revenue: ${amazon_total_revenue:,.2f}")
 
     # Metrics for Website and Amazon sections with formatted values
     website_metrics = [
@@ -237,6 +236,8 @@ with tab2:
     with st.expander("Item Sales Margins"):
         df_raw_sales_data = fetch_restlet_data('customsearch4990')
         if df_raw_sales_data is not None and not df_raw_sales_data.empty:
+            if 'Average Shipping Cost Per Unit' in df_raw_sales_data.columns:
+                df_raw_sales_data['Average Shipping Cost Per Unit'] = df_raw_sales_data['Average Shipping Cost Per Unit'].round(2)
             st.dataframe(df_raw_sales_data)
         else:
             st.warning("No raw sales data available for display.")
