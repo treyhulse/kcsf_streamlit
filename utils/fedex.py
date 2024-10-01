@@ -69,9 +69,13 @@ def create_fedex_rate_request(trimmed_data):
 # Function to send the request to FedEx API
 def get_fedex_rate_quote(trimmed_data):
     fedex_url = "https://apis.fedex.com/rate/v1/rates/quotes"
+
+    # Get a valid token using the centralized function
+    fedex_token = get_valid_fedex_token()
+    
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.session_state['fedex_token']}"
+        "Authorization": f"Bearer {fedex_token}"  # Use the valid token from session state
     }
     
     payload = create_fedex_rate_request(trimmed_data)
