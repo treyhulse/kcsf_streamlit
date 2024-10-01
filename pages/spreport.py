@@ -236,56 +236,59 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
-    # Define CSS for expander height and style to ensure uniformity
+    # Define CSS for calendar box layout
     st.markdown(
         """
         <style>
-        .streamlit-expander {
-            background-color: #f5f5f5; /* Optional: Set a background color */
-            border: 1px solid #ddd; /* Optional: Set a border */
-            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Optional: Set a shadow */
-            border-radius: 5px; /* Optional: Rounded corners */
-            height: 180px; /* Set the height of each expander to accommodate exactly 2 rows */
-            overflow: hidden; /* Prevent overflow outside the expander */
+        .calendar-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 columns for Monday to Friday */
+            gap: 10px; /* Space between calendar boxes */
+            padding: 20px;
+        }
+        .calendar-box {
+            background-color: #f9f9f9; /* Light background for each day box */
+            border: 1px solid #ddd; /* Border for each box */
+            border-radius: 8px; /* Optional: Rounded corners */
+            height: 200px; /* Fixed height for all boxes */
+            overflow-y: auto; /* Scrollbars for content overflow */
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: space-between; /* Space between content */
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
         }
-        .streamlit-expander-content {
-            max-height: 100px; /* Control the internal content height for exactly 2 rows */
-            overflow-y: auto; /* Enable vertical scrolling */
-        }
-        .streamlit-expanderHeader {
-            font-size: 16px; /* Optional: Font size for headers */
+        .calendar-header {
+            font-size: 16px;
             font-weight: bold;
-            padding: 5px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .calendar-content {
+            flex-grow: 1; /* Grow to fill available space */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .empty-day {
+            color: #888; /* Grey color for empty day text */
+            text-align: center;
+            padding-top: 20px;
         }
         </style>
         """, unsafe_allow_html=True
     )
 
-    # Display headers for the days of the week once at the top
-    col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
-    with col_mon:
-        st.write("**Monday**")
-    with col_tue:
-        st.write("**Tuesday**")
-    with col_wed:
-        st.write("**Wednesday**")
-    with col_thu:
-        st.write("**Thursday**")
-    with col_fri:
-        st.write("**Friday**")
+    # Display headers for the days of the week at the top
+    st.markdown("<div class='calendar-container'>", unsafe_allow_html=True)
 
-    # Iterate through the unique weeks
+    # Iterate through the unique weeks and days to create calendar boxes
     for _, week_row in unique_weeks.iterrows():
         week_start = week_row['Week Start']
         week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
 
-        # Populate columns with orders for each day, including the specific date
-        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], 
-                                           ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 
-                                           week_days):
+        # Create a calendar box for each day of the week
+        for day, specific_date in zip(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], week_days):
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
 
             # Check if specific_date is valid before formatting
@@ -294,25 +297,30 @@ with tab2:
             else:
                 formatted_date = "Invalid Date"
 
-            with col:
-                if len(day_orders) > 0:
-                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)", expanded=True):
-                        # Display up to two rows, with an empty space for fewer rows
-                        st.write(day_orders.iloc[:2])  # Show first 2 rows only, add more rows to the display if necessary
-                else:
-                    with st.expander(f"{formatted_date}: NO ORDERS", expanded=True):
-                        st.write("No orders for this day.")
+            # Create calendar box for the day
+            st.markdown(f"""
+                <div class='calendar-box'>
+                    <div class='calendar-header'>{day} - {formatted_date}</div>
+                    <div class='calendar-content'>
+            """, unsafe_allow_html=True)
 
-        # Add visual separation between weeks
-        st.write("")
+            if len(day_orders) > 0:
+                # Show all orders for the day, or limit display as needed
+                for index, row in day_orders.iterrows():
+                    st.markdown(f"""
+                        <div>
+                            <strong>Order #:</strong> {row['Order Number']} <br>
+                            <strong>Ship Date:</strong> {row['Ship Date']} <br>
+                            <strong>Name:</strong> {row['Name']}
+                        </div><br>
+                    """, unsafe_allow_html=True)
+            else:
+                # If no orders for the day, show a placeholder message
+                st.markdown("<div class='empty-day'>No orders for this day.</div>", unsafe_allow_html=True)
 
-    # Expander for customsearch5147 data with record count in header
-    st.header("Our Truck Orders to be scheduled")
-    st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
-    truck_order_count = len(our_truck_data)
-    with st.expander(f"{truck_order_count} Orders", expanded=True):
-        # Display up to two rows with uniform height
-        st.write(our_truck_data.iloc[:2])  # Show first 2 rows only
-        st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
+            st.markdown("</div></div>", unsafe_allow_html=True)  # Close the calendar box
+
+    # Close the calendar container
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
