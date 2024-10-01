@@ -250,16 +250,17 @@ with tab2:
             background-color: #f9f9f9; /* Light background for each day box */
             border: 1px solid #ddd; /* Border for each box */
             border-radius: 8px; /* Optional: Rounded corners */
-            height: 200px; /* Fixed height for all boxes */
+            height: 250px; /* Fixed height for all boxes */
             overflow-y: auto; /* Scrollbars for content overflow */
             padding: 10px;
             display: flex;
             flex-direction: column;
             justify-content: space-between; /* Space between content */
             box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+            text-align: left; /* Align text to the left */
         }
         .calendar-header {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             text-align: center;
             margin-bottom: 10px;
@@ -270,6 +271,9 @@ with tab2:
             flex-direction: column;
             justify-content: flex-start;
         }
+        .calendar-content div {
+            margin-bottom: 5px; /* Space between items */
+        }
         .empty-day {
             color: #888; /* Grey color for empty day text */
             text-align: center;
@@ -279,7 +283,7 @@ with tab2:
         """, unsafe_allow_html=True
     )
 
-    # Display headers for the days of the week at the top
+    # Display calendar container
     st.markdown("<div class='calendar-container'>", unsafe_allow_html=True)
 
     # Iterate through the unique weeks and days to create calendar boxes
@@ -305,14 +309,14 @@ with tab2:
             """, unsafe_allow_html=True)
 
             if len(day_orders) > 0:
-                # Show all orders for the day, or limit display as needed
+                # Show all orders for the day, properly contained within the box
                 for index, row in day_orders.iterrows():
                     st.markdown(f"""
                         <div>
-                            <strong>Order #:</strong> {row['Order Number']} <br>
-                            <strong>Ship Date:</strong> {row['Ship Date']} <br>
+                            <strong>Order #:</strong> {row['Order Number']}<br>
+                            <strong>Ship Date:</strong> {row['Ship Date']}<br>
                             <strong>Name:</strong> {row['Name']}
-                        </div><br>
+                        </div>
                     """, unsafe_allow_html=True)
             else:
                 # If no orders for the day, show a placeholder message
