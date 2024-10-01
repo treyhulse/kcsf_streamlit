@@ -222,34 +222,29 @@ with tab1:
     with st.expander("View Open Orders with a Ship Date"):
         st.write(merged_df)
 
-# Define CSS styles for calendar boxes and layout
+# Define CSS styles for the grid-based calendar layout
 st.markdown("""
 <style>
 .calendar-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 equal columns for Monday to Friday */
+    gap: 10px; /* Space between calendar boxes */
     padding: 20px;
-}
-.calendar-row {
-    display: flex;
     width: 100%;
-    justify-content: space-between;
-    margin-bottom: 20px;
 }
 .calendar-box {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    width: 18%; /* 18% width for 5 boxes in a row */
+    background-color: #f9f9f9; /* Light background for each day box */
+    border: 1px solid #ddd; /* Border for each box */
+    border-radius: 8px; /* Rounded corners */
     padding: 15px;
-    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1); /* Light shadow */
     text-align: left;
     height: 250px; /* Fixed height */
-    overflow-y: auto; /* Enable scrolling */
+    overflow-y: auto; /* Scrollbars for content overflow */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    width: 100%; /* Ensure each box fills the available width */
 }
 .calendar-header {
     font-size: 16px;
@@ -280,11 +275,8 @@ def display_calendar(merged_df):
     # Display the calendar container
     st.markdown("<div class='calendar-container'>", unsafe_allow_html=True)
 
-    # Iterate through each week and display the days
+    # Iterate through each week and display the days in a grid
     for _, week_row in unique_weeks.iterrows():
-        # Create a new row for the week
-        st.markdown("<div class='calendar-row'>", unsafe_allow_html=True)
-
         week_start = week_row['Week Start']
         week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
 
@@ -315,9 +307,6 @@ def display_calendar(merged_df):
 
             # Close the calendar box
             st.markdown("</div>", unsafe_allow_html=True)
-
-        # Close the calendar row
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # Close the calendar container
     st.markdown("</div>", unsafe_allow_html=True)
