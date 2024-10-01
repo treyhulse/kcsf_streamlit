@@ -3,6 +3,7 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 import plotly.express as px
+from utils.fedex import get_valid_fedex_token
 
 # Set the page configuration
 st.set_page_config(
