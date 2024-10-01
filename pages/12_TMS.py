@@ -326,13 +326,11 @@ with tab2:
         fedex_token = get_valid_fedex_token()
 
         # Set up the API endpoint and headers
-        fedex_claims_url = f"https://apis.fedex.com/claims/v1/claims/{shipment_tracking_number}"  # Replace with the correct FedEx endpoint if needed
+        fedex_claims_url = "https://apis.fedex.com/claims/v1/claims"  # Replace with the correct FedEx endpoint if needed
         headers = {
             "Authorization": f"Bearer {fedex_token}",
             "Content-Type": "application/json"
         }
-        st.write(f"Request URL: {fedex_claims_url}")
-        st.write(f"Headers: {headers}")
 
         # Create the payload for claim submission
         payload = {
@@ -407,11 +405,14 @@ with tab2:
         fedex_token = get_valid_fedex_token()
 
         # Set up the API endpoint for tracking and headers
-        fedex_claims_tracking_url = f"https://apis.fedex.com/claims/v1/claims/{claim_tracking_number}"  # Replace with the correct endpoint if needed
+        fedex_claims_tracking_url = f"https://apis.fedex.com/claims/v1/claims/{claim_tracking_number}"
         headers = {
             "Authorization": f"Bearer {fedex_token}",
             "Content-Type": "application/json"
         }
+        
+        st.write(f"Request URL: {fedex_claims_tracking_url}")
+        st.write(f"Headers: {headers}")
 
         # Make the GET request to track the claim status
         response = requests.get(fedex_claims_tracking_url, headers=headers)
