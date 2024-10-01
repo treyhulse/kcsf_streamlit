@@ -67,7 +67,7 @@ def get_fedex_rate_quote(data):
 
     fedex_api_url = "https://apis.fedex.com/rate/v1/rates/quotes"  # Replace with the appropriate endpoint for your FedEx integration
 
-    # Include the account number in the request
+    # Include the account number and rate request types in the payload
     payload = {
         "accountNumber": {
             "value": st.secrets["fedex_account_number"]
@@ -86,7 +86,7 @@ def get_fedex_rate_quote(data):
                 }
             },
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
-            "rateRequestTypes": ["ACCOUNT"],
+            "rateRequestTypes": ["LIST", "ACCOUNT"],  # Request both LIST and ACCOUNT rates
             "packageCount": "1",
             "requestedPackageLineItems": [
                 {
@@ -113,6 +113,7 @@ def get_fedex_rate_quote(data):
         return response.json()
     else:
         return {"error": f"Failed to get rate quote: {response.status_code} - {response.text}"}
+
 
 
 # Fetch sales order data from the new saved search
