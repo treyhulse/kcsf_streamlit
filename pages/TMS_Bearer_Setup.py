@@ -86,7 +86,7 @@ def get_fedex_rate_quote(data):
                 }
             },
             "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
-            "rateRequestTypes": ["LIST", "ACCOUNT"],  # Request both LIST and ACCOUNT rates
+            "rateRequestType": ["LIST", "ACCOUNT"],  # Request both LIST and ACCOUNT rates
             "packageCount": "1",
             "requestedPackageLineItems": [
                 {
