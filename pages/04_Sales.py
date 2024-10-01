@@ -58,7 +58,6 @@ tab1, tab2 = st.tabs(["Sales", "Website and Amazon"])
 
 # =========================== Sales Tab ===========================
 with tab1:
-    st.subheader("Sales Performance Metrics from 01/01/2023")
 
     chart_sales_by_month, net_difference, percentage_variance = get_sales_by_month()
     chart_sales_by_rep, df_grouped = get_sales_by_rep()
