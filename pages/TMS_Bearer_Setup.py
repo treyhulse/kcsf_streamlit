@@ -67,7 +67,11 @@ def get_fedex_rate_quote(data):
 
     fedex_api_url = "https://apis.fedex.com/rate/v1/rates/quotes"  # Replace with the appropriate endpoint for your FedEx integration
 
+    # Include the account number in the request
     payload = {
+        "accountNumber": {
+            "value": st.secrets["fedex_account_number"]
+        },
         "requestedShipment": {
             "shipper": {
                 "address": {
@@ -102,12 +106,14 @@ def get_fedex_rate_quote(data):
         }
     }
 
+    # Make the API request
     response = requests.post(fedex_api_url, headers=headers, json=payload)
     
     if response.status_code == 200:
         return response.json()
     else:
         return {"error": f"Failed to get rate quote: {response.status_code} - {response.text}"}
+
 
 # Fetch sales order data from the new saved search
 @st.cache_data(ttl=900)
