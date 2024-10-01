@@ -245,8 +245,8 @@ with tab2:
             border: 1px solid #ddd; /* Optional: Set a border */
             box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Optional: Set a shadow */
             border-radius: 5px; /* Optional: Rounded corners */
-            height: 200px; /* Set the height of each expander */
-            overflow: hidden;
+            height: 250px; /* Set the height of each expander */
+            overflow: hidden; /* Ensure the overall height is fixed */
         }
         .streamlit-expander-content {
             max-height: 150px; /* Control the internal content height */
