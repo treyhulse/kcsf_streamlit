@@ -294,8 +294,8 @@ with tab2:
             with col:
                 if len(day_orders) > 0:
                     with st.expander(f"{formatted_date} ({len(day_orders)} Orders)", expanded=True):
-                        # Display only the first 5 rows if there are more
-                        st.write(day_orders.head(5))
+                        # Display the full dataframe for this day
+                        st.write(day_orders)
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS", expanded=True):
                         st.write("No orders for this day.")
@@ -308,5 +308,7 @@ with tab2:
     st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders", expanded=True):
-        st.write(our_truck_data.head(5))
+        st.write(our_truck_data)  # Display the full truck order dataset
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
+
+
