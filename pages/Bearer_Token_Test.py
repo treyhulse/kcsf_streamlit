@@ -43,3 +43,39 @@ st_autorefresh(interval=59*60*1000, key="refresh_token")
 
 # Update token at the start of the application
 update_token_in_session()
+
+# Create a simple UI for testing
+st.title("FedEx Bearer Token Test Page")
+
+# Display the current token and expiration time
+if 'fedex_token' in st.session_state and 'fedex_token_expiration' in st.session_state:
+    st.subheader("Current Bearer Token")
+    st.code(st.session_state['fedex_token'], language='plaintext')
+
+    # Calculate remaining time until the token expires
+    remaining_time = int(st.session_state['fedex_token_expiration'] - time.time())
+    st.write(f"Token Expires In: {remaining_time} seconds")
+
+    # Button to force refresh the token
+    if st.button("Force Refresh Token"):
+        update_token_in_session()
+        st.success("Token refreshed successfully!")
+
+# Button to check the validity of the current token
+if st.button("Check Token Validity"):
+    try:
+        headers = {
+            "Authorization": f"Bearer {st.session_state['fedex_token']}",
+            "Content-Type": "application/json"
+        }
+
+        # Make a simple request to a FedEx API endpoint to check if the token works (you can replace this with your endpoint)
+        fedex_api_url = "https://apis.fedex.com/rate/v1/rates/quotes"  # Replace with a valid endpoint if needed
+        response = requests.get(fedex_api_url, headers=headers)
+
+        if response.status_code == 200:
+            st.success("Token is valid and working!")
+        else:
+            st.error(f"Token validation failed: {response.status_code} - {response.text}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
