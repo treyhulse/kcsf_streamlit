@@ -70,7 +70,7 @@ def get_fedex_rate_quote(trimmed_data):
     fedex_url = "https://apis.fedex.com/rate/v1/rates/quotes"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {st.secrets['fedex_token']}"
+        "Authorization": f"Bearer {st.session_state['fedex_token']}"
     }
     
     payload = create_fedex_rate_request(trimmed_data)
