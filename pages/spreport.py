@@ -236,13 +236,26 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
-    # Define CSS for expander height control
+    # Define CSS for expander height and style
     st.markdown(
         """
         <style>
+        .streamlit-expander {
+            background-color: #f5f5f5; /* Optional: Set a background color */
+            border: 1px solid #ddd; /* Optional: Set a border */
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Optional: Set a shadow */
+            border-radius: 5px; /* Optional: Rounded corners */
+            height: 200px; /* Set the height of each expander */
+            overflow: hidden;
+        }
         .streamlit-expander-content {
-            max-height: 50px; /* Set max height (adjust as needed) */
+            max-height: 150px; /* Control the internal content height */
             overflow-y: auto; /* Enable vertical scrolling */
+        }
+        .streamlit-expanderHeader {
+            font-size: 16px; /* Optional: Font size for headers */
+            font-weight: bold;
+            padding: 5px;
         }
         </style>
         """, unsafe_allow_html=True
