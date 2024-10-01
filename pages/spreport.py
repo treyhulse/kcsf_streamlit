@@ -222,11 +222,52 @@ with tab1:
     with st.expander("View Open Orders with a Ship Date"):
         st.write(merged_df)
 
-# Tab 2: Shipping Calendar
-with tab2:
-    st.header("Shipping Calendar")
+# Define CSS styles for calendar boxes and layout
+st.markdown("""
+<style>
+.calendar-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 20px;
+}
+.calendar-row {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.calendar-box {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 18%; /* 18% width for 5 boxes in a row */
+    padding: 15px;
+    box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    height: 250px; /* Fixed height */
+    overflow-y: auto; /* Enable scrolling */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.calendar-header {
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.empty-day {
+    color: #888; /* Grey color for empty day text */
+    text-align: center;
+    padding-top: 20px;
+}
+</style>
+""", unsafe_allow_html=True)
 
-    # Group orders by week and day
+# Function to render the calendar view
+def display_calendar(merged_df):
+    # Ensure date columns are properly formatted
     merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
     merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
     merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
@@ -236,58 +277,14 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
-    # Define CSS for calendar box layout
-    st.markdown(
-        """
-        <style>
-        .calendar-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5 columns for Monday to Friday */
-            gap: 10px; /* Space between calendar boxes */
-            padding: 20px;
-        }
-        .calendar-box {
-            background-color: #f9f9f9; /* Light background for each day box */
-            border: 1px solid #ddd; /* Border for each box */
-            border-radius: 8px; /* Optional: Rounded corners */
-            height: 250px; /* Fixed height for all boxes */
-            overflow-y: auto; /* Scrollbars for content overflow */
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Space between content */
-            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
-            text-align: left; /* Align text to the left */
-        }
-        .calendar-header {
-            font-size: 14px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .calendar-content {
-            flex-grow: 1; /* Grow to fill available space */
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-        .calendar-content div {
-            margin-bottom: 5px; /* Space between items */
-        }
-        .empty-day {
-            color: #888; /* Grey color for empty day text */
-            text-align: center;
-            padding-top: 20px;
-        }
-        </style>
-        """, unsafe_allow_html=True
-    )
-
-    # Display calendar container
+    # Display the calendar container
     st.markdown("<div class='calendar-container'>", unsafe_allow_html=True)
 
-    # Iterate through the unique weeks and days to create calendar boxes
+    # Iterate through each week and display the days
     for _, week_row in unique_weeks.iterrows():
+        # Create a new row for the week
+        st.markdown("<div class='calendar-row'>", unsafe_allow_html=True)
+
         week_start = week_row['Week Start']
         week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
 
@@ -295,21 +292,15 @@ with tab2:
         for day, specific_date in zip(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], week_days):
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
 
-            # Check if specific_date is valid before formatting
-            if pd.notna(specific_date):
-                formatted_date = specific_date.strftime('%B %d')
-            else:
-                formatted_date = "Invalid Date"
+            # Format the date for display
+            formatted_date = specific_date.strftime('%B %d')
 
-            # Create calendar box for the day
-            st.markdown(f"""
-                <div class='calendar-box'>
-                    <div class='calendar-header'>{day} - {formatted_date}</div>
-                    <div class='calendar-content'>
-            """, unsafe_allow_html=True)
+            # Start the calendar box
+            st.markdown(f"<div class='calendar-box'>", unsafe_allow_html=True)
+            st.markdown(f"<div class='calendar-header'>{day} - {formatted_date}</div>", unsafe_allow_html=True)
 
+            # Display the orders for the day or show a placeholder if no orders
             if len(day_orders) > 0:
-                # Show all orders for the day, properly contained within the box
                 for index, row in day_orders.iterrows():
                     st.markdown(f"""
                         <div>
@@ -322,9 +313,26 @@ with tab2:
                 # If no orders for the day, show a placeholder message
                 st.markdown("<div class='empty-day'>No orders for this day.</div>", unsafe_allow_html=True)
 
-            st.markdown("</div></div>", unsafe_allow_html=True)  # Close the calendar box
+            # Close the calendar box
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        # Close the calendar row
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Close the calendar container
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+# Example merged_df to pass into the display_calendar function
+# Replace this with your actual dataframe
+data = {
+    'Ship Date': ['2024-09-23', '2024-09-24', '2024-09-25', '2024-10-01', '2024-10-02'],
+    'Order Number': [5535883, 5542829, 5542807, 5537464, 5534358],
+    'Name': ['GABES - GABRIEL BROTHERS INC', 'Thomas Jewelry Design', 'Johnson Corp', 'Example Store', 'Another Store']
+}
+merged_df = pd.DataFrame(data)
+
+# Display the calendar view
+display_calendar(merged_df)
 
 
