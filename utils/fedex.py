@@ -2,6 +2,7 @@ import requests
 import json
 import streamlit as st
 from utils.connections import connect_to_netsuite
+import time
 
 # Function to create the FedEx request payload
 def create_fedex_rate_request(trimmed_data):
@@ -116,3 +117,41 @@ def update_sales_order_shipping_details(sales_order_id, shipping_cost, ship_meth
     else:
         st.error(f"Failed to update sales order: {response.status_code} - {response.text}")
         return None
+    
+
+
+# Function to get a valid FedEx bearer token, refreshing it if necessary
+def get_valid_fedex_token():
+    # Check if the token is already in session state or has expired
+    if 'fedex_token' not in st.session_state or 'fedex_token_expiration' not in st.session_state:
+        # Request a new token if none exists
+        new_token, expires_in = get_fedex_bearer_token()
+        st.session_state['fedex_token'] = new_token
+        st.session_state['fedex_token_expiration'] = time.time() + expires_in - 60  # Subtract 60 seconds for safety margin
+    elif time.time() > st.session_state['fedex_token_expiration']:
+        # Refresh the token if it has expired
+        new_token, expires_in = get_fedex_bearer_token()
+        st.session_state['fedex_token'] = new_token
+        st.session_state['fedex_token_expiration'] = time.time() + expires_in - 60  # Subtract 60 seconds for safety margin
+
+    # Return the valid token
+    return st.session_state['fedex_token']
+
+# Function to retrieve a new bearer token from FedEx using client ID and secret from st.secrets
+def get_fedex_bearer_token():
+    url = "https://apis.fedex.com/oauth/token"
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    data = {
+        "grant_type": "client_credentials",
+        "client_id": st.secrets["fedex_id"],          # Use fedex_id from st.secrets
+        "client_secret": st.secrets["fedex_secret"],  # Use fedex_secret from st.secrets
+    }
+
+    response = requests.post(url, headers=headers, data=data)
+    if response.status_code == 200:
+        token_info = response.json()
+        return token_info['access_token'], token_info['expires_in']
+    else:
+        raise Exception(f"Failed to get token: {response.status_code}, {response.text}")

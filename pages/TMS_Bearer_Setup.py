@@ -1,10 +1,61 @@
 import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
+import pandas as pd
+import plotly.express as px
+from utils.fedex import get_valid_fedex_token
+
+# Set the page configuration
+st.set_page_config(
+    page_title="Practice Page",
+    page_icon="📊",
+    layout="wide",
+)
+
+# Custom CSS to hide the top bar and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Validate access to this specific page
+page_name = 'Shipping Report'  # Adjust this based on the current page
+if not validate_page_access(user_email, page_name):
+    show_permission_violation()
+    st.stop()
+
+st.write(f"Welcome, {user_email}. You have access to this page.")
+
+################################################################################################
+
+## AUTHENTICATED
+
+################################################################################################
+
+import streamlit as st
 import pandas as pd
 from utils.restlet import fetch_restlet_data  # Custom module for fetching data from NetSuite
+from utils.fedex import get_fedex_rate_quote  # Custom module for fetching FedEx rate quotes
 from requests_oauthlib import OAuth1
 import requests
 import json
-import time
+
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_raw_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
 
 # Function to parse shipAddress into components and convert country name to ISO code
 def parse_ship_address(ship_address, city, state, postal_code, country):
@@ -52,76 +103,6 @@ def get_netsuite_id(fedex_rate_code):
 # Function to get the service name from the FedEx rate code
 def get_service_name(fedex_rate_code):
     return fedex_service_mapping.get(fedex_rate_code, {}).get("name", "Unknown Service")
-
-# Fetch FedEx rate quote using the session state token
-def get_fedex_rate_quote(data):
-    # Use the token stored in session state
-    if 'fedex_token' not in st.session_state:
-        st.error("FedEx token not available. Please refresh the token and try again.")
-        return {"error": "FedEx token not available"}
-
-    headers = {
-        "Authorization": f"Bearer {st.session_state['fedex_token']}",
-        "Content-Type": "application/json"
-    }
-
-    fedex_api_url = "https://apis.fedex.com/rate/v1/rates/quotes"  # Replace with the appropriate endpoint for your FedEx integration
-
-    # Include the account number and rate request types in the payload
-    payload = {
-        "accountNumber": {
-            "value": st.secrets["fedex_account_number"]
-        },
-        "requestedShipment": {
-            "shipper": {
-                "address": {
-                    "postalCode": data['shipPostalCode'],
-                    "countryCode": data['shipCountry']
-                }
-            },
-            "recipient": {
-                "address": {
-                    "postalCode": "90210",  # Replace with recipient's postal code
-                    "countryCode": "US"     # Replace with recipient's country code
-                }
-            },
-            "pickupType": "DROPOFF_AT_FEDEX_LOCATION",
-            "rateRequestType": ["LIST", "ACCOUNT"],  # Request both LIST and ACCOUNT rates
-            "packageCount": "1",
-            "requestedPackageLineItems": [
-                {
-                    "groupPackageCount": 1,
-                    "weight": {
-                        "units": "LB",
-                        "value": data['packageWeight']
-                    },
-                    "dimensions": {
-                        "length": 12,
-                        "width": 12,
-                        "height": 12,
-                        "units": "IN"
-                    }
-                }
-            ]
-        }
-    }
-
-    # Make the API request
-    response = requests.post(fedex_api_url, headers=headers, json=payload)
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return {"error": f"Failed to get rate quote: {response.status_code} - {response.text}"}
-
-
-
-# Fetch sales order data from the new saved search
-@st.cache_data(ttl=900)
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
-    df = fetch_restlet_data(saved_search_id)
-    return df
 
 # Sidebar filters
 st.sidebar.header("Filters")
@@ -208,3 +189,99 @@ if not sales_order_data_raw.empty:
                         st.session_state['fedex_response'] = fedex_quote  # Store the response in session state
                     else:
                         st.error(fedex_quote["error"])
+
+    # Bottom row: FedEx Shipping Options
+    if 'fedex_response' in st.session_state and st.session_state['fedex_response']:
+        fedex_quote = st.session_state['fedex_response']
+        st.markdown("### Available Shipping Options")
+
+        rate_options = fedex_quote.get('output', {}).get('rateReplyDetails', [])
+        valid_rate_options = [
+            option for option in rate_options
+            if 'ratedShipmentDetails' in option and len(option['ratedShipmentDetails']) > 0
+        ]
+
+        if valid_rate_options:
+            sorted_rate_options = sorted(valid_rate_options, key=lambda x: x['ratedShipmentDetails'][0]['totalNetCharge'])
+
+            # Limit to the top options
+            top_rate_options = sorted_rate_options[:8]
+
+            st.write(f"Found {len(top_rate_options)} shipping options")
+
+            # Create an empty container to hold the selected option
+            selected_shipping_option = None
+
+            # Create a container for the cards and allow selection
+            with st.container():
+                for option in top_rate_options:
+                    service_type = option.get('serviceType', 'N/A')
+                    service_name = get_service_name(service_type)
+                    delivery_time = option.get('deliveryTimestamp', 'N/A')
+                    net_charge = option['ratedShipmentDetails'][0]['totalNetCharge']
+                    currency = option['ratedShipmentDetails'][0].get('currency', 'USD')
+
+                    # Display as a selectable card
+                    if st.button(f"{service_name}: ${net_charge} {currency}", key=service_type):
+                        selected_shipping_option = {
+                            "service_type": service_type,
+                            "net_charge": net_charge,
+                            "currency": currency,
+                            "netsuite_id": get_netsuite_id(service_type)  # Get the internal NetSuite ID for the service
+                        }
+                        st.session_state['selected_shipping_option'] = selected_shipping_option
+
+            # Display the selected shipping option
+            if 'selected_shipping_option' in st.session_state:
+                selected_option = st.session_state['selected_shipping_option']
+                st.markdown(f"### Selected Shipping Option: {get_service_name(selected_option['service_type'])} (${selected_option['net_charge']} {selected_option['currency']})")
+
+                # Send the selected shipping option back to NetSuite using REST Web Services
+                if st.button("Submit Shipping Option to NetSuite"):
+                    # Create the payload using the selected shipping option's NetSuite ID
+                    netsuite_payload = {
+                        "shippingCost": selected_option['net_charge'],
+                        "shipMethod": {
+                            "id": selected_option['netsuite_id']  # Use the mapped NetSuite internal ID
+                        }
+                    }
+
+                    # NetSuite credentials and setup
+                    consumer_key = st.secrets["consumer_key"]
+                    consumer_secret = st.secrets["consumer_secret"]
+                    token = st.secrets["token_key"]
+                    token_secret = st.secrets["token_secret"]
+                    realm = st.secrets["realm"]
+
+                    # OAuth1 authentication
+                    auth = OAuth1(
+                        client_key=consumer_key,
+                        client_secret=consumer_secret,
+                        resource_owner_key=token,
+                        resource_owner_secret=token_secret,
+                        realm=realm,
+                        signature_method='HMAC-SHA256'
+                    )
+
+                    # Headers for the request
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return-content'
+                    }
+
+                    # Replace the existing code block that handles the response from NetSuite after submission:
+                    try:
+                        # Update the NetSuite Sales Order with the selected shipping details
+                        response = update_netsuite_sales_order(selected_id, selected_option['net_charge'], selected_option['netsuite_id'], headers, auth)
+
+                        # Handle 204 status code as a successful response
+                        if response.status_code in [200, 204]:  # Consider 204 as a successful response
+                            st.success(f"Shipping option '{get_service_name(selected_option['service_type'])}' submitted successfully to NetSuite!")
+                        else:
+                            st.error(f"Failed to submit shipping option to NetSuite. Status Code: {response.status_code}")
+                            st.write("Response Text:", response.text)
+                    except Exception as e:
+                        st.error(f"Error occurred while updating NetSuite: {str(e)}")
+
+else:
+    st.error("No sales orders available.")
