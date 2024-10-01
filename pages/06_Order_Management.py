@@ -237,6 +237,9 @@ with tab2:
     quote_data['Latest'] = pd.to_datetime(quote_data['Latest'], format='%m/%d/%Y %I:%M %p', errors='coerce')
     quote_data['Earliest'] = pd.to_datetime(quote_data['Earliest'], format='%m/%d/%Y %I:%M %p', errors='coerce')
 
+    # Filter out rows where 'Latest' and 'Earliest' are equal
+    quote_data = quote_data[quote_data['Latest'] != quote_data['Earliest']]
+
     # Calculate the time difference between 'Latest' and 'Earliest'
     quote_data['Time Difference'] = quote_data['Latest'] - quote_data['Earliest']
 
@@ -262,7 +265,7 @@ with tab2:
     # Display the estimate data with conditional formatting
     st.dataframe(estimate_data.style.apply(highlight_conditions_column, axis=1))
     st.markdown("[View detailed sales order data in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5127&whence=)")
-    
+
     # Nest the quote data DataFrame inside an expander
     with st.expander("Quote Cycle Times"):
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
