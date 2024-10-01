@@ -236,6 +236,18 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
+    # Define CSS for expander height control
+    st.markdown(
+        """
+        <style>
+        .streamlit-expander-content {
+            max-height: 150px; /* Set max height (adjust as needed) */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        </style>
+        """, unsafe_allow_html=True
+    )
+
     # Display headers for the days of the week once at the top
     col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
     with col_mon:
@@ -268,10 +280,11 @@ with tab2:
 
             with col:
                 if len(day_orders) > 0:
-                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)"):
-                        st.write(day_orders)
+                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)", expanded=True):
+                        # Display only the first 5 rows if there are more
+                        st.write(day_orders.head(5))
                 else:
-                    with st.expander(f"{formatted_date}: NO ORDERS"):
+                    with st.expander(f"{formatted_date}: NO ORDERS", expanded=True):
                         st.write("No orders for this day.")
 
         # Add visual separation between weeks
@@ -281,6 +294,6 @@ with tab2:
     st.header("Our Truck Orders to be scheduled")
     st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
     truck_order_count = len(our_truck_data)
-    with st.expander(f"{truck_order_count} Orders"):
-        st.write(our_truck_data)
+    with st.expander(f"{truck_order_count} Orders", expanded=True):
+        st.write(our_truck_data.head(5))
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
