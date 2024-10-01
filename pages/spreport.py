@@ -236,7 +236,7 @@ with tab2:
     # Get the unique weeks from the dataset
     unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
 
-    # Define CSS for expander height and style
+    # Define CSS for expander height and style to ensure uniformity
     st.markdown(
         """
         <style>
@@ -245,11 +245,14 @@ with tab2:
             border: 1px solid #ddd; /* Optional: Set a border */
             box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Optional: Set a shadow */
             border-radius: 5px; /* Optional: Rounded corners */
-            height: 250px; /* Set the height of each expander */
-            overflow: hidden; /* Ensure the overall height is fixed */
+            height: 180px; /* Set the height of each expander to accommodate exactly 2 rows */
+            overflow: hidden; /* Prevent overflow outside the expander */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .streamlit-expander-content {
-            max-height: 150px; /* Control the internal content height */
+            max-height: 100px; /* Control the internal content height for exactly 2 rows */
             overflow-y: auto; /* Enable vertical scrolling */
         }
         .streamlit-expanderHeader {
@@ -294,8 +297,8 @@ with tab2:
             with col:
                 if len(day_orders) > 0:
                     with st.expander(f"{formatted_date} ({len(day_orders)} Orders)", expanded=True):
-                        # Display the full dataframe for this day
-                        st.write(day_orders)
+                        # Display up to two rows, with an empty space for fewer rows
+                        st.write(day_orders.iloc[:2])  # Show first 2 rows only, add more rows to the display if necessary
                 else:
                     with st.expander(f"{formatted_date}: NO ORDERS", expanded=True):
                         st.write("No orders for this day.")
@@ -308,7 +311,8 @@ with tab2:
     st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
     truck_order_count = len(our_truck_data)
     with st.expander(f"{truck_order_count} Orders", expanded=True):
-        st.write(our_truck_data)  # Display the full truck order dataset
+        # Display up to two rows with uniform height
+        st.write(our_truck_data.iloc[:2])  # Show first 2 rows only
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
 
 
