@@ -253,7 +253,7 @@ with tab2:
     # Estimates Metrics
     estimates_metrics = [
         {"label": "Total Estimates", "value": total_estimates, "change": percentage_change_estimates, "positive": percentage_change_estimates > 0},
-        {"label": "Average Quote Cycle Time (Last 30 Days)", "value": avg_time_diff_str, "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
+        {"label": "Avg. Quote Cycle Time (Last 30 Days)", "value": avg_time_diff_str, "change": percentage_change_ready_estimates, "positive": percentage_change_ready_estimates > 0},
         {"label": "Total Estimates Not Ready", "value": not_ready_estimates, "change": percentage_change_not_ready_estimates, "positive": percentage_change_not_ready_estimates > 0},
         {"label": "Outstanding Revenue", "value": f"${outstanding_revenue_estimates:,.2f}", "change": percentage_change_revenue_estimates, "positive": percentage_change_revenue_estimates > 0},
     ]
