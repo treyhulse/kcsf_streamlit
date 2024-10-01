@@ -15,8 +15,6 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("Shipping Report")
-
 # Capture the user's email
 user_email = capture_user_email()
 if user_email is None:
@@ -42,6 +40,8 @@ from utils.restlet import fetch_restlet_data
 import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
+
+st.title("Shipping Report")
 
 # Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)
 @st.cache_data(ttl=120)
