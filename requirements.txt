@@ -11,3 +11,4 @@ python-dotenv
 apscheduler
 altair
 streamlit-echarts
+streamlit-autorefresh
