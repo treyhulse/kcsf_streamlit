@@ -241,7 +241,7 @@ with tab2:
         """
         <style>
         .streamlit-expander-content {
-            max-height: 150px; /* Set max height (adjust as needed) */
+            max-height: 50px; /* Set max height (adjust as needed) */
             overflow-y: auto; /* Enable vertical scrolling */
         }
         </style>
