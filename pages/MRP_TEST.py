@@ -44,11 +44,11 @@ def fetch_paginated_suiteql_data(query, base_url):
             next_url = next((link['href'] for link in data.get("links", []) if link['rel'] == 'next'), None)
         except Exception as e:
             logger.error(f"Error fetching data: {e}")
-            break
+            return pd.DataFrame()  # Return an empty DataFrame on error
 
     return pd.DataFrame(all_data)
 
-# Updated SuiteQL query for inventory data including item type and vendor
+# Define the query and base URL
 suiteql_query = """
 SELECT
     invbal.item AS "item",
@@ -77,25 +77,29 @@ inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 purchase_df = fetch_raw_data("customsearch5142")
 
-# Convert column names to lowercase
-inventory_df.columns = inventory_df.columns.str.lower()
-sales_df.columns = sales_df.columns.str.lower()
-purchase_df.columns = purchase_df.columns.str.lower()
+# Check if dataframes are empty and convert column names to lowercase
+for df in [inventory_df, sales_df, purchase_df]:
+    if not df.empty:
+        df.columns = df.columns.str.lower()
+    else:
+        st.error("Failed to load data for one or more dataframes. Please check the logs and data sources.")
 
 # Joining dataframes on 'item'
-master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
+if not inventory_df.empty and not sales_df.empty and not purchase_df.empty:
+    master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
+    # Multiselect for filtering by 'item type'
+    selected_item_types = st.multiselect('Select Item Type', options=master_df['item type'].unique())
+    filtered_df = master_df[master_df['item type'].isin(selected_item_types)] if selected_item_types else master_df
 
-# Multiselect for filtering by 'item type'
-selected_item_types = st.multiselect('Select Item Type', options=master_df['item type'].unique())
-filtered_df = master_df[master_df['item type'].isin(selected_item_types)] if selected_item_types else master_df
+    # Multiselect for filtering by 'vendor'
+    selected_vendors = st.multiselect('Select Vendor', options=filtered_df['vendor'].unique())
+    filtered_df = filtered_df[filtered_df['vendor'].isin(selected_vendors)] if selected_vendors else filtered_df
 
-# Multiselect for filtering by 'vendor'
-selected_vendors = st.multiselect('Select Vendor', options=filtered_df['vendor'].unique())
-filtered_df = filtered_df[filtered_df['vendor'].isin(selected_vendors)] if selected_vendors else filtered_df
+    # Displaying the filtered DataFrame
+    st.dataframe(filtered_df)
 
-# Displaying the filtered DataFrame
-st.dataframe(filtered_df)
-
-# Download button for the filtered data
-csv = filtered_df.to_csv(index=False)
-st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
+    # Download button for the filtered data
+    csv = filtered_df.to_csv(index=False)
+    st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
+else:
+    st.error("Unable to merge dataframes as one or more are empty.")
