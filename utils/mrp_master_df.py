@@ -14,19 +14,21 @@ logger = logging.getLogger(__name__)
 def fetch_raw_data(saved_search_id, secrets):
     logger.info(f"Fetching data for saved search ID: {saved_search_id}")
     try:
+        # Assuming fetch_restlet_data is a function that accepts saved_search_id and secrets and returns a DataFrame
         data = fetch_restlet_data(saved_search_id, secrets)
-        if not isinstance(data, pd.DataFrame):
-            logger.error(f"Data returned for {saved_search_id} is not a DataFrame: {data}")
-            return pd.DataFrame()  # Return empty DataFrame on error
+        if data is None or data.empty:
+            logger.warning(f"No data found for saved search ID: {saved_search_id}")
+            return pd.DataFrame()  # Return an empty DataFrame if no data is found
         return data
     except Exception as e:
         logger.error(f"Error fetching raw data for {saved_search_id}: {e}")
-        return pd.DataFrame()  # Return empty DataFrame on exception
+        return pd.DataFrame()  # Return an empty DataFrame on exception
 
 # Function to fetch paginated SuiteQL data
 def fetch_paginated_suiteql_data(query, base_url, secrets):
     logger.info(f"Fetching SuiteQL data with query: {query}")
     try:
+        # Set up the OAuth1 authorization
         auth = OAuth1(
             secrets["consumer_key"],
             secrets["consumer_secret"],
@@ -35,12 +37,14 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
             realm=secrets["realm"],
             signature_method='HMAC-SHA256'
         )
+        
         all_data = []
         next_url = base_url
         payload = {"q": query}
 
         while next_url:
             try:
+                # Make the POST request to the SuiteQL API
                 response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
                 response.raise_for_status()
 
@@ -48,6 +52,7 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
                 items = data.get("items", [])
                 all_data.extend(items)
 
+                # Check for next page link
                 next_url = next((link['href'] for link in data.get("links", []) if link['rel'] == 'next'), None)
             except Exception as e:
                 logger.error(f"Error fetching SuiteQL data: {e}")
@@ -57,6 +62,7 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
             logger.warning(f"No data returned from SuiteQL query: {query}")
             return pd.DataFrame()  # Return empty DataFrame if no data is fetched
 
+        # Convert the data into a DataFrame and return
         return pd.DataFrame(all_data)
     except Exception as e:
         logger.error(f"Failed to fetch SuiteQL data: {e}")
@@ -84,12 +90,12 @@ def create_master_dataframe(secrets):
         """
         base_url = f"https://{secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-        # Fetch data
+        # Fetch data from different sources
         inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url, secrets)
         sales_df = fetch_raw_data("customsearch5141", secrets)
         purchase_df = fetch_raw_data("customsearch5142", secrets)
 
-        # Check if dataframes are valid
+        # Check if any DataFrame is empty and log the result
         if inventory_df.empty:
             logger.warning("Inventory DataFrame is empty.")
         if sales_df.empty:
@@ -97,7 +103,7 @@ def create_master_dataframe(secrets):
         if purchase_df.empty:
             logger.warning("Purchase DataFrame is empty.")
 
-        # Convert column names to lowercase
+        # Convert column names to lowercase for consistency
         inventory_df.columns = inventory_df.columns.str.lower()
         sales_df.columns = sales_df.columns.str.lower()
         purchase_df.columns = purchase_df.columns.str.lower()
