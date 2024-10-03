@@ -67,26 +67,39 @@ ORDER BY
 """
 base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-# Fetch all data
+
+# Fetch data
 inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 
-# Convert column names to lowercase
+# Display column names for debugging
+st.write("Inventory DF Columns: ", inventory_df.columns.tolist())
+st.write("Sales DF Columns: ", sales_df.columns.tolist())
+
+# Ensure 'item' column for merging is consistent
 inventory_df.columns = inventory_df.columns.str.lower()
 sales_df.columns = sales_df.columns.str.lower()
 
-# Joining dataframes on 'item'
-master_df = inventory_df.merge(sales_df, on='item', how='outer')
+# Merge dataframes on 'item'
+if 'item' in inventory_df.columns and 'item' in sales_df.columns:
+    master_df = inventory_df.merge(sales_df, on='item', how='outer')
+else:
+    st.error("Item column missing in one of the dataframes")
+    master_df = pd.DataFrame()
 
-# Multiselect for filtering by 'item type' and 'Vendor'
-selected_item_types = st.multiselect('Select Item Type', options=master_df['item type'].unique())
-selected_vendors = st.multiselect('Select Vendor', options=master_df['Vendor'].unique())
+# Multiselect for item type
+item_type_options = master_df['item type'].unique() if 'item type' in master_df.columns else []
+selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
 
-# Apply filters
-filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) & 
-                        (master_df['Vendor'].isin(selected_vendors) if selected_vendors else True)]
+# Multiselect for vendor
+vendor_options = master_df['vendor'].unique() if 'vendor' in master_df.columns else []
+selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
 
-# Displaying the filtered DataFrame
+# Apply filters to dataframe
+filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
+                        (master_df['vendor'].isin(selected_vendors) if selected_vendors else True)]
+
+# Display filtered DataFrame
 st.dataframe(filtered_df)
 
 # Download button for the filtered data
