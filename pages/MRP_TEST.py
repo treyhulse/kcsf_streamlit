@@ -44,6 +44,25 @@ def fetch_paginated_suiteql_data(query, base_url):
             break
     return pd.DataFrame(all_data)
 
+# SuiteQL query for inventory data including item type
+suiteql_query = """
+SELECT
+    invbal.item AS "item",
+    item.displayname AS "display name",
+    invbal.quantityonhand AS "quantity on hand",
+    invbal.quantityavailable AS "quantity available",
+    item.itemtype AS "item type"
+FROM
+    inventorybalance invbal
+JOIN
+    item ON invbal.item = item.id
+WHERE
+    item.isinactive = 'F'
+ORDER BY
+    item.displayname ASC;
+"""
+base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+
 # Fetch data
 inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
