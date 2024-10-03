@@ -7,12 +7,13 @@ from utils.mrp_master_df import create_master_dataframe
 # Set up page title
 st.title("MRP Dashboard")
 
-# Function to fetch and cache the master DataFrame
+# Fetch the master dataframe with caching
 @st.cache_data(ttl=900)
 def get_master_dataframe():
     try:
-        # Call the utility function to create the master DataFrame
-        return create_master_dataframe(st.secrets)
+        # Call create_master_dataframe and pass st.secrets as an argument
+        master_df = create_master_dataframe(st.secrets)
+        return master_df  # Return the fetched master_df directly
     except Exception as e:
         st.error(f"Failed to load data: {e}")
         return pd.DataFrame()  # Return empty DataFrame on error
