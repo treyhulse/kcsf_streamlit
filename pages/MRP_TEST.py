@@ -72,6 +72,12 @@ inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 purchase_df = fetch_raw_data("customsearch5142")
 
+# Print out the column headers of each dataframe to identify the issue
+st.write("Inventory DataFrame Columns:", inventory_df.columns.tolist())
+st.write("Sales DataFrame Columns:", sales_df.columns.tolist())
+st.write("Purchase DataFrame Columns:", purchase_df.columns.tolist())
+
+
 # Convert column names to lowercase
 inventory_df.columns = inventory_df.columns.str.lower()
 sales_df.columns = sales_df.columns.str.lower()
