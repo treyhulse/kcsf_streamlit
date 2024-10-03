@@ -51,10 +51,10 @@ def fetch_paginated_suiteql_data(query, base_url):
 # SuiteQL query for inventory data
 suiteql_query = """
 SELECT
-    invbal.item AS "Item",
-    item.displayname AS "Display Name",
-    invbal.quantityonhand AS "Quantity On Hand",
-    invbal.quantityavailable AS "Quantity Available"
+    invbal.item AS "item",
+    item.displayname AS "display name",
+    invbal.quantityonhand AS "quantity on hand",
+    invbal.quantityavailable AS "quantity available"
 FROM
     inventorybalance invbal
 JOIN
@@ -71,19 +71,44 @@ inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 purchase_df = fetch_raw_data("customsearch5142")
 
-# Joining dataframes on 'Item'
-master_df = inventory_df.merge(sales_df, on='Item', how='outer').merge(purchase_df, on='Item', how='outer')
+# Convert column names to lowercase
+inventory_df.columns = inventory_df.columns.str.lower()
+sales_df.columns = sales_df.columns.str.lower()
+purchase_df.columns = purchase_df.columns.str.lower()
+
+# Joining dataframes on 'item'
+master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
 
 # Handling duplicates and aggregating data
-master_df = master_df.groupby('Item').agg({
-    'Display Name': 'first',  # Keeps the first non-null display name
-    'Quantity On Hand': 'sum',
-    'Quantity Available': 'sum'
+master_df = master_df.groupby('item').agg({
+    'display name': 'first',  # Keeps the first non-null display name
+    'quantity on hand': 'sum',
+    'quantity available': 'sum'
 }).reset_index()
 
-# Displaying the master DataFrame
-st.dataframe(master_df)
+# Tab structure for switching between different views
+tab1, tab2 = st.tabs(["Inventory Data", "Sales/Purchase Order Lines"])
 
-# Download button for the aggregated data
-csv = master_df.to_csv(index=False)
-st.download_button(label="Download Combined Data as CSV", data=csv, file_name='combined_inventory_data.csv', mime='text/csv')
+with tab1:
+    # Displaying the master DataFrame
+    st.write("Aggregated Inventory and Orders Data")
+    st.dataframe(master_df)
+    # Download button for the aggregated data
+    csv = master_df.to_csv(index=False)
+    st.download_button(label="Download Combined Data as CSV", data=csv, file_name='combined_inventory_data.csv', mime='text/csv')
+
+with tab2:
+    # Create two columns to display the individual saved search data side by side
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("Sales Order Lines")
+        if not sales_df.empty:
+            st.dataframe(sales_df)
+        else:
+            st.write("No data available for customsearch5141.")
+    with col2:
+        st.write("Purchase Order Lines")
+        if not purchase_df.empty:
+            st.dataframe(purchase_df)
+        else:
+            st.write("No data available for Purchase Order Lines.")
