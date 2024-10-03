@@ -120,8 +120,8 @@ with tab1:
     # SuiteQL query
     suiteql_query = """
     SELECT
-        invbal.item AS "Item ID",
-        item.displayname AS "Item",
+        invbal.item AS "Item",
+        item.displayname AS "Display Name",
         invbal.binnumber AS "Bin Number",
         invbal.location AS "Warehouse",
         invbal.inventorynumber AS "Inventory Number",
