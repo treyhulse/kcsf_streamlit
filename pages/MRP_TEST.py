@@ -67,39 +67,31 @@ ORDER BY
 """
 base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-
 # Fetch data
 inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
+purchase_df = fetch_raw_data("customsearch5142")
 
-# Display column names for debugging
-st.write("Inventory DF Columns: ", inventory_df.columns.tolist())
-st.write("Sales DF Columns: ", sales_df.columns.tolist())
-
-# Ensure 'item' column for merging is consistent
+# Convert column names to lowercase
 inventory_df.columns = inventory_df.columns.str.lower()
 sales_df.columns = sales_df.columns.str.lower()
+purchase_df.columns = purchase_df.columns.str.lower()
 
-# Merge dataframes on 'item'
-if 'item' in inventory_df.columns and 'item' in sales_df.columns:
-    master_df = inventory_df.merge(sales_df, on='item', how='outer')
-else:
-    st.error("Item column missing in one of the dataframes")
-    master_df = pd.DataFrame()
+# Merge dataframes
+master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
 
-# Multiselect for item type
-item_type_options = master_df['item type'].unique() if 'item type' in master_df.columns else []
+# Multiselect for item type and vendor
+item_type_options = sorted(master_df['item type'].dropna().unique())
 selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
 
-# Multiselect for vendor
-vendor_options = master_df['vendor'].unique() if 'vendor' in master_df.columns else []
+vendor_options = sorted(pd.concat([sales_df['vendor'], purchase_df['vendor']]).dropna().unique())
 selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
 
-# Apply filters to dataframe
+# Filter the data based on selections
 filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
                         (master_df['vendor'].isin(selected_vendors) if selected_vendors else True)]
 
-# Display filtered DataFrame
+# Display the filtered DataFrame
 st.dataframe(filtered_df)
 
 # Download button for the filtered data
