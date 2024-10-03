@@ -1,56 +1,107 @@
-# pages/mrp_dashboard.py
-
 import streamlit as st
 import pandas as pd
-from utils.mrp_master_df import create_master_dataframe
+import requests
+from requests_oauthlib import OAuth1
+import logging
+from utils.restlet import fetch_restlet_data
 
-# Set up page title
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Page title
 st.title("MRP Dashboard")
 
-# Fetch the master dataframe with caching
-@st.cache_data(ttl=900)
-def get_master_dataframe():
-    try:
-        # Call the utility function to create the master DataFrame
-        master_df = create_master_dataframe()
-        return master_df
-    except Exception as e:
-        st.error(f"Failed to load data: {e}")
-        return pd.DataFrame()  # Return empty DataFrame on error
+# Function to fetch and cache data
+@st.cache(ttl=900, allow_output_mutation=True)
+def fetch_raw_data(saved_search_id):
+    return fetch_restlet_data(saved_search_id)
 
-# Fetch the master dataframe
-master_df = get_master_dataframe()
+# Function to fetch SuiteQL data
+@st.cache(ttl=900, allow_output_mutation=True)
+def fetch_paginated_suiteql_data(query, base_url):
+    auth = OAuth1(
+        st.secrets["consumer_key"],
+        st.secrets["consumer_secret"],
+        st.secrets["token_key"],
+        st.secrets["token_secret"],
+        realm=st.secrets["realm"],
+        signature_method='HMAC-SHA256'
+    )
+    all_data = []
+    next_url = base_url
+    payload = {"q": query}
 
-# Check if the master_df is empty before proceeding
-if master_df.empty:
-    st.warning("No data available to display. Please check the data source or API configurations.")
-else:
-    st.success("Data loaded successfully.")
-    
-    # Display first few rows for verification
-    st.write("Preview of the master data:")
-    st.write(master_df.head())
+    while next_url:
+        try:
+            response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
+            response.raise_for_status()
 
-    # Display column names for verification
-    st.write("Column Names in Master DataFrame:")
-    st.write(list(master_df.columns))  # Display column names for debugging
+            data = response.json()
+            items = data.get("items", [])
+            all_data.extend(items)
 
-    # Multiselect for item type (no reference to vendor now)
-    if 'item type' in master_df.columns:
-        item_type_options = sorted(master_df['item type'].dropna().unique())
-        selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
-    else:
-        st.warning("'item type' column not found in the master DataFrame. Check if it exists in the raw data sources.")
-        selected_item_types = []  # Empty selection if 'item type' is missing
+            next_url = next((link['href'] for link in data.get("links", []) if link['rel'] == 'next'), None)
+        except Exception as e:
+            logger.error(f"Error fetching data: {e}")
+            break
 
-    # Filter the data based on selected item types
-    filtered_df = master_df[
-        (master_df['item type'].isin(selected_item_types) if selected_item_types else True)
-    ]
+    return pd.DataFrame(all_data)
 
-    # Display the filtered DataFrame
-    st.dataframe(filtered_df)
+# SuiteQL query for inventory data including item type
+suiteql_query = """
+SELECT
+    invbal.item AS "item",
+    item.displayname AS "display name",
+    invbal.quantityonhand AS "quantity on hand",
+    invbal.quantityavailable AS "quantity available",
+    item.itemtype AS "item type"
+FROM
+    inventorybalance invbal
+JOIN
+    item ON invbal.item = item.id
+WHERE
+    item.isinactive = 'F'
+ORDER BY
+    item.displayname ASC;
+"""
+base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-    # Download button for the filtered data
-    csv = filtered_df.to_csv(index=False)
-    st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
+# Fetch data
+inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
+sales_df = fetch_raw_data("customsearch5141")
+purchase_df = fetch_raw_data("customsearch5142")
+
+# Convert column names to lowercase
+inventory_df.columns = inventory_df.columns.str.lower()
+sales_df.columns = sales_df.columns.str.lower()
+purchase_df.columns = purchase_df.columns.str.lower()
+
+# Merge sales and purchase data based on 'item'
+transactions_df = pd.merge(sales_df, purchase_df, on='item', how='outer', suffixes=('_sales', '_purchase'))
+
+# Merge the transactions dataframe with inventory dataframe
+master_df = pd.merge(inventory_df, transactions_df, on='item', how='left')
+
+# Convert any date columns to datetime for proper filtering and display
+for col in master_df.columns:
+    if 'date' in col:
+        master_df[col] = pd.to_datetime(master_df[col], errors='coerce')
+
+# Multiselect for item type and vendor
+item_type_options = sorted(master_df['item type'].dropna().unique())
+selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
+
+vendor_options = sorted(pd.concat([sales_df['vendor_sales'], purchase_df['vendor_purchase']]).dropna().unique())
+selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
+
+# Filter the data based on selections
+filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
+                        (master_df[['vendor_sales', 'vendor_purchase']].isin(selected_vendors).any(axis=1) if selected_vendors else True)]
+
+# Display the filtered DataFrame
+st.dataframe(filtered_df)
+
+# Download button for the filtered data
+csv = filtered_df.to_csv(index=False)
+st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
