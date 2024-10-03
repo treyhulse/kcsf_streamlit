@@ -23,6 +23,11 @@ master_df = get_master_dataframe()
 if master_df.empty:
     st.warning("No data available to display. Please check the data source or API configurations.")
 else:
+    st.success("Data loaded successfully.")
+    # Display first few rows for verification
+    st.write("Preview of the master data:")
+    st.write(master_df.head())
+
     # Multiselect for item type and vendor
     item_type_options = sorted(master_df['item type'].dropna().unique())
     selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
