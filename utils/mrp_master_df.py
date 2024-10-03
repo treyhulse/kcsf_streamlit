@@ -1,18 +1,19 @@
 # utils/mrp_master_df.py
 
-import streamlit as st
 import pandas as pd
 import requests
 from requests_oauthlib import OAuth1
 import logging
+import streamlit as st  # Import streamlit to access st.secrets globally
+
 from utils.restlet import fetch_restlet_data
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Function to fetch and cache raw data using the saved search ID
-@st.cache_data(ttl=900)  # Updated to use st.cache_data
+# Function to fetch and cache raw data using a saved search ID
+@st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
     try:
         # Fetch raw data from the RESTlet endpoint
@@ -24,15 +25,16 @@ def fetch_raw_data(saved_search_id):
         return pd.DataFrame()  # Return an empty DataFrame on error
 
 # Function to fetch and cache SuiteQL data
-@st.cache_data(ttl=900)  # Updated to use st.cache_data
-def fetch_paginated_suiteql_data(query, base_url, secrets):
+@st.cache_data(ttl=900)
+def fetch_paginated_suiteql_data(query, base_url):
     try:
+        # Use st.secrets directly for the OAuth1 setup
         auth = OAuth1(
-            secrets["consumer_key"],
-            secrets["consumer_secret"],
-            secrets["token_key"],
-            secrets["token_secret"],
-            realm=secrets["realm"],
+            st.secrets["consumer_key"],
+            st.secrets["consumer_secret"],
+            st.secrets["token_key"],
+            st.secrets["token_secret"],
+            realm=st.secrets["realm"],
             signature_method='HMAC-SHA256'
         )
 
@@ -59,7 +61,7 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
         return pd.DataFrame()  # Return an empty DataFrame on error
 
 # Function to create the master DataFrame
-def create_master_dataframe(secrets):
+def create_master_dataframe():
     try:
         # SuiteQL query for inventory data including item type
         suiteql_query = """
@@ -78,11 +80,11 @@ def create_master_dataframe(secrets):
         ORDER BY
             item.displayname ASC;
         """
-        base_url = f"https://{secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+        base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
         # Fetch data
         logger.info("Fetching inventory data from SuiteQL...")
-        inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url, secrets)
+        inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 
         logger.info("Fetching sales data...")
         sales_df = fetch_raw_data("customsearch5141")
