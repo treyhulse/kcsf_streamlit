@@ -82,17 +82,42 @@ master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_
 
 # Multiselect for item type and vendor
 item_type_options = sorted(master_df['item type'].dropna().unique())
-selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
+selected_item_types = st.multiselect('Select Item Type', options=item_type_options, default='All')
 
 vendor_options = sorted(pd.concat([sales_df['vendor'], purchase_df['vendor']]).dropna().unique())
-selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
+selected_vendors = st.multiselect('Select Vendor', options=vendor_options, default='All')
 
 # Filter the data based on selections
-filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
-                        (master_df['vendor'].isin(selected_vendors) if selected_vendors else True)]
+filtered_df = master_df
+if 'All' not in selected_item_types:
+    filtered_df = filtered_df[filtered_df['item type'].isin(selected_item_types)]
+if 'All' not in selected_vendors:
+    filtered_df = filtered_df[filtered_df['vendor'].isin(selected_vendors)]
 
-# Display the filtered DataFrame
-st.dataframe(filtered_df)
+# Item search and metrics display
+selected_item = st.selectbox('Search Item', options=filtered_df['item'].unique())
+
+# Extract data for the selected item
+item_data = filtered_df[filtered_df['item'] == selected_item]
+
+# Displaying metrics
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Quantity On Hand", item_data['quantity on hand'].sum())
+col2.metric("Quantity Available", item_data['quantity available'].sum())
+col3.metric("Quantity Incoming", item_data['quantity incoming'].sum())  # Assuming this field exists
+col4.metric("Quantity Backordered", item_data['quantity backordered'].sum())  # Assuming this field exists
+
+# Display sales and purchase orders specific to the selected item
+sales_orders = item_data[item_data['order_type'] == 'sales']  # Assuming these fields exist
+purchase_orders = item_data[item_data['order_type'] == 'purchase']  # Assuming these fields exist
+
+col1, col2 = st.columns(2)
+with col1:
+    st.write("Sales Orders")
+    st.dataframe(sales_orders[['item', 'order_id', 'quantity', 'date']])
+with col2:
+    st.write("Purchase Orders")
+    st.dataframe(purchase_orders[['item', 'order_id', 'quantity', 'date']])
 
 # Download button for the filtered data
 csv = filtered_df.to_csv(index=False)
