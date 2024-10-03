@@ -72,12 +72,6 @@ inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 purchase_df = fetch_raw_data("customsearch5142")
 
-# Print out the column headers of each dataframe to identify the issue
-st.write("Inventory DataFrame Columns:", inventory_df.columns.tolist())
-st.write("Sales DataFrame Columns:", sales_df.columns.tolist())
-st.write("Purchase DataFrame Columns:", purchase_df.columns.tolist())
-
-
 # Convert column names to lowercase
 inventory_df.columns = inventory_df.columns.str.lower()
 sales_df.columns = sales_df.columns.str.lower()
@@ -89,25 +83,14 @@ transactions_df = pd.merge(sales_df, purchase_df, on='item', how='outer', suffix
 # Merge the transactions dataframe with inventory dataframe
 master_df = pd.merge(inventory_df, transactions_df, on='item', how='left')
 
-# Convert any date columns to datetime for proper filtering and display
+# Convert any date columns to datetime for proper formatting and display
 for col in master_df.columns:
     if 'date' in col:
         master_df[col] = pd.to_datetime(master_df[col], errors='coerce')
 
-# Multiselect for item type and vendor
-item_type_options = sorted(master_df['item type'].dropna().unique())
-selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
+# Display the merged DataFrame
+st.dataframe(master_df)
 
-vendor_options = sorted(pd.concat([sales_df['vendor_sales'], purchase_df['vendor_purchase']]).dropna().unique())
-selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
-
-# Filter the data based on selections
-filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
-                        (master_df[['vendor_sales', 'vendor_purchase']].isin(selected_vendors).any(axis=1) if selected_vendors else True)]
-
-# Display the filtered DataFrame
-st.dataframe(filtered_df)
-
-# Download button for the filtered data
-csv = filtered_df.to_csv(index=False)
-st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
+# Download button for the merged data
+csv = master_df.to_csv(index=False)
+st.download_button(label="Download Merged Data as CSV", data=csv, file_name='merged_inventory_data.csv', mime='text/csv')
