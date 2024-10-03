@@ -78,13 +78,13 @@ sales_df.columns = sales_df.columns.str.lower()
 # Joining dataframes on 'item'
 master_df = inventory_df.merge(sales_df, on='item', how='outer')
 
-# Multiselect for filtering by 'item type' and 'vendor'
+# Multiselect for filtering by 'item type' and 'Vendor'
 selected_item_types = st.multiselect('Select Item Type', options=master_df['item type'].unique())
-selected_vendors = st.multiselect('Select Vendor', options=master_df['vendor'].unique())
+selected_vendors = st.multiselect('Select Vendor', options=master_df['Vendor'].unique())
 
 # Apply filters
 filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) & 
-                        (master_df['vendor'].isin(selected_vendors) if selected_vendors else True)]
+                        (master_df['Vendor'].isin(selected_vendors) if selected_vendors else True)]
 
 # Displaying the filtered DataFrame
 st.dataframe(filtered_df)
