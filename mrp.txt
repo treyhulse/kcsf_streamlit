@@ -48,13 +48,14 @@ def fetch_paginated_suiteql_data(query, base_url):
 
     return pd.DataFrame(all_data)
 
-# SuiteQL query for inventory data
+# SuiteQL query for inventory data including item type
 suiteql_query = """
 SELECT
     invbal.item AS "item",
     item.displayname AS "display name",
     invbal.quantityonhand AS "quantity on hand",
-    invbal.quantityavailable AS "quantity available"
+    invbal.quantityavailable AS "quantity available",
+    item.itemtype AS "item type"
 FROM
     inventorybalance invbal
 JOIN
@@ -66,7 +67,7 @@ ORDER BY
 """
 base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-# Fetch all data
+# Fetch data
 inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
 sales_df = fetch_raw_data("customsearch5141")
 purchase_df = fetch_raw_data("customsearch5142")
@@ -76,13 +77,23 @@ inventory_df.columns = inventory_df.columns.str.lower()
 sales_df.columns = sales_df.columns.str.lower()
 purchase_df.columns = purchase_df.columns.str.lower()
 
-# Joining dataframes on 'item'
+# Merge dataframes
 master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
 
-# Displaying the master DataFrame
-st.write("Aggregated Inventory, Sales, and Purchase Orders Data")
-st.dataframe(master_df)
+# Multiselect for item type and vendor
+item_type_options = sorted(master_df['item type'].dropna().unique())
+selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
 
-# Download button for the aggregated data
-csv = master_df.to_csv(index=False)
-st.download_button(label="Download Combined Data as CSV", data=csv, file_name='combined_inventory_sales_purchase_data.csv', mime='text/csv')
+vendor_options = sorted(pd.concat([sales_df['vendor'], purchase_df['vendor']]).dropna().unique())
+selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
+
+# Filter the data based on selections
+filtered_df = master_df[(master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
+                        (master_df['vendor'].isin(selected_vendors) if selected_vendors else True)]
+
+# Display the filtered DataFrame
+st.dataframe(filtered_df)
+
+# Download button for the filtered data
+csv = filtered_df.to_csv(index=False)
+st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
