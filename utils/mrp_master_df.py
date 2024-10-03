@@ -1,5 +1,6 @@
 # utils/mrp_master_df.py
 
+import streamlit as st
 import pandas as pd
 import requests
 from requests_oauthlib import OAuth1
@@ -10,25 +11,25 @@ from utils.restlet import fetch_restlet_data
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Function to fetch raw data using the Restlet endpoint
-def fetch_raw_data(saved_search_id, secrets):
-    logger.info(f"Fetching data for saved search ID: {saved_search_id}")
+# Function to fetch raw data using a saved search ID with caching
+@st.cache_data(ttl=900)  # Use st.cache_data for caching the raw data fetching
+def fetch_raw_data(saved_search_id):
+    logger.info(f"Fetching raw data for saved search ID: {saved_search_id}")
     try:
-        # Assuming fetch_restlet_data is a function that accepts saved_search_id and secrets and returns a DataFrame
-        data = fetch_restlet_data(saved_search_id, secrets)
+        data = fetch_restlet_data(saved_search_id)
         if data is None or data.empty:
-            logger.warning(f"No data found for saved search ID: {saved_search_id}")
+            logger.warning(f"No data returned for saved search ID: {saved_search_id}")
             return pd.DataFrame()  # Return an empty DataFrame if no data is found
         return data
     except Exception as e:
         logger.error(f"Error fetching raw data for {saved_search_id}: {e}")
         return pd.DataFrame()  # Return an empty DataFrame on exception
 
-# Function to fetch paginated SuiteQL data
+# Function to fetch paginated SuiteQL data with caching
+@st.cache_data(ttl=900)  # Use st.cache_data for caching the SuiteQL data fetching
 def fetch_paginated_suiteql_data(query, base_url, secrets):
     logger.info(f"Fetching SuiteQL data with query: {query}")
     try:
-        # Set up the OAuth1 authorization
         auth = OAuth1(
             secrets["consumer_key"],
             secrets["consumer_secret"],
@@ -44,7 +45,6 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
 
         while next_url:
             try:
-                # Make the POST request to the SuiteQL API
                 response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
                 response.raise_for_status()
 
@@ -62,7 +62,6 @@ def fetch_paginated_suiteql_data(query, base_url, secrets):
             logger.warning(f"No data returned from SuiteQL query: {query}")
             return pd.DataFrame()  # Return empty DataFrame if no data is fetched
 
-        # Convert the data into a DataFrame and return
         return pd.DataFrame(all_data)
     except Exception as e:
         logger.error(f"Failed to fetch SuiteQL data: {e}")
@@ -90,12 +89,12 @@ def create_master_dataframe(secrets):
         """
         base_url = f"https://{secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
 
-        # Fetch data from different sources
+        # Fetch data using the appropriate functions
         inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url, secrets)
-        sales_df = fetch_raw_data("customsearch5141", secrets)
-        purchase_df = fetch_raw_data("customsearch5142", secrets)
+        sales_df = fetch_raw_data("customsearch5141")
+        purchase_df = fetch_raw_data("customsearch5142")
 
-        # Check if any DataFrame is empty and log the result
+        # Check if dataframes are valid
         if inventory_df.empty:
             logger.warning("Inventory DataFrame is empty.")
         if sales_df.empty:

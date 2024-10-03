@@ -7,8 +7,8 @@ from utils.mrp_master_df import create_master_dataframe
 # Set up page title
 st.title("MRP Dashboard")
 
-# Function to fetch and cache the master DataFrame
-@st.cache(ttl=900, allow_output_mutation=True)
+# Fetch the master dataframe with caching
+@st.cache_data(ttl=900)
 def get_master_dataframe():
     try:
         return create_master_dataframe(st.secrets)
