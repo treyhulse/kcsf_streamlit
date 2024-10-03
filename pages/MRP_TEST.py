@@ -31,25 +31,21 @@ else:
     st.write("Preview of the master data:")
     st.write(master_df.head())
 
-    # **Debugging: Show all columns of the master dataframe**
+    # Display column names for verification
     st.write("Column Names in Master DataFrame:")
-    st.write(list(master_df.columns))  # Display column names
+    st.write(list(master_df.columns))  # Display column names for debugging
 
-    # Ensure that the 'vendor' column exists before trying to use it
-    if 'vendor' in master_df.columns:
-        # Multiselect for item type and vendor
+    # Multiselect for item type (no reference to vendor now)
+    if 'item type' in master_df.columns:
         item_type_options = sorted(master_df['item type'].dropna().unique())
         selected_item_types = st.multiselect('Select Item Type', options=item_type_options)
-
-        vendor_options = sorted(pd.concat([master_df['vendor'], master_df['vendor']]).dropna().unique())
-        selected_vendors = st.multiselect('Select Vendor', options=vendor_options)
     else:
-        st.warning("'vendor' column not found in the master DataFrame. Check if it exists in the raw data sources.")
+        st.warning("'item type' column not found in the master DataFrame. Check if it exists in the raw data sources.")
+        selected_item_types = []  # Empty selection if 'item type' is missing
 
-    # Filter the data based on selections
+    # Filter the data based on selected item types
     filtered_df = master_df[
-        (master_df['item type'].isin(selected_item_types) if selected_item_types else True) &
-        (master_df['vendor'].isin(selected_vendors) if 'vendor' in master_df.columns and selected_vendors else True)
+        (master_df['item type'].isin(selected_item_types) if selected_item_types else True)
     ]
 
     # Display the filtered DataFrame
