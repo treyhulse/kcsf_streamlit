@@ -48,23 +48,17 @@ def fetch_paginated_suiteql_data(query, base_url):
 
     return pd.DataFrame(all_data)
 
-# Updated SuiteQL query for inventory data including item type and vendor
+# SuiteQL query for inventory data
 suiteql_query = """
 SELECT
     invbal.item AS "item",
     item.displayname AS "display name",
     invbal.quantityonhand AS "quantity on hand",
-    invbal.quantityavailable AS "quantity available",
-    itype.description AS "item type",
-    vend.companyname AS "vendor"
+    invbal.quantityavailable AS "quantity available"
 FROM
     inventorybalance invbal
 JOIN
     item ON invbal.item = item.id
-LEFT JOIN
-    itemtype itype ON item.itemtype = itype.id
-LEFT JOIN
-    vendor vend ON item.preferredvendor = vend.id
 WHERE
     item.isinactive = 'F'
 ORDER BY
@@ -85,17 +79,10 @@ purchase_df.columns = purchase_df.columns.str.lower()
 # Joining dataframes on 'item'
 master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
 
-# Multiselect for filtering by 'item type'
-selected_item_types = st.multiselect('Select Item Type', options=master_df['item type'].unique())
-filtered_df = master_df[master_df['item type'].isin(selected_item_types)] if selected_item_types else master_df
+# Displaying the master DataFrame
+st.write("Aggregated Inventory, Sales, and Purchase Orders Data")
+st.dataframe(master_df)
 
-# Multiselect for filtering by 'vendor'
-selected_vendors = st.multiselect('Select Vendor', options=filtered_df['vendor'].unique())
-filtered_df = filtered_df[filtered_df['vendor'].isin(selected_vendors)] if selected_vendors else filtered_df
-
-# Displaying the filtered DataFrame
-st.dataframe(filtered_df)
-
-# Download button for the filtered data
-csv = filtered_df.to_csv(index=False)
-st.download_button(label="Download Filtered Data as CSV", data=csv, file_name='filtered_inventory_data.csv', mime='text/csv')
+# Download button for the aggregated data
+csv = master_df.to_csv(index=False)
+st.download_button(label="Download Combined Data as CSV", data=csv, file_name='combined_inventory_sales_purchase_data.csv', mime='text/csv')
