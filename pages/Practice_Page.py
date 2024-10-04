@@ -1,9 +1,16 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
+import pandas as pd
+from datetime import datetime, timedelta
+import plotly.express as px
 
-st.set_page_config(page_title="Shipping Report", 
-                   page_icon="🚚",
-                   layout="wide",)
+# Set the page configuration
+st.set_page_config(
+    page_title="Practice Page",
+    page_icon="📊",
+    layout="wide",
+)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
@@ -22,24 +29,18 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = 'Shipping Report'  # Adjust this based on the current page
+page_name = 'Practice Page'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
+    st.stop()
 
-
-st.write(f"You have access to this page.")
+st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
 ## AUTHENTICATED
 
 ################################################################################################
-
-import streamlit as st
-from utils.restlet import fetch_restlet_data
-import pandas as pd
-from datetime import datetime, timedelta
-import plotly.express as px
 
 st.title("Shipping Report")
 
@@ -71,10 +72,18 @@ st.sidebar.header('Filters')
 sales_rep_list = merged_df['Sales Rep'].unique().tolist()
 sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
+# Determine the default sales rep filter based on the user's email
+default_sales_rep = 'All'
+if user_email == 'trey.hulse@kcstorefixtures.com':
+    default_sales_rep = 'Trey Hulse'
+elif user_email == 'kaitlyn.surry@kcstorefixtures.com':
+    default_sales_rep = 'Kaitlyn Surry'
+
+# Sales Rep filter with pre-populated default value based on user email
 sales_rep_filter = st.sidebar.multiselect(
     'Sales Rep', 
     options=sales_rep_list, 
-    default='All'
+    default=[default_sales_rep] if default_sales_rep != 'All' else ['All']
 )
 
 # Ship Via filter with 'All' option
@@ -97,7 +106,7 @@ ship_via_filter = st.sidebar.multiselect(
     options=ship_via_list, 
     default=default_ship_via
 )
-    
+
 # Ship Date filter with 'All Time' option
 date_filter_options = ['All Time', 'Today', 'Past (including today)', 'Future', 'Custom Range']
 ship_date_filter = st.sidebar.selectbox(
