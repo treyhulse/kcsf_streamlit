@@ -11,25 +11,19 @@ st.set_page_config(
     layout="wide",
 )
 
-# Custom CSS to hide the top bar and footer
-hide_streamlit_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# Additional CSS for card styling
+# Custom CSS for card styling
 card_style = """
     <style>
     .card {
         background-color: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 15px;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 10px;
         box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        height: 220px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
     .card-header {
         font-size: 20px;
@@ -41,9 +35,22 @@ card_style = """
         margin-bottom: 10px;
     }
     .card-footer {
-        font-size: 12px;
+        font-size: 14px;
+        font-weight: bold;
         color: gray;
     }
+    .status {
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+    .status-submitted { background-color: #ffcccc; color: #cc0000; }
+    .status-in-consideration { background-color: #cce5ff; color: #007bff; }
+    .status-building { background-color: #cce5ff; color: #007bff; }
+    .status-implementing { background-color: #ccffcc; color: #28a745; }
+    .status-complete { background-color: #d4edda; color: #155724; }
     </style>
 """
 st.markdown(card_style, unsafe_allow_html=True)
@@ -77,33 +84,29 @@ st.write("""
 
 st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
 
-# Function to map status to Streamlit status indicators
-def get_status_style(status):
-    if status == "Submitted":
-        return st.error, "Submitted"
-    elif status in ["In Consideration", "Building"]:
-        return st.info, status
-    elif status in ["Implementing", "Complete"]:
-        return st.success, status
-    else:
-        return st.warning, "Unknown Status"
+# Function to map status to custom CSS class for styling
+def get_status_class(status):
+    status_class = {
+        "Submitted": "status-submitted",
+        "In Consideration": "status-in-consideration",
+        "Building": "status-building",
+        "Implementing": "status-implementing",
+        "Complete": "status-complete"
+    }
+    return status_class.get(status, "status-unknown")
 
-# Function to create HTML for feature cards using custom styling and Streamlit status
+# Function to create feature card using custom HTML with status
 def feature_card(title, description, owner, status):
-    status_func, status_label = get_status_style(status)
-    with st.container():
-        st.markdown(
-            f"""
-            <div class='card'>
-                <div class='card-header'>{title}</div>
-                <div class='card-body'>{description}</div>
-                <div class='card-footer'>Owner: {owner}<br>Status: {status_label}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        # Show the status indicator
-        status_func(status_label)
+    status_class = get_status_class(status)
+    card_html = f"""
+        <div class='card'>
+            <div class='card-header'>{title}</div>
+            <div class='card-body'>{description}</div>
+            <div class='status {status_class}'>{status}</div>
+            <div class='card-footer'>Owner: {owner}</div>
+        </div>
+    """
+    st.markdown(card_html, unsafe_allow_html=True)
 
 # Function to add a new feature to the database
 def add_feature_to_db(title, description, owner):
@@ -125,25 +128,18 @@ def add_feature_to_db(title, description, owner):
     except Exception as e:
         st.error(f"Failed to submit feature: {e}")
 
-# Display Add New Feature form as the first card
-st.subheader("Feature Request Board")
+# Display Add New Feature form as the top card
+st.markdown("#### Add New Feature")
+new_title = st.text_input("Feature Title", "")
+new_description = st.text_area("Feature Description", "")
+submit_button = st.button("Submit Feature")
 
-# Create the first row with the "Add New Feature" card in the first column
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("#### Add New Feature")
-    new_title = st.text_input("Feature Title", "")
-    new_description = st.text_area("Feature Description", "")
-    submit_button = st.button("Submit Feature")
+if submit_button and new_title and new_description:
+    # Retrieve user email from Streamlit (if authenticated)
+    user_email = st.session_state.get("user_email", "anonymous@kcstorefixtures.com")
     
-    if submit_button and new_title and new_description:
-        # Retrieve user email from Streamlit (if authenticated)
-        # Here assuming Streamlit's user email is available in st.session_state["user_email"]
-        user_email = st.session_state.get("user_email", "anonymous@kcstorefixtures.com")
-        
-        # Add feature to the database
-        add_feature_to_db(new_title, new_description, user_email)
+    # Add feature to the database
+    add_feature_to_db(new_title, new_description, user_email)
 
 # Fetch and display features from the 'features' collection
 try:
@@ -153,17 +149,19 @@ try:
     # Fetch the 'features' collection data
     features_data = get_collection_data(mongo_client, 'features')
 
-    # Display the features in 3 columns layout
+    # Display the features in 4 columns layout
     if not features_data.empty:
-        # Counter to track feature placement in columns
-        columns = [col2, col3]
+        # Create four columns for the feature cards
+        col1, col2, col3, col4 = st.columns(4)
+
+        columns = [col1, col2, col3, col4]
         column_index = 0
 
         # Iterate over each feature and display in a card
         for _, feature in features_data.iterrows():
             with columns[column_index]:
                 feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-            column_index = (column_index + 1) % 2  # Cycle through col2 and col3
+            column_index = (column_index + 1) % 4  # Cycle through the four columns
     else:
         st.warning("No features found in the 'features' collection.")
 except Exception as e:
