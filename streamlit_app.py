@@ -12,6 +12,16 @@ st.set_page_config(
     layout="wide",
 )
 
+# Custom CSS to hide the top bar and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Custom CSS for card styling
 card_style = """
     <style>
