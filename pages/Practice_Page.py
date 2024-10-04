@@ -27,7 +27,6 @@ today = date.today()
 st.title(f"Welcome to our KC Store Fixtures App! 👋")
 st.subheader(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
-
 # Brief introduction
 st.write("""
 This app is actively being developed so new features will be added periodically. 
@@ -50,11 +49,29 @@ st.write("""
 
 st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
 
-st.write("")
-st.write("")
-st.write("")
+# Function to map status to color
+def get_status_style(status):
+    color_map = {
+        "Submitted": "#ffcc00",
+        "In Consideration": "#66ccff",
+        "Building": "#3399ff",
+        "Implementing": "#33cc33",
+        "Complete": "#66cc66"
+    }
+    return color_map.get(status, "#999999")  # Default color if status is not found
 
-st.error("Working on a digital suggestion box down here")
+# Function to create HTML for feature cards
+def feature_card(title, description, owner, status):
+    color = get_status_style(status)
+    card_html = f"""
+        <div style='background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 15px 0; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);'>
+            <h3 style='margin: 0;'>{title}</h3>
+            <p style='font-size: 14px;'>{description}</p>
+            <p><strong>Owner:</strong> {owner}</p>
+            <p><strong>Status:</strong> <span style='color: {color}; font-weight: bold;'>{status}</span></p>
+        </div>
+    """
+    return card_html
 
 # Fetch data from the 'features' collection
 try:
@@ -64,21 +81,14 @@ try:
     # Fetch the 'features' collection data
     features_data = get_collection_data(mongo_client, 'features')
 
-    # Display the features in a table format if data is available
+    # Display the features in card format
     if not features_data.empty:
         st.header("Features Under Consideration")
         st.write("Here are the current feature requests and their status:")
 
-        # Show a sample of the features
-        st.dataframe(features_data)
-        
-        # Display a few sample features individually
-        for _, row in features_data.iterrows():
-            st.subheader(row["Title"])
-            st.write(f"**Description**: {row['Description']}")
-            st.write(f"**Owner**: {row['Owner']}")
-            st.write(f"**Status**: {row['Status']}")
-            st.write("---")  # Separator between features
+        # Generate cards for each feature
+        for _, feature in features_data.iterrows():
+            st.markdown(feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"]), unsafe_allow_html=True)
     else:
         st.warning("No features found in the 'features' collection.")
 except Exception as e:
