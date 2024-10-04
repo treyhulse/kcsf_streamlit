@@ -215,7 +215,7 @@ with tab1:
         st.write("No data available for the selected filters.")
 
     # Display filtered DataFrame in an expander
-    with st.expander("View Open Orders with a Ship Date"):
+    with st.expander("View Open Orders with a Ship Date", expanded=True):
         st.write(merged_df)
 
 # Tab 2: Shipping Calendar
@@ -274,6 +274,6 @@ with tab2:
     st.header("Our Truck Orders to be scheduled")
     st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
     truck_order_count = len(our_truck_data)
-    with st.expander(f"{truck_order_count} Orders", expanded=False):
+    with st.expander(f"{truck_order_count} Orders"):
         st.write(our_truck_data)
         st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
