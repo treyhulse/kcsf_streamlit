@@ -165,8 +165,7 @@ def add_feature_to_db(title, description, owner):
 st.write("")
 st.write("")
 # Display Add New Feature form as the top card
-st.title("New Features Roadmap")
-st.markdown("##### Request New Feature")
+st.title("New Feature Request")
 new_title = st.text_input("Title", "")
 new_description = st.text_area("Description", "")
 submit_button = st.button("Submit Request")
@@ -176,6 +175,7 @@ if submit_button and new_title and new_description:
     add_feature_to_db(new_title, new_description, user_email)
 st.write("")
 
+st.title("Requested Features")
 # Updated main code block to capture and print feature IDs
 try:
     # Initialize the MongoDB client
