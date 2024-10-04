@@ -70,7 +70,7 @@ if user_email is None:
     st.stop()
 
 # Admin email list
-admin_email = "treyhulse3@gmail.com"
+admin_email = "trey.hulse@kcstorefixtures.com"
 
 # Brief introduction
 st.write("""
