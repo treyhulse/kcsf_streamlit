@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 from utils.mongo_connection import get_mongo_client, get_collection_data
+from bson.objectid import ObjectId
 
 # Set page configuration with collapsed sidebar
 st.set_page_config(
@@ -49,31 +50,71 @@ st.write("""
 
 st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
 
-# Function to map status to color
+# Function to map status to Streamlit status indicators
 def get_status_style(status):
-    color_map = {
-        "Submitted": "#ffcc00",
-        "In Consideration": "#66ccff",
-        "Building": "#3399ff",
-        "Implementing": "#33cc33",
-        "Complete": "#66cc66"
-    }
-    return color_map.get(status, "#999999")  # Default color if status is not found
+    if status == "Submitted":
+        return st.error, "Submitted"
+    elif status in ["In Consideration", "Building"]:
+        return st.info, status
+    elif status in ["Implementing", "Complete"]:
+        return st.success, status
+    else:
+        return st.warning, "Unknown Status"
 
-# Function to create HTML for feature cards
+# Function to create feature card using Streamlit columns
 def feature_card(title, description, owner, status):
-    color = get_status_style(status)
-    card_html = f"""
-        <div style='background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 15px 0; box-shadow: 2px 2px 10px rgba(0,0,0,0.1);'>
-            <h3 style='margin: 0;'>{title}</h3>
-            <p style='font-size: 14px;'>{description}</p>
-            <p><strong>Owner:</strong> {owner}</p>
-            <p><strong>Status:</strong> <span style='color: {color}; font-weight: bold;'>{status}</span></p>
-        </div>
-    """
-    return card_html
+    # Get status style function
+    status_func, status_label = get_status_style(status)
+    
+    # Create a card with title, description, owner, and status
+    status_func(f"### {title}")
+    st.write(description)
+    st.write(f"**Owner:** {owner}")
+    st.write(f"**Status:** {status_label}")
+    st.write("---")
 
-# Fetch data from the 'features' collection
+# Function to add a new feature to the database
+def add_feature_to_db(title, description, owner):
+    try:
+        client = get_mongo_client()
+        db = client['netsuite']
+        features_collection = db['features']
+        
+        new_feature = {
+            "Title": title,
+            "Description": description,
+            "Owner": owner,
+            "Status": "Submitted",
+            "Timestamp": pd.Timestamp.now()
+        }
+        
+        features_collection.insert_one(new_feature)
+        st.success("Feature request submitted successfully!")
+    except Exception as e:
+        st.error(f"Failed to submit feature: {e}")
+
+# Display Add New Feature form as the first card
+st.subheader("Feature Request Board")
+
+# Create columns for feature cards layout
+col1, col2, col3, col4 = st.columns(4)
+
+# Add New Feature card
+with col1:
+    st.markdown("#### Add New Feature")
+    new_title = st.text_input("Feature Title", "")
+    new_description = st.text_area("Feature Description", "")
+    submit_button = st.button("Submit Feature")
+    
+    if submit_button and new_title and new_description:
+        # Retrieve user email from Streamlit (if authenticated)
+        # Here assuming Streamlit's user email is available in st.session_state["user_email"]
+        user_email = st.session_state.get("user_email", "anonymous@kcstorefixtures.com")
+        
+        # Add feature to the database
+        add_feature_to_db(new_title, new_description, user_email)
+
+# Fetch and display features from the 'features' collection
 try:
     # Initialize the MongoDB client
     mongo_client = get_mongo_client()
@@ -81,14 +122,29 @@ try:
     # Fetch the 'features' collection data
     features_data = get_collection_data(mongo_client, 'features')
 
-    # Display the features in card format
+    # Display the features in 4 columns
     if not features_data.empty:
-        st.header("Features Under Consideration")
-        st.write("Here are the current feature requests and their status:")
+        # Counter to track the current column for feature placement
+        column_counter = 1
 
-        # Generate cards for each feature
+        # Iterate over each feature and display in a column
         for _, feature in features_data.iterrows():
-            st.markdown(feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"]), unsafe_allow_html=True)
+            if column_counter == 1:
+                with col1:
+                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+                column_counter = 2
+            elif column_counter == 2:
+                with col2:
+                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+                column_counter = 3
+            elif column_counter == 3:
+                with col3:
+                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+                column_counter = 4
+            else:
+                with col4:
+                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+                column_counter = 1  # Reset counter back to first column
     else:
         st.warning("No features found in the 'features' collection.")
 except Exception as e:
