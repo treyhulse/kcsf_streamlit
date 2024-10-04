@@ -8,7 +8,6 @@ st.set_page_config(
     page_title="KC Store Fixtures",
     page_icon="./assets/KCSF_Square.png",
     layout="wide",
-    initial_sidebar_state="collapsed",
 )
 
 # Custom CSS to hide the top bar and footer
