@@ -75,8 +75,10 @@ email_to_sales_rep = {
     'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry',
     'roger.dixon@kcstorefixtures': 'Roger Dixon',
     'lorim@kc-store-fixtures.com': 'Kaitlyn Surry',
-    'shelley.gummig@kcstorefixtures': 'Roger Dixon',
+    'shelley.gummig@kcstorefixtures': 'Shelley Gummig',
+    'ray.brown@kcstorefixtures': 'Ray Brown',
 }
+
 
 # Set the default sales rep based on the user's email
 default_sales_rep = email_to_sales_rep.get(user_email, 'All')
