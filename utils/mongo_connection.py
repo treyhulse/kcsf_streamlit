@@ -26,19 +26,23 @@ def get_mongo_client():
         logging.error(f"Failed to connect to MongoDB: {e}")
         raise
 
+# Modified function to get collection data from MongoDB and handle `_id` correctly
 def get_collection_data(client, collection_name):
     try:
         logging.debug(f"Fetching data from collection: {collection_name}")
         db = client['netsuite']  # Ensure the database name is correct
         collection = db[collection_name]
-        
+
         # Fetch the entire collection and convert it to a DataFrame
         data = pd.DataFrame(list(collection.find()))
-        
-        # Drop the '_id' column
+
+        # Convert the '_id' field to a string
         if '_id' in data.columns:
-            data = data.drop('_id', axis=1)
-        
+            data['_id'] = data['_id'].apply(str)
+
+        # Print data for debugging
+        print(data.head())
+
         logging.info(f"Data fetched successfully from {collection_name}")
         return data
     except Exception as e:

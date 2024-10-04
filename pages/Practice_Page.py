@@ -120,10 +120,13 @@ def update_feature_status(feature_id, new_status):
     except Exception as e:
         st.error(f"Failed to update feature status: {e}")
 
-# Function to create feature card using custom HTML with status and admin access for status update
+# Updated feature_card function to debug and print feature IDs
 def feature_card(feature_id, title, description, owner, status):
     status_class = get_status_class(status)
     
+    # Debugging print to check feature ID and other details
+    print(f"Feature ID: {feature_id}, Title: {title}")
+
     # Display the feature card
     card_html = f"""
         <div class='card'>
@@ -138,7 +141,7 @@ def feature_card(feature_id, title, description, owner, status):
     # If the user is an admin, provide a dropdown to update the feature status
     if user_email == admin_email:
         new_status = st.selectbox(
-            f"Update status for '{title}':",
+            f"Update status for '{title}' (ID: {feature_id}):",
             options=["Submitted", "In Consideration", "Building", "Implementing", "Complete"],
             index=["Submitted", "In Consideration", "Building", "Implementing", "Complete"].index(status)
         )
@@ -175,13 +178,17 @@ if submit_button and new_title and new_description:
     # Add feature to the database
     add_feature_to_db(new_title, new_description, user_email)
 
-# Fetch and display features from the 'features' collection
+# Updated main code block to capture and print feature IDs
 try:
     # Initialize the MongoDB client
     mongo_client = get_mongo_client()
     
-    # Fetch the 'features' collection data
+    # Fetch the 'features' collection data and ensure `_id` is converted to string
     features_data = get_collection_data(mongo_client, 'features')
+
+    # Check if data has been retrieved successfully
+    st.write("Fetched data from MongoDB:")
+    st.write(features_data)
 
     # Display the features in 4 columns layout
     if not features_data.empty:
@@ -193,9 +200,12 @@ try:
 
         # Iterate over each feature and display in a card
         for _, feature in features_data.iterrows():
+            feature_id = feature["_id"]  # Ensure this is a string type
+            print(f"Feature ID (string format): {feature_id}")  # Debug print
+            
             with columns[column_index]:
                 feature_card(
-                    feature_id=feature["_id"],  # Pass feature ID for admin updates
+                    feature_id=feature_id,  # Pass feature ID as string
                     title=feature["Title"],
                     description=feature["Description"],
                     owner=feature["Owner"],
