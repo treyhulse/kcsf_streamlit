@@ -9,7 +9,8 @@ from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 from datetime import datetime, timedelta
 
 # Configure page layout
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Order Management", 
+                   layout="wide",)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
