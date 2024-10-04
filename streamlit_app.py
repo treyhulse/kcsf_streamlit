@@ -164,9 +164,9 @@ def add_feature_to_db(title, description, owner):
 
 # Display Add New Feature form as the top card
 st.title("New Features Roadmap")
-st.markdown("#### Request New Feature")
-new_title = st.text_input('', "Title")
-new_description = st.text_area('', "Description")
+st.markdown("##### Request New Feature")
+new_title = st.text_input("Title", "")
+new_description = st.text_area("Description", "")
 submit_button = st.button("Submit Request")
 
 if submit_button and new_title and new_description:
