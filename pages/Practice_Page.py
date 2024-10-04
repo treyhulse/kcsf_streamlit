@@ -90,7 +90,7 @@ if st.sidebar.button('Our Truck'):
 elif st.sidebar.button('LTL'):
     default_ship_via = ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'FedEx Freight® Priority']
 elif st.sidebar.button('Small Package'):
-    default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'WEB - Your Method', 'WEB - Method Not Available - Quote Freight Offline']
+    default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'WEB - Your Method', 'WEB - Method Not Available - Quote Freight Offline', 'DHL']
 else:
     default_ship_via = 'All'
 
