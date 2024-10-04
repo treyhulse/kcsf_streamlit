@@ -13,13 +13,40 @@ st.set_page_config(
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# Additional CSS for card styling
+card_style = """
+    <style>
+    .card {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px;
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .card-body {
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+    .card-footer {
+        font-size: 12px;
+        color: gray;
+    }
+    </style>
+"""
+st.markdown(card_style, unsafe_allow_html=True)
 
 # Get today's date
 today = date.today()
@@ -61,17 +88,22 @@ def get_status_style(status):
     else:
         return st.warning, "Unknown Status"
 
-# Function to create feature card using Streamlit columns
+# Function to create HTML for feature cards using custom styling and Streamlit status
 def feature_card(title, description, owner, status):
-    # Get status style function
     status_func, status_label = get_status_style(status)
-    
-    # Create a card with title, description, owner, and status
-    status_func(f"### {title}")
-    st.write(description)
-    st.write(f"**Owner:** {owner}")
-    st.write(f"**Status:** {status_label}")
-    st.write("---")
+    with st.container():
+        st.markdown(
+            f"""
+            <div class='card'>
+                <div class='card-header'>{title}</div>
+                <div class='card-body'>{description}</div>
+                <div class='card-footer'>Owner: {owner}<br>Status: {status_label}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        # Show the status indicator
+        status_func(status_label)
 
 # Function to add a new feature to the database
 def add_feature_to_db(title, description, owner):
@@ -96,10 +128,9 @@ def add_feature_to_db(title, description, owner):
 # Display Add New Feature form as the first card
 st.subheader("Feature Request Board")
 
-# Create columns for feature cards layout
-col1, col2, col3, col4 = st.columns(4)
+# Create the first row with the "Add New Feature" card in the first column
+col1, col2, col3 = st.columns(3)
 
-# Add New Feature card
 with col1:
     st.markdown("#### Add New Feature")
     new_title = st.text_input("Feature Title", "")
@@ -122,29 +153,17 @@ try:
     # Fetch the 'features' collection data
     features_data = get_collection_data(mongo_client, 'features')
 
-    # Display the features in 4 columns
+    # Display the features in 3 columns layout
     if not features_data.empty:
-        # Counter to track the current column for feature placement
-        column_counter = 1
+        # Counter to track feature placement in columns
+        columns = [col2, col3]
+        column_index = 0
 
-        # Iterate over each feature and display in a column
+        # Iterate over each feature and display in a card
         for _, feature in features_data.iterrows():
-            if column_counter == 1:
-                with col1:
-                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-                column_counter = 2
-            elif column_counter == 2:
-                with col2:
-                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-                column_counter = 3
-            elif column_counter == 3:
-                with col3:
-                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-                column_counter = 4
-            else:
-                with col4:
-                    feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-                column_counter = 1  # Reset counter back to first column
+            with columns[column_index]:
+                feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+            column_index = (column_index + 1) % 2  # Cycle through col2 and col3
     else:
         st.warning("No features found in the 'features' collection.")
 except Exception as e:
