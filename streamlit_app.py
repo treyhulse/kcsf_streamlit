@@ -82,7 +82,7 @@ if user_email is None:
 # Admin email list
 admin_email = "trey.hulse@kcstorefixtures.com"
 
-st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
+st.info("**This is in development and your feedback is valuable to improve the app. Please reach out!**")
 
 # Add a Tips & Tricks section
 st.header("Tips & Tricks")
