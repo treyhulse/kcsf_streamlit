@@ -91,19 +91,8 @@ elif st.sidebar.button('LTL'):
     default_ship_via = ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'FedEx Freight® Priority']
 elif st.sidebar.button('Small Package'):
     default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery','UPS Ground', 'DHL']
-elif st.sidebar.button('Pick Ups'):
-    default_ship_via = ['Pick Up 1', 'Pick Up 2']
 else:
     default_ship_via = 'All'
-
-
-
-
-
-
-
-
-
 
 # Allow user to manually select Ship Via options but pre-populate if the button was clicked
 ship_via_filter = st.sidebar.multiselect(
