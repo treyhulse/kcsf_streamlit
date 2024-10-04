@@ -35,7 +35,6 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
-from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 import plotly.express as px
 from utils.restlet import fetch_restlet_data
 import pandas as pd
