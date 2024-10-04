@@ -63,7 +63,7 @@ quote_data_raw = fetch_raw_data("customsearch4993")
 
 # Create a dictionary mapping emails to sales rep names
 email_to_sales_rep = {
-    'trey.hulse@kcstorefixtures.com': 'Trey Hulse',
+    'treyhulse3@gmail.com': 'Trey Hulse',
     'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry'
 }
 
