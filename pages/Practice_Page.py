@@ -74,7 +74,6 @@ sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
 # Create a dictionary mapping emails to sales rep names
 email_to_sales_rep = {
-    'trey.hulse@kcstorefixtures.com': 'Trey Hulse',
     'treyhulse3@gmail.com': 'Trey Hulse',
     'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry'
 }
