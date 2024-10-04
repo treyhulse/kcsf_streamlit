@@ -108,6 +108,33 @@ def feature_card(title, description, owner, status):
     """
     st.markdown(card_html, unsafe_allow_html=True)
 
+
+# Fetch and display features from the 'features' collection
+try:
+    # Initialize the MongoDB client
+    mongo_client = get_mongo_client()
+    
+    # Fetch the 'features' collection data
+    features_data = get_collection_data(mongo_client, 'features')
+
+    # Display the features in 4 columns layout
+    if not features_data.empty:
+        # Create four columns for the feature cards
+        col1, col2, col3, col4 = st.columns(4)
+
+        columns = [col1, col2, col3, col4]
+        column_index = 0
+
+        # Iterate over each feature and display in a card
+        for _, feature in features_data.iterrows():
+            with columns[column_index]:
+                feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
+            column_index = (column_index + 1) % 4  # Cycle through the four columns
+    else:
+        st.warning("No features found in the 'features' collection.")
+except Exception as e:
+    st.error(f"Failed to retrieve features data: {e}")
+
 # Function to add a new feature to the database
 def add_feature_to_db(title, description, owner):
     try:
@@ -140,29 +167,3 @@ if submit_button and new_title and new_description:
     
     # Add feature to the database
     add_feature_to_db(new_title, new_description, user_email)
-
-# Fetch and display features from the 'features' collection
-try:
-    # Initialize the MongoDB client
-    mongo_client = get_mongo_client()
-    
-    # Fetch the 'features' collection data
-    features_data = get_collection_data(mongo_client, 'features')
-
-    # Display the features in 4 columns layout
-    if not features_data.empty:
-        # Create four columns for the feature cards
-        col1, col2, col3, col4 = st.columns(4)
-
-        columns = [col1, col2, col3, col4]
-        column_index = 0
-
-        # Iterate over each feature and display in a card
-        for _, feature in features_data.iterrows():
-            with columns[column_index]:
-                feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-            column_index = (column_index + 1) % 4  # Cycle through the four columns
-    else:
-        st.warning("No features found in the 'features' collection.")
-except Exception as e:
-    st.error(f"Failed to retrieve features data: {e}")
