@@ -162,6 +162,8 @@ def add_feature_to_db(title, description, owner):
     except Exception as e:
         st.error(f"Failed to submit feature: {e}")
 
+st.write("")
+st.write("")
 # Display Add New Feature form as the top card
 st.title("New Features Roadmap")
 st.markdown("##### Request New Feature")
@@ -189,6 +191,7 @@ try:
         columns = [col1, col2, col3, col4]
         column_index = 0
 
+        st.write("")
         # Iterate over each feature and display in a card
         for _, feature in features_data.iterrows():
             feature_id = feature["_id"]  # Ensure this is a string type
