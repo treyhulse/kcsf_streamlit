@@ -163,7 +163,7 @@ def add_feature_to_db(title, description, owner):
         st.error(f"Failed to submit feature: {e}")
 
 # Display Add New Feature form as the top card
-st.header("New Feature Requests")
+st.title("New Features")
 st.markdown("#### Add New Feature")
 new_title = st.text_input("Feature Title", "")
 new_description = st.text_area("Feature Description", "")
