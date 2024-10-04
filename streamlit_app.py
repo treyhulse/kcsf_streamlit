@@ -171,7 +171,6 @@ def add_feature_to_db(title, description, owner):
         st.error(f"Failed to submit feature: {e}")
 
 st.write("")
-st.write("")
 
 # Display Add New Feature form as the top card
 st.title("New Feature Request")
@@ -182,8 +181,7 @@ submit_button = st.button("Submit Request")
 if submit_button and new_title and new_description:
     # Add feature to the database
     add_feature_to_db(new_title, new_description, user_email)
-    
-st.write("")
+
 st.write("")
 
 st.title("Requested Features")
