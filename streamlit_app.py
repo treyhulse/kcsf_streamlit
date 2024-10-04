@@ -24,66 +24,31 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Get today's date
 today = date.today()
 
-# MongoDB client setup
-client = get_mongo_client()
-
-# Fetch announcements from the 'announcements' collection
-announcements_data = get_collection_data(client, 'announcements')
-
-# CSS for card styling with drop shadow
-st.markdown("""
-    <style>
-    .card {
-        background-color: #ffffff;
-        padding: 20px;
-        margin-bottom: 15px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    .card:hover {
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-    }
-    .card h4 {
-        margin-top: 0;
-        font-size: 1.2rem;
-    }
-    .card p {
-        font-size: 0.9rem;
-        color: #666;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # Welcome message and date
-st.write(f"# Welcome to KC Store Fixtures! 👋")
+st.write(f"# Welcome to our KC Store Fixtures App! 👋")
 st.write(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
-# Announcements section - styled as cards with drop shadow
-st.write("### Announcements")
-if not announcements_data.empty:
-    for index, row in announcements_data.iterrows():
-        announcement_date = pd.to_datetime(row['date']).strftime('%B %d, %Y')
-        st.markdown(
-            f"""
-            <div class="card">
-                <h4>{row['announcement']}</h4>
-                <p>Announced on: {announcement_date}</p>
-            </div>
-            """, 
-            unsafe_allow_html=True
-        )
-else:
-    st.write("No announcements at this time.")
 
-# Sidebar content
-st.sidebar.image("./assets/kcsf_red.png", use_column_width=True)
-st.sidebar.success("Select a report above.")
+# Set the title of the homepage
+st.title("Welcome to the KC Store Fixtures App")
 
-# Main content - Remove 'Available Reports' and add link to website
-st.markdown(
-    """
-    Visit our [KC Store Fixtures App](https://kcstorefixtures.streamlit.app/) for more reports and insights.
-    """
-)
+# Brief introduction
+st.write("""
+This is where you can access various modules to manage and analyze different aspects of your business, such as inventory, sales, order management, marketing, and more.
+
+This app is actively being developed, so things will change periodically. Updates will refresh the pages, and new features will be added. To recommend new features, please email [trey.hulse@kcstorefixtures.com](mailto:trey.hulse@kcstorefixtures.com) for now.
+
+I'll try to get a suggestion box set up or something at some point. But for now, see below for tips & tricks.
+""")
+
+# Add a Tips & Tricks section
+st.header("Tips & Tricks")
+st.write("""
+- **Navigation**: Use the sidebar on the left to switch between different modules.
+- **Filtering Data**: Utilize the filtering options within each module to view specific data points.
+- **Exporting Data**: Download CSVs for any filtered or displayed data for further analysis.
+- **Regular Updates**: Keep an eye out for new features and improvements to the existing modules.
+""")
+
+st.info("This is a work in progress, and your feedback is valuable to improve the app. Feel free to reach out!")
+
