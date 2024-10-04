@@ -16,7 +16,7 @@ st.set_page_config(
 card_style = """
     <style>
     .card {
-        background-color: #f9f9f9;
+        background-color: #F0F2F6;
         padding: 20px;
         border-radius: 10px;
         margin: 10px;
