@@ -9,7 +9,7 @@ runOnSave = false
 [theme]
 primaryColor="#c70039"
 backgroundColor="#f9f9f9"
-secondaryBackgroundColor="#e5e4e2"
+secondaryBackgroundColor="#ECECEC"
 textColor="#000000"
 
 [mapbox]
