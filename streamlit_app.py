@@ -31,11 +31,7 @@ st.write(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
 # Brief introduction
 st.write("""
-This is where you can access various modules to manage and analyze different aspects of our company including inventory, sales, order management, reporting, and more.
-
-This app is actively being developed, so things will change periodically. Updates will freshen up the pages, and new features will be added. To recommend new features, please email [trey.hulse@kcstorefixtures.com](mailto:trey.hulse@kcstorefixtures.com) for now.
-
-I'll try to get a digital suggestion box set up or something at some point. Now, see below for tips & tricks.
+This is where you can access various modules to manage and analyze different aspects of our company including inventory, sales, order management, reporting, and more. This app is actively being developed, so things will change periodically. Updates will freshen up the pages, and new features will be added. To recommend new features, please email [trey.hulse@kcstorefixtures.com](mailto:trey.hulse@kcstorefixtures.com) for now. I'll try to get a digital suggestion box set up or something at some point. Now, see below for tips & tricks.
 """)
 
 # Add a Tips & Tricks section
