@@ -2,38 +2,31 @@ import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
 
-# Set up the Streamlit page configuration
-st.set_page_config(page_title="Manufacturing Insights", layout="wide")
+# Configure the Streamlit page layout
+st.set_page_config(page_title="Manufacturing Data", layout="wide")
 
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+# Custom CSS to hide the Streamlit menu and footer
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# Cache the data fetching process to improve performance, resetting every 15 minutes
 @st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
-    """
-    Fetch raw data from the provided NetSuite saved search ID using the
-    fetch_restlet_data function and return a DataFrame.
-    """
+    # Fetch raw data from the specified NetSuite saved search ID
     df = fetch_restlet_data(saved_search_id)
     return df
 
-# Sidebar for future controls or information display
-st.sidebar.header("Manufacturing Wing Insights")
-
-# Fetch the data using the saved search ID `customsearch5162`
+# Fetch raw data using the saved search ID "customsearch5162"
 manufacturing_data_raw = fetch_raw_data("customsearch5162")
 
-# Check if the data is successfully fetched and not empty
-if not manufacturing_data_raw.empty:
-    # Display the raw data in a table format
-    st.write("## Manufacturing Wing Data")
-    st.dataframe(manufacturing_data_raw)
+# Display the fetched data as a DataFrame
+st.write("## Manufacturing Wing Data")
+st.dataframe(manufacturing_data_raw)
 
-    # Optionally display basic statistics or summary
-    st.write("### Summary Statistics")
-    st.write(manufacturing_data_raw.describe())
-
-    # Additional custom visualizations can go here
-    # Example: st.bar_chart(manufacturing_data_raw["Column_Name"])
-
-else:
-    # Display a message if no data is available
-    st.warning("No data available for the selected search ID.")
+# Optional: Add any additional information, filters, or data processing as needed below
