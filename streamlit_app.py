@@ -37,7 +37,6 @@ This app is actively being developed so new features will be added periodically.
 
 To recommend new features, please email [trey.hulse@kcstorefixtures.com](mailto:trey.hulse@kcstorefixtures.com) for now. I'll try to get a digital suggestion box set up at some point. 
 
-For now, see below for tips & tricks.
 """)
 
 # Add a Tips & Tricks section
