@@ -1,7 +1,13 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
 
-st.set_page_config(layout="wide")
+# Set the page configuration
+st.set_page_config(
+    page_title="Practice Page",
+    page_icon="📊",
+    layout="wide",
+)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
@@ -23,9 +29,9 @@ if user_email is None:
 page_name = 'MRP'  # Adjust this based on the current page
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
+    st.stop()
 
-
-st.write(f"You have access to this page.")
+st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
