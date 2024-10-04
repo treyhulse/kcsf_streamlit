@@ -42,13 +42,14 @@ To recommend new features, please email [trey.hulse@kcstorefixtures.com](mailto:
 # Add a Tips & Tricks section
 st.header("Tips & Tricks")
 st.write("""
-- **Navigation**: Use the sidebar on the left to switch between different pages.
+- **Navigation**: Use the sidebar on the left to switch between different pages. Strongly recommend bookmarking frequently visited pages.
 - **Filtering**: Utilize the filtering options within the sidebar to view specific data. (I'm working on a pre-filter so that when you view a page, it defaults to being filtered to just you.)
-- **Extracting Data**: You can download CSVs for any filtered or displayed data for further analysis or to send out from the download icon in the top right of any table.
-- **Searching Data**: Use the interactive search mechanism in the top right of tables to find specific order numbers, customers, ship methods, etc. Anything in the table should be searchable.
-- **Data Refresh**: Most data in here has a cache mechanism setup where it is refreshed every 15-20 minutes. I can work on adding a refresh button to update the data as needed. The cache is too prevent recurring load times.
+- **Extracting Data**: You can download CSVs from any table for further use with the download icon in the top right of any table. You can also capture visualizations as images. Explore that as you wish.
+- **Searching Data**: Use the interactive search mechanism in the top right of any table to find specific order numbers, customers, ship methods, etc. Anything in the table should be searchable, let me know if it's not.
+- **Data Refresh**: Most data in here has a cache mechanism setup where it is refreshes every 15-20 minutes. I can work on adding a refresh button to update the data as needed. The cache is too prevent recurring load times.
 - **Regular Updates**: Keep an eye out for new features and improvements to the existing pages. If the app is rebooting, you'll get a white screen with a cake icon in the middle. This reboot takes anywhere from 10 seconds to 60 seconds.
 """)
 
 st.info("This is a work in progress, and your feedback is valuable to improve the app. Please reach out!")
 
+st.error("Working on a digital suggestion box")
