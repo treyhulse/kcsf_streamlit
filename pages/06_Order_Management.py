@@ -1,12 +1,6 @@
 import streamlit as st
-import pandas as pd
-import logging
-import traceback
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
-from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
-from datetime import datetime, timedelta
-import plotly.express as px
+
 
 # Configure page layout
 st.set_page_config(page_title="Order Management", layout="wide")
@@ -41,7 +35,11 @@ st.write(f"You have access to this page.")
 
 ################################################################################################
 
+from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
+import plotly.express as px
 from utils.restlet import fetch_restlet_data
+import pandas as pd
+
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache_data(ttl=900)

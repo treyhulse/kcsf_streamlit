@@ -22,6 +22,4 @@ manufacturing_data_raw = fetch_raw_data("customsearch5162")
 st.write("## Manufacturing Wing Data")
 st.dataframe(manufacturing_data_raw)
 
-# Optional: Add additional filters and summary statistics below
-# st.write("### Additional Insights")
-# Additional code for filtering and visualization can go here
+
