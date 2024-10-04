@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import logging
@@ -7,10 +6,10 @@ from utils.auth import capture_user_email, validate_page_access, show_permission
 from utils.data_functions import process_netsuite_data_csv, replace_ids_with_display_values
 from utils.mappings import sales_rep_mapping, ship_via_mapping, terms_mapping
 from datetime import datetime, timedelta
+import plotly.express as px
 
 # Configure page layout
-st.set_page_config(page_title="Order Management", 
-                   layout="wide",)
+st.set_page_config(page_title="Order Management", layout="wide")
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
@@ -43,12 +42,9 @@ st.write(f"You have access to this page.")
 ################################################################################################
 
 from utils.restlet import fetch_restlet_data
-import pandas as pd
-import plotly.express as px
-
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
     df = fetch_restlet_data(saved_search_id)
@@ -65,7 +61,19 @@ customsearch5129_data_raw = fetch_raw_data("customsearch5129")
 customsearch5132_data_raw = fetch_raw_data("customsearch5132")
 quote_data_raw = fetch_raw_data("customsearch4993")
 
-# Extract unique sales reps from both datasets and add 'All' option
+# Create a dictionary mapping emails to sales rep names
+email_to_sales_rep = {
+    'treyhulse3@gmail.com': 'Trey Hulse',
+    'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry',
+    'roger.dixon@kcstorefixtures': 'Roger Dixon',
+    'lorim@kc-store-fixtures.com': 'Kaitlyn Surry',
+    'shelley.gummig@kcstorefixtures': 'Roger Dixon',
+}
+
+# Set the default sales rep based on the user's email
+default_sales_rep = email_to_sales_rep.get(user_email, 'All')
+
+# Extract unique sales reps from all datasets and add 'All' option
 unique_sales_reps = pd.concat([
     estimate_data_raw['Sales Rep'], 
     sales_order_data_raw['Sales Rep'],
@@ -74,8 +82,12 @@ unique_sales_reps = pd.concat([
 ]).dropna().unique()
 unique_sales_reps = ['All'] + sorted(unique_sales_reps)  # Add 'All' as the first option
 
-# Sales rep filter in the sidebar
-selected_sales_reps = st.sidebar.multiselect("Select Sales Reps", options=unique_sales_reps, default=['All'])
+# Sales rep filter in the sidebar with default value based on user email
+selected_sales_reps = st.sidebar.multiselect(
+    "Select Sales Reps", 
+    options=unique_sales_reps, 
+    default=[default_sales_rep] if default_sales_rep != 'All' else ['All']
+)
 
 # Apply the filter dynamically (not cached) to both datasets
 def apply_filters(df):
@@ -83,12 +95,13 @@ def apply_filters(df):
         df = df[df['Sales Rep'].isin(selected_sales_reps)]
     return df
 
+# Apply filters to the datasets
 estimate_data = apply_filters(estimate_data_raw)
 sales_order_data = apply_filters(sales_order_data_raw)
 customsearch5128_data = apply_filters(customsearch5128_data_raw)
 customsearch5129_data = apply_filters(customsearch5129_data_raw)
-customsearch5132_data = customsearch5132_data_raw
-quote_data = quote_data_raw  # Use raw data for quote
+customsearch5132_data = customsearch5132_data_raw  # No filter applied for customsearch5132
+quote_data = quote_data_raw  # No filter applied for quotes
 
 # Function to calculate metrics for orders or estimates
 def calculate_metrics(df):
@@ -271,7 +284,6 @@ with tab2:
     with st.expander("Quote Cycle Times"):
         st.dataframe(quote_data[['Document Number', 'Latest', 'Earliest', 'Time Difference']])
 
-
 # Customsearch 5128 tab (no metrics)
 with tab3:
     st.subheader("Purchase Orders")
@@ -298,4 +310,3 @@ with tab6:
         st.dataframe(customsearch5129_data)
     else:
         st.write("No data available for Customsearch 5129.")
-
