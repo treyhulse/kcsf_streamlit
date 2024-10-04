@@ -1,9 +1,5 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
-from utils.restlet import fetch_restlet_data
-import pandas as pd
-from datetime import datetime, timedelta
-import plotly.express as px
 
 # Set page configuration
 st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
@@ -37,6 +33,12 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
+from utils.restlet import fetch_restlet_data
+import pandas as pd
+from datetime import datetime, timedelta
+import plotly.express as px
+
 
 st.title("Shipping Report")
 
@@ -170,59 +172,38 @@ with tab1:
     untasked_orders_count = merged_df['Task ID'].isna().sum()
     task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
-    # Styling for the metrics boxes
-    st.markdown("""
-    <style>
-    .metrics-box {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
-        text-align: center;
-    }
-    .metric-title {
-        margin: 0;
-        font-size: 20px;
-    }
-    .metric-value {
-        margin: 0;
-        font-size: 28px;
-        font-weight: bold;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Display dynamic metric boxes
-    metrics = [
-        {"label": "Total Open Orders", "value": total_orders},
-        {"label": "Tasked Orders", "value": tasked_orders_count},
-        {"label": "Untasked Orders", "value": untasked_orders_count},
-        {"label": "Successful Task Percentage", "value": f"{task_percentage:.2f}%"},
-    ]
-
-    # Display metrics in columns
+    # Display dynamic metrics
     col1, col2, col3, col4 = st.columns(4)
-    for col, metric in zip([col1, col2, col3, col4], metrics):
-        with col:
-            st.markdown(f"""
-            <div class="metrics-box">
-                <h3 class="metric-title">{metric['label']}</h3>
-                <p class="metric-value">{metric['value']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # Add visual separation
-    st.write("")
+    col1.metric("Total Open Orders", total_orders)
+    col2.metric("Tasked Orders", tasked_orders_count)
+    col3.metric("Untasked Orders", untasked_orders_count)
+    col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
 
     # Display charts using Plotly
     if not merged_df.empty:
         col_chart, col_pie = st.columns([2, 1])
-        with col_chart:
-            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
-            ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
-            fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
-            st.plotly_chart(fig_line, use_container_width=True)
-        
+
+        # Ensure 'Ship Date' column is in datetime format and valid
+        merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'], errors='coerce')
+
+        # Create a line chart for Ship Dates
+        ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
+
+        if not ship_date_counts.empty:
+            ship_date_counts_df = pd.DataFrame(ship_date_counts).reset_index()
+            ship_date_counts_df.columns = ['Ship Date', 'Number of Orders']
+            ship_date_counts_df['Ship Date'] = pd.to_datetime(ship_date_counts_df['Ship Date'], errors='coerce')
+
+            with col_chart:
+                fig_line = px.line(
+                    ship_date_counts_df, 
+                    x='Ship Date', 
+                    y='Number of Orders', 
+                    labels={'Ship Date': 'Ship Date', 'Number of Orders': 'Number of Orders'},
+                    title='Open Sales Orders by Ship Date'
+                )
+                st.plotly_chart(fig_line, use_container_width=True)
+
         with col_pie:
             matched_orders = merged_df['Task ID'].notna().sum()
             unmatched_orders = merged_df['Task ID'].isna().sum()
@@ -275,10 +256,7 @@ with tab2:
             day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
 
             # Check if specific_date is valid before formatting
-            if pd.notna(specific_date):
-                formatted_date = specific_date.strftime('%B %d')
-            else:
-                formatted_date = "Invalid Date"
+            formatted_date = specific_date.strftime('%B %d') if pd.notna(specific_date) else "Invalid Date"
 
             with col:
                 if len(day_orders) > 0:
