@@ -50,6 +50,10 @@ st.write("""
 - **Regular Updates**: Keep an eye out for new features and improvements to the existing pages. If the app is rebooting, you'll get a white screen with a cake icon in the middle. This reboot takes anywhere from 10 seconds to 60 seconds.
 """)
 
-st.info("This is a work in progress, and your feedback is valuable to improve the app. Please reach out!")
+st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
+
+st.write("")
+st.write("")
+st.write("")
 
 st.error("Working on a digital suggestion box")
