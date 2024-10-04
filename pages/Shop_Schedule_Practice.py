@@ -15,8 +15,7 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Cache the data fetching process to improve performance, resetting every 15 minutes
-@st.cache_data(ttl=900)
+
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from the specified NetSuite saved search ID
     df = fetch_restlet_data(saved_search_id)
