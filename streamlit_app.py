@@ -56,4 +56,4 @@ st.write("")
 st.write("")
 st.write("")
 
-st.error("Working on a digital suggestion box")
+st.error("Working on a digital suggestion box down here")
