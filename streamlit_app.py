@@ -25,8 +25,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 today = date.today()
 
 # Welcome message and date
-st.write(f"# Welcome to our KC Store Fixtures App! 👋")
-st.write(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
+st.header(f"# Welcome to our KC Store Fixtures App! 👋")
+st.subheader(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
 
 # Brief introduction
