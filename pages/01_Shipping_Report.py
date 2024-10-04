@@ -81,9 +81,13 @@ sales_rep_filter = st.sidebar.multiselect(
 ship_via_list = merged_df['Ship Via'].unique().tolist()
 ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
-# **Pre-populate the Ship Via filter if the 'Our Truck' button is clicked**
+# **Pre-populate the Ship Via filter if the 'Our Truck', 'LTL', or 'Small Package' button is clicked**
 if st.sidebar.button('Our Truck'):
     default_ship_via = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
+elif st.sidebar.button('LTL'):
+    default_ship_via = ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'FedEx Freight® Priority']
+elif st.sidebar.button('Small Package'):
+    default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'WEB - Your Method', 'WEB - Method Not Available - Quote Freight Offline', 'DHL']
 else:
     default_ship_via = 'All'
 
