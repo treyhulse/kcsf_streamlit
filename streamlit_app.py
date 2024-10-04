@@ -72,7 +72,7 @@ if user_email is None:
 # Admin email list
 admin_email = "trey.hulse@kcstorefixtures.com"
 
-
+st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
 
 # Add a Tips & Tricks section
 st.header("Tips & Tricks")
@@ -85,8 +85,6 @@ st.write("""
 - **Data Refresh**: Most data in here has a cache mechanism setup where it is refreshes every 15-20 minutes. I can work on adding a refresh button to update the data as needed. The cache is too prevent recurring load times.
 - **Regular Updates**: Keep an eye out for new features and improvements to the existing pages. If the app is rebooting, you'll get a white screen with a cake icon in the middle. This reboot takes anywhere from 10 seconds to 60 seconds.
 """)
-
-st.info("This is in development and your feedback is valuable to improve the app. Please reach out!")
 
 # Function to map status to custom CSS class for styling
 def get_status_class(status):
