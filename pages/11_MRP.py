@@ -4,7 +4,7 @@ from utils.restlet import fetch_restlet_data
 
 # Set the page configuration
 st.set_page_config(
-    page_title="Practice Page",
+    page_title="MRP Dashboard",
     page_icon="📊",
     layout="wide",
 )
@@ -51,7 +51,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Page title
-st.title("MRP Dashboard")
+st.title("Material Resource Planning Dashboard")
 
 # Function to fetch and cache data
 @st.cache(ttl=900, allow_output_mutation=True)

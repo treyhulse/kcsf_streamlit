@@ -6,11 +6,8 @@ import plotly.express as px
 from utils.fedex import get_valid_fedex_token
 
 # Set the page configuration
-st.set_page_config(
-    page_title="Practice Page",
-    page_icon="📊",
-    layout="wide",
-)
+st.set_page_config(page_title="TMS", 
+                   layout="wide",)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """

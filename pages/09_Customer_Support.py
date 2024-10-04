@@ -1,8 +1,7 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-st.set_page_config(page_title="Shipping Report", 
-                   page_icon="🚚",
+st.set_page_config(page_title="Customer Support", 
                    layout="wide",)
 
 # Custom CSS to hide the top bar and footer

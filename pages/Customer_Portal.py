@@ -1,12 +1,8 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-# Set the page configuration
-st.set_page_config(
-    page_title="Practice Page",
-    page_icon="📊",
-    layout="wide",
-)
+st.set_page_config(page_title="External Customer Portal", 
+                   layout="wide",)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """

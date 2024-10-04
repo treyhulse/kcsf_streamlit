@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Supply Chain", 
+                   page_icon="🚚",
+                   layout="wide",)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
