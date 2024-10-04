@@ -1,31 +1,19 @@
 import streamlit as st
-from utils.restlet import fetch_restlet_data
 import pandas as pd
+import altair as alt
+from utils.restlet import fetch_restlet_data
+# Set the page title
+st.title("Manufacturing Insights")
 
-# Configure the Streamlit page layout
-st.set_page_config(page_title="Manufacturing Data", layout="wide")
-
-# Custom CSS to hide the Streamlit menu and footer
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from the specified NetSuite saved search ID
+# Cache the raw data fetching process with a 10-minute expiration
+@st.cache_data(ttl=600)
+def fetch_raw_data_with_progress(saved_search_id):
+    # Initialize progress bar
+    progress_bar = st.progress(0)
+    
+    # Simulating the data loading process in chunks
     df = fetch_restlet_data(saved_search_id)
-    return df
+    progress_bar.progress(33)  # 33% done after fetching data
 
-# Fetch raw data using the saved search ID "customsearch5162"
-manufacturing_data_raw = fetch_raw_data("customsearch5162")
-
-# Display the fetched data as a DataFrame
-st.write("## Manufacturing Wing Data")
-st.dataframe(manufacturing_data_raw)
-
-# Optional: Add any additional information, filters, or data processing as needed below
+# Fetch raw data for customsearch5135 with progress bar
+customsearch5135_data_raw = fetch_raw_data_with_progress("customsearch5127")
