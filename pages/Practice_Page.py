@@ -5,12 +5,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 import plotly.express as px
 
-# Set the page configuration
-st.set_page_config(
-    page_title="Practice Page",
-    page_icon="📊",
-    layout="wide",
-)
+# Set page configuration
+st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
@@ -29,12 +25,12 @@ if user_email is None:
     st.stop()
 
 # Validate access to this specific page
-page_name = 'Practice Page'  # Adjust this based on the current page
+page_name = 'Shipping Report'
 if not validate_page_access(user_email, page_name):
     show_permission_violation()
     st.stop()
 
-st.write(f"Welcome, {user_email}. You have access to this page.")
+st.write(f"You have access to this page.")
 
 ################################################################################################
 
@@ -74,7 +70,7 @@ sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
 # Create a dictionary mapping emails to sales rep names
 email_to_sales_rep = {
-    'treyhulse3@gmail.com': 'Trey Hulse',
+    'trey.hulse@kcstorefixtures.com': 'Trey Hulse',
     'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry'
 }
 
@@ -160,43 +156,142 @@ elif untasked_orders and not tasked_orders:
 # Remove duplicate Order Numbers
 merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
-# Check if the filtered DataFrame is empty
-if merged_df.empty:
-    st.warning("No data available for the selected filters.")
-else:
-    # Create tabs for Open Orders and Shipping Calendar
-    tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
+# Create tabs for Open Orders and Shipping Calendar
+tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
 
-    # Tab 1: Open Orders
-    with tab1:
-        # Metrics
-        total_orders = len(merged_df)
-        tasked_orders_count = merged_df['Task ID'].notna().sum()
-        untasked_orders_count = merged_df['Task ID'].isna().sum()
-        task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
+# Tab 1: Open Orders
+with tab1:
+    # Metrics
+    total_orders = len(merged_df)
+    tasked_orders_count = merged_df['Task ID'].notna().sum()
+    untasked_orders_count = merged_df['Task ID'].isna().sum()
+    task_percentage = (tasked_orders_count / total_orders) * 100 if total_orders > 0 else 0
 
-        # Display metrics
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total Open Orders", total_orders)
-        col2.metric("Tasked Orders", tasked_orders_count)
-        col3.metric("Untasked Orders", untasked_orders_count)
-        col4.metric("Successful Task Percentage", f"{task_percentage:.2f}%")
+    # Styling for the metrics boxes
+    st.markdown("""
+    <style>
+    .metrics-box {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    .metric-title {
+        margin: 0;
+        font-size: 20px;
+    }
+    .metric-value {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-        # Check if `Ship Date` has valid data before plotting
-        if 'Ship Date' in merged_df.columns and not merged_df['Ship Date'].isnull().all():
-            # Group by Ship Date and count orders
+    # Display dynamic metric boxes
+    metrics = [
+        {"label": "Total Open Orders", "value": total_orders},
+        {"label": "Tasked Orders", "value": tasked_orders_count},
+        {"label": "Untasked Orders", "value": untasked_orders_count},
+        {"label": "Successful Task Percentage", "value": f"{task_percentage:.2f}%"},
+    ]
+
+    # Display metrics in columns
+    col1, col2, col3, col4 = st.columns(4)
+    for col, metric in zip([col1, col2, col3, col4], metrics):
+        with col:
+            st.markdown(f"""
+            <div class="metrics-box">
+                <h3 class="metric-title">{metric['label']}</h3>
+                <p class="metric-value">{metric['value']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # Add visual separation
+    st.write("")
+
+    # Display charts using Plotly
+    if not merged_df.empty:
+        col_chart, col_pie = st.columns([2, 1])
+        with col_chart:
+            merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
             ship_date_counts = merged_df['Ship Date'].value_counts().sort_index()
+            fig_line = px.line(x=ship_date_counts.index, y=ship_date_counts.values, labels={'x': 'Ship Date', 'y': 'Number of Orders'}, title='Open Sales Orders by Ship Date')
+            st.plotly_chart(fig_line, use_container_width=True)
+        
+        with col_pie:
+            matched_orders = merged_df['Task ID'].notna().sum()
+            unmatched_orders = merged_df['Task ID'].isna().sum()
+            pie_data = pd.DataFrame({'Task Status': ['Tasked Orders', 'Untasked Orders'], 'Count': [matched_orders, unmatched_orders]})
+            fig_pie = px.pie(pie_data, names='Task Status', values='Count', title='Tasked vs Untasked Orders', hole=0.4)
+            st.plotly_chart(fig_pie, use_container_width=True)
+    else:
+        st.write("No data available for the selected filters.")
 
-            # Check if ship_date_counts is not empty before plotting
-            if not ship_date_counts.empty:
-                fig_line = px.line(
-                    x=ship_date_counts.index, 
-                    y=ship_date_counts.values, 
-                    labels={'x': 'Ship Date', 'y': 'Number of Orders'}, 
-                    title='Open Sales Orders by Ship Date'
-                )
-                st.plotly_chart(fig_line, use_container_width=True)
+    # Display filtered DataFrame in an expander
+    with st.expander("View Open Orders with a Ship Date"):
+        st.write(merged_df)
+
+# Tab 2: Shipping Calendar
+with tab2:
+    st.header("Shipping Calendar")
+
+    # Group orders by week and day
+    merged_df['Ship Date'] = pd.to_datetime(merged_df['Ship Date'])
+    merged_df['Week'] = merged_df['Ship Date'].dt.isocalendar().week
+    merged_df['Day'] = merged_df['Ship Date'].dt.day_name()
+    merged_df['Week Start'] = merged_df['Ship Date'] - pd.to_timedelta(merged_df['Ship Date'].dt.weekday, unit='D')
+    merged_df['Week End'] = merged_df['Week Start'] + timedelta(days=6)
+
+    # Get the unique weeks from the dataset
+    unique_weeks = merged_df[['Week', 'Week Start', 'Week End']].drop_duplicates().sort_values(by='Week')
+
+    # Display headers for the days of the week once at the top
+    col_mon, col_tue, col_wed, col_thu, col_fri = st.columns(5)
+    with col_mon:
+        st.write("**Monday**")
+    with col_tue:
+        st.write("**Tuesday**")
+    with col_wed:
+        st.write("**Wednesday**")
+    with col_thu:
+        st.write("**Thursday**")
+    with col_fri:
+        st.write("**Friday**")
+
+    # Iterate through the unique weeks
+    for _, week_row in unique_weeks.iterrows():
+        week_start = week_row['Week Start']
+        week_days = [week_start + timedelta(days=i) for i in range(5)]  # Monday to Friday
+
+        # Populate columns with orders for each day, including the specific date
+        for col, day, specific_date in zip([col_mon, col_tue, col_wed, col_thu, col_fri], 
+                                           ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], 
+                                           week_days):
+            day_orders = merged_df[(merged_df['Week Start'] == week_start) & (merged_df['Day'] == day)]
+
+            # Check if specific_date is valid before formatting
+            if pd.notna(specific_date):
+                formatted_date = specific_date.strftime('%B %d')
             else:
-                st.write("No data available for the selected date range.")
-        else:
-            st.write("No valid Ship Date data available for plotting.")
+                formatted_date = "Invalid Date"
+
+            with col:
+                if len(day_orders) > 0:
+                    with st.expander(f"{formatted_date} ({len(day_orders)} Orders)"):
+                        st.write(day_orders)
+                else:
+                    with st.expander(f"{formatted_date}: NO ORDERS"):
+                        st.write("No orders for this day.")
+
+        # Add visual separation between weeks
+        st.write("")
+
+    # Expander for customsearch5147 data with record count in header
+    st.header("Our Truck Orders to be scheduled")
+    st.subheader("This table will not be affected by filters. It only shows our truck orders with no ship date.")
+    truck_order_count = len(our_truck_data)
+    with st.expander(f"{truck_order_count} Orders"):
+        st.write(our_truck_data)
+        st.markdown("[View in NetSuite](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5147&whence=)", unsafe_allow_html=True)
