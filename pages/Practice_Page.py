@@ -72,12 +72,14 @@ st.sidebar.header('Filters')
 sales_rep_list = merged_df['Sales Rep'].unique().tolist()
 sales_rep_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 
-# Determine the default sales rep filter based on the user's email
-default_sales_rep = 'All'
-if user_email == 'trey.hulse@kcstorefixtures.com':
-    default_sales_rep = 'Trey Hulse'
-elif user_email == 'kaitlyn.surry@kcstorefixtures.com':
-    default_sales_rep = 'Kaitlyn Surry'
+# Create a dictionary mapping emails to sales rep names
+email_to_sales_rep = {
+    'trey.hulse@kcstorefixtures.com': 'Trey Hulse',
+    'kaitlyn.surry@kcstorefixtures.com': 'Kaitlyn Surry'
+}
+
+# Set the default sales rep based on the user's email
+default_sales_rep = email_to_sales_rep.get(user_email, 'All')
 
 # Sales Rep filter with pre-populated default value based on user email
 sales_rep_filter = st.sidebar.multiselect(
