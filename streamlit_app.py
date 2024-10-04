@@ -174,6 +174,7 @@ submit_button = st.button("Submit Request")
 if submit_button and new_title and new_description:
     # Add feature to the database
     add_feature_to_db(new_title, new_description, user_email)
+st.write("")
 
 # Updated main code block to capture and print feature IDs
 try:
@@ -191,7 +192,6 @@ try:
         columns = [col1, col2, col3, col4]
         column_index = 0
 
-        st.write("")
         # Iterate over each feature and display in a card
         for _, feature in features_data.iterrows():
             feature_id = feature["_id"]  # Ensure this is a string type
