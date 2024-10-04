@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from bson.objectid import ObjectId
+from utils.auth import capture_user_email
 
 # Set page configuration with collapsed sidebar
 st.set_page_config(
@@ -20,7 +21,7 @@ card_style = """
         border-radius: 10px;
         margin: 10px;
         box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        height: 220px;
+        height: 260px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -62,6 +63,15 @@ today = date.today()
 st.title(f"Welcome to our KC Store Fixtures App! 👋")
 st.subheader(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
+# Capture the user's email
+user_email = capture_user_email()
+if user_email is None:
+    st.error("Unable to retrieve user information.")
+    st.stop()
+
+# Admin email list
+admin_email = "treyhulse3@gmail.com"
+
 # Brief introduction
 st.write("""
 This app is actively being developed so new features will be added periodically. 
@@ -95,9 +105,26 @@ def get_status_class(status):
     }
     return status_class.get(status, "status-unknown")
 
-# Function to create feature card using custom HTML with status
-def feature_card(title, description, owner, status):
+# Function to update feature status in the database
+def update_feature_status(feature_id, new_status):
+    try:
+        client = get_mongo_client()
+        db = client['netsuite']
+        features_collection = db['features']
+        # Update the feature status
+        features_collection.update_one(
+            {"_id": ObjectId(feature_id)},
+            {"$set": {"Status": new_status}}
+        )
+        st.success("Feature status updated successfully!")
+    except Exception as e:
+        st.error(f"Failed to update feature status: {e}")
+
+# Function to create feature card using custom HTML with status and admin access for status update
+def feature_card(feature_id, title, description, owner, status):
     status_class = get_status_class(status)
+    
+    # Display the feature card
     card_html = f"""
         <div class='card'>
             <div class='card-header'>{title}</div>
@@ -107,33 +134,16 @@ def feature_card(title, description, owner, status):
         </div>
     """
     st.markdown(card_html, unsafe_allow_html=True)
-
-
-# Fetch and display features from the 'features' collection
-try:
-    # Initialize the MongoDB client
-    mongo_client = get_mongo_client()
     
-    # Fetch the 'features' collection data
-    features_data = get_collection_data(mongo_client, 'features')
-
-    # Display the features in 4 columns layout
-    if not features_data.empty:
-        # Create four columns for the feature cards
-        col1, col2, col3, col4 = st.columns(4)
-
-        columns = [col1, col2, col3, col4]
-        column_index = 0
-
-        # Iterate over each feature and display in a card
-        for _, feature in features_data.iterrows():
-            with columns[column_index]:
-                feature_card(feature["Title"], feature["Description"], feature["Owner"], feature["Status"])
-            column_index = (column_index + 1) % 4  # Cycle through the four columns
-    else:
-        st.warning("No features found in the 'features' collection.")
-except Exception as e:
-    st.error(f"Failed to retrieve features data: {e}")
+    # If the user is an admin, provide a dropdown to update the feature status
+    if user_email == admin_email:
+        new_status = st.selectbox(
+            f"Update status for '{title}':",
+            options=["Submitted", "In Consideration", "Building", "Implementing", "Complete"],
+            index=["Submitted", "In Consideration", "Building", "Implementing", "Complete"].index(status)
+        )
+        if st.button(f"Update Status for '{title}'"):
+            update_feature_status(feature_id, new_status)
 
 # Function to add a new feature to the database
 def add_feature_to_db(title, description, owner):
@@ -162,8 +172,37 @@ new_description = st.text_area("Feature Description", "")
 submit_button = st.button("Submit Feature")
 
 if submit_button and new_title and new_description:
-    # Retrieve user email from Streamlit (if authenticated)
-    user_email = st.session_state.get("user_email", "anonymous@kcstorefixtures.com")
-    
     # Add feature to the database
     add_feature_to_db(new_title, new_description, user_email)
+
+# Fetch and display features from the 'features' collection
+try:
+    # Initialize the MongoDB client
+    mongo_client = get_mongo_client()
+    
+    # Fetch the 'features' collection data
+    features_data = get_collection_data(mongo_client, 'features')
+
+    # Display the features in 4 columns layout
+    if not features_data.empty:
+        # Create four columns for the feature cards
+        col1, col2, col3, col4 = st.columns(4)
+
+        columns = [col1, col2, col3, col4]
+        column_index = 0
+
+        # Iterate over each feature and display in a card
+        for _, feature in features_data.iterrows():
+            with columns[column_index]:
+                feature_card(
+                    feature_id=feature["_id"],  # Pass feature ID for admin updates
+                    title=feature["Title"],
+                    description=feature["Description"],
+                    owner=feature["Owner"],
+                    status=feature["Status"]
+                )
+            column_index = (column_index + 1) % 4  # Cycle through the four columns
+    else:
+        st.warning("No features found in the 'features' collection.")
+except Exception as e:
+    st.error(f"Failed to retrieve features data: {e}")
