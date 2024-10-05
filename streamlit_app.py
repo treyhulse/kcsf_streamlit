@@ -80,7 +80,7 @@ if user_email is None:
     st.stop()
 
 # Admin email list
-admin_email = "treyhulse@gmail.com"
+admin_email = "treyhulse3@gmail.com"
 
 st.info("**This is in development and your feedback is valuable to improve the app. Please reach out!**")
 
