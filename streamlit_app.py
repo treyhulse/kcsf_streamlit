@@ -135,7 +135,6 @@ def feature_card(feature_id, title, description, owner, status):
             <div class='card-header'>{title}</div>
             <div class='card-body'>{description}</div>
             <div class='status {status_class}'>{status}</div>
-            <div class='card-footer'>Owner: {owner}</div>
         </div>
     """
     st.markdown(card_html, unsafe_allow_html=True)
