@@ -146,7 +146,7 @@ def feature_card(feature_id, title, description, owner, status):
             options=["Submitted", "In Consideration", "Building", "Implementing", "Complete"],
             index=["Submitted", "In Consideration", "Building", "Implementing", "Complete"].index(status)
         )
-        if st.button(f"Update"):
+        if st.button(f"Update Status for '{title}'"):
             update_feature_status(feature_id, new_status)
 
 # Function to add a new feature to the database
