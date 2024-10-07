@@ -142,11 +142,11 @@ def feature_card(feature_id, title, description, owner, status):
     # If the user is an admin, provide a dropdown to update the feature status
     if user_email == admin_email:
         new_status = st.selectbox(
-            f"Update status for '{title}' (ID: {feature_id}):",
+            f"Update status for '{title}'",
             options=["Submitted", "In Consideration", "Building", "Implementing", "Complete"],
             index=["Submitted", "In Consideration", "Building", "Implementing", "Complete"].index(status)
         )
-        if st.button(f"Update Status for '{title}'"):
+        if st.button(f"Update"):
             update_feature_status(feature_id, new_status)
 
 # Function to add a new feature to the database
