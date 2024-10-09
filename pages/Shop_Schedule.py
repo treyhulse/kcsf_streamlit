@@ -90,31 +90,26 @@ substatus_dict = {
 
 # Function to handle posting updates back to NetSuite using PATCH
 def update_work_order_status(internal_id, new_status_id, new_substatus_id):
-    # Construct the update payload
     update_payload = {
         "custbody34": new_status_id,     # Field ID for work order status
         "custbody178": new_substatus_id  # Field ID for substatus
     }
 
-    # Ensure the base URL is correctly prefixed
-    base_url = st.secrets["rest_url"]  # The base URL stored in Streamlit secrets
-    full_url = f"{base_url}workOrder/{internal_id}"  # Construct the full URL
+    base_url = st.secrets["rest_url"]
+    full_url = f"{base_url}workOrder/{internal_id}"
 
-    # Display the payload and URL for debugging purposes
+    # Display the payload and URL for debugging purposes (optional)
     st.write(f"Payload for Work Order {internal_id}: {update_payload}")
 
     try:
-        # Send a PATCH request to update the record in NetSuite
-        response = make_netsuite_rest_api_request(full_url, update_payload, method="PATCH")
-
-        # Check if the response was successful (status code 200 or 204)
-        if response is not None:
-            st.success(f"Successfully updated Work Order ID {internal_id}.")
-        else:
-            st.error(f"Failed to update Work Order ID {internal_id}. Please try again.")
+        # Send a PATCH request to update the record in NetSuite (no return value needed)
+        make_netsuite_rest_api_request(full_url, update_payload, method="PATCH")
+        
+        # If no exception was raised, show a success message
+        st.success(f"Successfully updated Work Order ID {internal_id}.")
     except Exception as e:
-        st.error(f"Error in processing the request: {e}")
-
+        # If an exception was raised, show an error message
+        st.error(f"Failed to update Work Order ID {internal_id}. Error: {e}")
 
 
 # Apply custom CSS styling for the card container
