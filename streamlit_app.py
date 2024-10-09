@@ -7,11 +7,11 @@ pages = {
         st.Page("pages/Shipping_Report.py", title="Shipping Report", icon="🚚"),
         st.Page("pages/TMS.py", title="Transportation Management System", icon="🌐"),
 
-        st.Page("pages/Supply_Chain.py", title="Supply Chain Overview", icon="🚚"),
+        st.Page("pages/Supply_Chain.py", title="Supply Chain", icon="🚚"),
         st.Page("pages/MRP.py", title="Material Resource Planning", icon="📦"),
         st.Page("pages/Shop.py", title="Shop", icon="🛠️"),
 
-        st.Page("pages/Sales.py", title="Sales Overview", icon="💲"),
+        st.Page("pages/Sales.py", title="Sales Dashboard", icon="💲"),
         st.Page("pages/Distributor_Management.py", title="Distributor Management", icon="👥"),
         st.Page("pages/Order_Management.py", title="Order Management", icon="💰"),
 
