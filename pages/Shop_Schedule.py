@@ -40,6 +40,7 @@ import altair as alt
 from utils.rest import make_netsuite_rest_api_request  # Assuming the correct path is utils/rest.py
 from utils.restlet import fetch_restlet_data
 
+
 # Set the page title
 st.title("Shop Schedule")
 
@@ -107,6 +108,22 @@ if selected_substatus:
     if "Substatus" in customsearch5163_data_raw.columns:
         filtered_data = filtered_data[filtered_data["Substatus"].isin(selected_substatus)]
 
+# Set up pagination variables
+PAGE_SIZE = 10  # Number of records to show per page
+total_records = len(filtered_data)  # Get total number of records after filtering
+total_pages = (total_records - 1) // PAGE_SIZE + 1  # Calculate total number of pages
+
+# Sidebar navigation for pagination
+current_page = st.sidebar.number_input("Select page:", min_value=1, max_value=total_pages, value=1, step=1)
+start_index = (current_page - 1) * PAGE_SIZE
+end_index = start_index + PAGE_SIZE
+
+# Display the current page and total pages information
+st.sidebar.write(f"Page {current_page} of {total_pages}")
+
+# Apply pagination to the filtered data
+paginated_data = filtered_data.iloc[start_index:end_index]
+
 # Function to handle posting updates back to NetSuite using PATCH
 def update_work_order_status(internal_id, new_status_id, new_substatus_id):
     update_payload = {
@@ -116,9 +133,6 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
 
     base_url = st.secrets["rest_url"]
     full_url = f"{base_url}workOrder/{internal_id}"
-
-    # Display the payload and URL for debugging purposes
-    st.write(f"Payload for Work Order {internal_id}: {update_payload}")
 
     try:
         # Send a PATCH request to update the record in NetSuite (no return value needed)
@@ -148,8 +162,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Display the filtered work orders as cards
-for index, row in filtered_data.iterrows():
+# Display the paginated work orders as cards
+for index, row in paginated_data.iterrows():
     # Create a card container for each work order with custom styling
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
