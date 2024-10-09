@@ -33,6 +33,7 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
 import pandas as pd
 import json
 import altair as alt
@@ -93,10 +94,18 @@ with st.sidebar:
     selected_substatus = st.multiselect("Filter by Substatus", options=list(substatus_dict.values()))
 
 # Apply filters to the dataframe
-filtered_data = customsearch5163_data_raw[
-    (customsearch5163_data_raw["WO Status"].isin(selected_status) if selected_status else True) &
-    (customsearch5163_data_raw["Substatus"].isin(selected_substatus) if selected_substatus else True)
-]
+# Start by assuming no filters are applied
+filtered_data = customsearch5163_data_raw
+
+# Apply status filter if any status is selected
+if selected_status:
+    if "WO Status" in customsearch5163_data_raw.columns:
+        filtered_data = filtered_data[filtered_data["WO Status"].isin(selected_status)]
+
+# Apply substatus filter if any substatus is selected
+if selected_substatus:
+    if "Substatus" in customsearch5163_data_raw.columns:
+        filtered_data = filtered_data[filtered_data["Substatus"].isin(selected_substatus)]
 
 # Function to handle posting updates back to NetSuite using PATCH
 def update_work_order_status(internal_id, new_status_id, new_substatus_id):
