@@ -24,35 +24,25 @@ def get_netsuite_auth():
     )
 
 def make_netsuite_rest_api_request(url, payload=None, method="GET"):
-    """Make an authenticated request to the NetSuite REST API with the specified method."""
+    """Make an authenticated request to the NetSuite REST API without returning a response."""
     auth = get_netsuite_auth()
-    rest_url = st.secrets["rest_url"]
-    
-    headers = {
-        "Content-Type": "application/json",
-    }
+    headers = {"Content-Type": "application/json"}
 
-    # Convert payload to JSON if it's not None
-    json_payload = None
-    if payload:
-        json_payload = json.dumps(payload)
+    # Convert payload to JSON if provided
+    json_payload = json.dumps(payload) if payload else None
 
-    # Determine the HTTP method and send the request
-    if method == "GET":
-        response = requests.get(url, headers=headers, auth=auth)
-    elif method == "POST":
-        response = requests.post(url, headers=headers, auth=auth, data=json_payload)
-    elif method == "PATCH":
-        response = requests.patch(url, headers=headers, auth=auth, data=json_payload)
-    elif method == "PUT":
-        response = requests.put(url, headers=headers, auth=auth, data=json_payload)
-    else:
-        raise ValueError("Invalid HTTP method specified.")
-
-    # Check for response status and content
-    if response.status_code != 200:
-        st.error(f"Failed to fetch data: {response.status_code}")
-        st.write(f"Error content: {response.text}")
-        return None
-
-    return response.json()
+    try:
+        # Determine the HTTP method and send the request
+        if method == "PATCH":
+            requests.patch(url, headers=headers, auth=auth, data=json_payload)
+        elif method == "POST":
+            requests.post(url, headers=headers, auth=auth, data=json_payload)
+        elif method == "PUT":
+            requests.put(url, headers=headers, auth=auth, data=json_payload)
+        elif method == "DELETE":
+            requests.delete(url, headers=headers, auth=auth)
+        else:
+            requests.get(url, headers=headers, auth=auth)
+    except requests.exceptions.RequestException as e:
+        # Raise the exception if any error occurs during the request
+        raise e
