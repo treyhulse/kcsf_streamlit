@@ -5,8 +5,8 @@ pages = {
     "streamlit app": [
         st.Page("pages/Home.py", title="Home"),
         st.Page("pages/Customer_Portal.py", title="Customer Portal"),
-        st.Page("pages/08_Shop.py", title="Shop"),
-        st.Page("pages/15_AI_Insights.py", title="AI Insights"),
+        st.Page("pages/Shop.py", title="Shop"),
+        st.Page("pages/AI_Insights.py", title="AI Insights"),
         st.Page("pages/Role_and_Permissions.py", title="Role and Permissions"),
         st.Page("pages/Pagination_Example.py", title="Pagination Example"),
         st.Page("pages/Practice_Page.py", title="Practice Page"),
