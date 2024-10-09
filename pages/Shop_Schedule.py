@@ -40,7 +40,6 @@ import altair as alt
 from utils.rest import make_netsuite_rest_api_request  # Assuming the correct path is utils/rest.py
 from utils.restlet import fetch_restlet_data
 
-
 # Set the page title
 st.title("Shop Schedule")
 
@@ -95,7 +94,6 @@ with st.sidebar:
     selected_substatus = st.multiselect("Filter by Substatus", options=list(substatus_dict.values()))
 
 # Apply filters to the dataframe
-# Start by assuming no filters are applied
 filtered_data = customsearch5163_data_raw
 
 # Apply status filter if any status is selected
@@ -144,7 +142,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
         # If an exception was raised, show an error message
         st.error(f"Failed to update Work Order ID {internal_id}. Error: {e}")
 
-# Apply custom CSS styling for the card container to fix the layout
+# Apply improved CSS styling for the card container to fix the layout
 st.markdown(
     """
     <style>
@@ -155,7 +153,13 @@ st.markdown(
         padding: 16px;
         margin-bottom: 20px;
         overflow: hidden;  /* Ensure the content fits inside the box */
-        display: block;  /* Ensures the card covers the entire content */
+        display: flex;  /* Use flexbox layout to wrap content properly */
+        flex-direction: column;  /* Arrange elements vertically */
+        width: 100%;  /* Ensure card takes full width */
+        background-color: #ffffff;  /* Set background color */
+    }
+    .card-content {
+        margin-bottom: 16px;  /* Add spacing between elements inside card */
     }
     </style>
     """,
@@ -167,18 +171,20 @@ for index, row in paginated_data.iterrows():
     # Create a card container for each work order with custom styling
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        
+
         # Top row with Status and Substatus
         col1, col2 = st.columns([3, 1])  # Adjusted to have more space for status
-        col1.success(f"{row['WO Status']}")  # Display work order status as st.success without the prefix
-        col2.info(f"Substatus: {row['Substatus']}")  # Display substatus in info style
+        with col1:
+            st.markdown(f"<div class='card-content'>{row['WO Status']}</div>", unsafe_allow_html=True)  # Display work order status in styled div
+        with col2:
+            st.markdown(f"<div class='card-content'><span style='background-color: #e0f7fa; padding: 4px; border-radius: 4px;'>Substatus: {row['Substatus']}</span></div>", unsafe_allow_html=True)  # Styled substatus label
 
-        # Display additional work order details below the status and substatus
-        st.write(f"**Work Order Number:** {row['Work Order Number']}")
-        st.write(f"**Item:** {row['item']}")
-        st.write(f"**Customer:** {row['Customer']}")
-        st.write(f"**Start Date:** {row['Start Date']}")
-        st.write(f"**End Date:** {row['End Date']}")
+        # Display additional work order details inside card-content divs
+        st.markdown(f"<div class='card-content'><b>Work Order Number:</b> {row['Work Order Number']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-content'><b>Item:</b> {row['item']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-content'><b>Customer:</b> {row['Customer']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-content'><b>Start Date:</b> {row['Start Date']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card-content'><b>End Date:</b> {row['End Date']}</div>", unsafe_allow_html=True)
 
         # Dropdowns for status and substatus selection with unique keys
         new_status = st.selectbox(
