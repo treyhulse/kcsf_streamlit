@@ -39,8 +39,6 @@ import altair as alt
 from utils.rest import make_netsuite_rest_api_request  # Assuming the correct path is utils/rest.py
 from utils.restlet import fetch_restlet_data
 
-st.set_page_config(page_title="Shop Schedule", layout="wide")
-
 # Set the page title
 st.title("Shop Schedule")
 
