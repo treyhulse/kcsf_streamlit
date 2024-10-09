@@ -105,7 +105,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
         st.write(f"JSON Payload: {json_payload}")  # Show the formatted JSON payload
 
         # Make the API request to update the record in NetSuite
-        response = make_netsuite_rest_api_request(f"/record/v1/workorder/{internal_id}", json_payload)
+        response = make_netsuite_rest_api_request(f"workorder/{internal_id}", json_payload)
         
         # Debugging: Display response status and content
         if response:
