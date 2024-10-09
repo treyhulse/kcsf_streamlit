@@ -17,10 +17,14 @@ def get_bearer_token():
     }
 
     response = requests.post(AUTH_URL, headers=headers, auth=(username, password))
+    
+    # Diagnostic print for debugging
+    print(f"Authentication Response: {response.status_code} - {response.text}")
+    
     if response.status_code == 200:
         return response.json().get('access_token')
     else:
-        st.error(f"Failed to authenticate: {response.text}")
+        st.error(f"Failed to authenticate: {response.json().get('error', {}).get('message', 'Unknown error')}")
         return None
 
 # Function to get freight quote
@@ -56,8 +60,12 @@ def get_freight_quote(token, pickup_zip, delivery_zip, weight, handling_units):
     }
 
     response = requests.post(QUOTE_URL, headers=headers, json=payload)
+    
+    # Diagnostic print for debugging
+    print(f"Freight Quote Response: {response.status_code} - {response.text}")
+
     if response.status_code == 200:
         return response.json()
     else:
-        st.error(f"Failed to retrieve a freight quote: {response.text}")
+        st.error(f"Failed to retrieve a freight quote: {response.json().get('error', {}).get('message', 'Unknown error')}")
         return None

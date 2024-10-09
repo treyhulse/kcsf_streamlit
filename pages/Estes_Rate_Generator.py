@@ -7,12 +7,18 @@ st.set_page_config(page_title="Estes LTL Shipment Rate Generator", page_icon="ðŸ
 # Page title
 st.title("Estes LTL Shipment Rate Generator")
 
+# Pre-fill default values for testing
+default_pickup_zip = "23234"   # Example ZIP code for pickup (Richmond, VA)
+default_delivery_zip = "90001" # Example ZIP code for delivery (Los Angeles, CA)
+default_weight = 1000          # Default weight in lbs
+default_handling_units = 1     # Default handling units
+
 # Input fields for shipment details
 st.header("Shipment Details")
-pickup_zip = st.text_input("Pickup ZIP Code", max_chars=5, placeholder="Enter pickup ZIP code")
-delivery_zip = st.text_input("Delivery ZIP Code", max_chars=5, placeholder="Enter delivery ZIP code")
-weight = st.number_input("Weight (lbs)", min_value=1, placeholder="Enter total weight in lbs")
-handling_units = st.number_input("Handling Units", min_value=1, placeholder="Enter number of handling units")
+pickup_zip = st.text_input("Pickup ZIP Code", value=default_pickup_zip, max_chars=5, placeholder="Enter pickup ZIP code")
+delivery_zip = st.text_input("Delivery ZIP Code", value=default_delivery_zip, max_chars=5, placeholder="Enter delivery ZIP code")
+weight = st.number_input("Weight (lbs)", value=default_weight, min_value=1, placeholder="Enter total weight in lbs")
+handling_units = st.number_input("Handling Units", value=default_handling_units, min_value=1, placeholder="Enter number of handling units")
 
 # Button to get quote
 if st.button("Get Freight Quote"):
