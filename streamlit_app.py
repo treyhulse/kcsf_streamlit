@@ -15,7 +15,7 @@ pages = {
     ],
     "Supply Chain": [
         st.Page("pages/Supply_Chain.py", title="Supply Chain Overview"),
-        st.Page("pages/MRP.py", title="MRP"),  # Nested under Supply Chain
+        st.Page("pages/MRP.py", title="Material Resource Planning"),  # Nested under Supply Chain
     ],
     "Sales": [
         st.Page("pages/Sales.py", title="Sales Overview"),
@@ -29,7 +29,7 @@ pages = {
     ],
     "Logistics": [
         st.Page("pages/Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/TMS.py", title="Transportation Management System (TMS)"),
+        st.Page("pages/TMS.py", title="Transportation Management System"),
     ],
 }
 
