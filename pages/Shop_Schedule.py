@@ -97,7 +97,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
     
     # Ensure the base URL is correctly prefixed
     base_url = st.secrets["rest_url"]  # The base URL should be stored in your Streamlit secrets
-    full_url = f"{base_url}/workOrder/{internal_id}"  # Construct the full URL using the base URL and internal ID
+    full_url = f"{base_url}workOrder/{internal_id}"  # Construct the full URL using the base URL and internal ID
 
     # Display the payload and URL for debugging purposes
     st.write(f"Payload for Work Order {internal_id}: {update_payload}")
