@@ -9,7 +9,7 @@ pages = {
 
         st.Page("pages/Supply_Chain.py", title="Supply Chain", icon="📦"),
         st.Page("pages/MRP.py", title="Material Resource Planning", icon="🗓️"),
-        st.Page("pages/Shop.py", title="Shop", icon="🛠️"),
+        st.Page("pages/Shop_Schedule.py", title="Shop", icon="🛠️"),
 
         st.Page("pages/Sales.py", title="Sales Dashboard", icon="💲"),
         st.Page("pages/Order_Management.py", title="Order Management", icon="💰"),
