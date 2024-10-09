@@ -19,12 +19,11 @@ pages = {
         st.Page("pages/AI_Insights.py", title="AI Insights", icon="💬"),
         st.Page("pages/Role_and_Permissions.py", title="Role and Permissions", icon="🔒"),
     ],
-    
+
     "Practice": [  # Main section for general pages
         st.Page("pages/Pagination_Example.py", title="Pagination Example", icon="📄"),
         st.Page("pages/Practice_Page.py", title="Practice Page", icon="🌱"),
         st.Page("pages/MRP_TEST.py", title="MRP TEST", icon="🌱"),
-        st.Page("pages/Shop_Schedule_Practice.py", title="Shop Schedule Practice", icon="🌱"),
     ],
 }
 
