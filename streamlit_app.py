@@ -24,7 +24,7 @@ pages = {
         st.Page("pages/Pagination_Example.py", title="Pagination Example", icon="📄"),
         st.Page("pages/Practice_Page.py", title="Practice Page", icon="🌱"),
         st.Page("pages/MRP_TEST.py", title="MRP TEST", icon="🌱"),
-        st.Page("Estes_Rate_Generator.py", title="Estes Rate Generator", icon="🌱"),
+        st.Page("pages/Estes_Rate_Generator.py", title="Estes Rate Generator", icon="🌱"),
     ],
 }
 
