@@ -88,24 +88,24 @@ substatus_dict = {
     15: "BOM Drawing"
 }
 
-# Function to handle posting updates back to NetSuite
+# Function to handle posting updates back to NetSuite using PATCH
 def update_work_order_status(internal_id, new_status_id, new_substatus_id):
     update_payload = {
-        "internalId": internal_id,
-        "custbody34": new_status_id,     # Mapping to work order status field ID
-        "custbody178": new_substatus_id  # Mapping to substatus field ID
+        "custbody34": new_status_id,     # Field ID for work order status
+        "custbody178": new_substatus_id  # Field ID for substatus
     }
     
-    # Debugging: Display the payload before making the API request
-    st.write(f"Payload for Work Order {internal_id}: {update_payload}")
-    
-    # Convert the payload to JSON
-    try:
-        json_payload = json.dumps(update_payload)  # Ensure JSON formatting
-        st.write(f"JSON Payload: {json_payload}")  # Show the formatted JSON payload
+    # Ensure the base URL is correctly prefixed
+    base_url = st.secrets["rest_url"]  # The base URL should be stored in your Streamlit secrets
+    full_url = f"{base_url}/workOrder/{internal_id}"  # Construct the full URL using the base URL and internal ID
 
-        # Make the API request to update the record in NetSuite
-        response = make_netsuite_rest_api_request(f"workorder/{internal_id}", json_payload)
+    # Display the payload and URL for debugging purposes
+    st.write(f"Payload for Work Order {internal_id}: {update_payload}")
+    st.write(f"Full URL: {full_url}")
+
+    try:
+        # Send a PATCH request to update the record in NetSuite
+        response = make_netsuite_rest_api_request(full_url, update_payload, method="PATCH")
         
         # Debugging: Display response status and content
         if response:
@@ -114,6 +114,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
             st.error(f"Failed to update Work Order ID {internal_id}. Response: {response}")
     except Exception as e:
         st.error(f"Error in processing the request: {e}")
+
 
 # Apply custom CSS styling for the card container
 st.markdown(
