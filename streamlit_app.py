@@ -17,7 +17,7 @@ pages = {
         st.Page("pages/Customer_Portal.py", title="Customer Portal", icon="👤"),
         st.Page("pages/Customer_Support.py", title="Support", icon="📞"),
         st.Page("pages/AI_Insights.py", title="AI Insights", icon="💬"),
-        st.Page("pages/Role_and_Permissions.py", title="Role and Permissions", icon="🔒"),
+        st.Page("pages/Roles_and_Permissions.py", title="Roles and Permissions", icon="🔒"),
     ],
 
     "Practice": [  # Main section for general pages
