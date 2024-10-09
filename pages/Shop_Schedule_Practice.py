@@ -5,7 +5,7 @@ from utils.rest import make_netsuite_rest_api_request  # Assuming the correct pa
 from utils.restlet import fetch_restlet_data
 
 # Set the page title
-st.title("Distributor Management System")
+st.title("Shop Schedule")
 
 # Cache the raw data fetching process with a 10-minute expiration
 @st.cache_data(ttl=600)
