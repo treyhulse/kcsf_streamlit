@@ -14,22 +14,22 @@ pages = {
         st.Page("pages/Shop_Schedule_Practice.py", title="Shop Schedule Practice"),
     ],
     "Supply Chain": [
-        st.Page("pages/02_Supply_Chain.py", title="Supply Chain Overview"),
-        st.Page("pages/11_MRP.py", title="MRP"),  # Nested under Supply Chain
+        st.Page("pages/Supply_Chain.py", title="Supply Chain Overview"),
+        st.Page("pages/MRP.py", title="MRP"),  # Nested under Supply Chain
     ],
     "Sales": [
-        st.Page("pages/04_Sales.py", title="Sales Overview"),
-        st.Page("pages/06_Order_Management.py", title="Order Management"),  # Nested under Sales
+        st.Page("pages/Sales.py", title="Sales Overview"),
+        st.Page("pages/Order_Management.py", title="Order Management"),  # Nested under Sales
     ],
     "Support": [
-        st.Page("pages/09_Customer_Support.py", title="Customer Support"),
+        st.Page("pages/Customer_Support.py", title="Customer Support"),
     ],
     "Management": [
-        st.Page("pages/05_Distributor_Management.py", title="Distributor Management"),
+        st.Page("pages/Distributor_Management.py", title="Distributor Management"),
     ],
     "Logistics": [
-        st.Page("pages/01_Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/12_TMS.py", title="Transportation Management System (TMS)"),
+        st.Page("pages/Shipping_Report.py", title="Shipping Report"),
+        st.Page("pages/TMS.py", title="Transportation Management System (TMS)"),
     ],
 }
 
