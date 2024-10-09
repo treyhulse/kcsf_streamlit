@@ -33,8 +33,14 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+import streamlit as st
+import pandas as pd
+import json  # Import JSON module to ensure proper payload formatting
+import altair as alt
 from utils.rest import make_netsuite_rest_api_request  # Assuming the correct path is utils/rest.py
 from utils.restlet import fetch_restlet_data
+
+st.set_page_config(page_title="Shop Schedule", layout="wide")
 
 # Set the page title
 st.title("Shop Schedule")
@@ -92,21 +98,51 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
         "custbody178": new_substatus_id  # Mapping to substatus field ID
     }
     
-    # Make the API request to update the record in NetSuite
-    response = make_netsuite_rest_api_request(f"/record/v1/workorder/{internal_id}", update_payload)
-    if response:
-        st.success(f"Successfully updated Work Order ID {internal_id}.")
-    else:
-        st.error(f"Failed to update Work Order ID {internal_id}.")
+    # Debugging: Display the payload before making the API request
+    st.write(f"Payload for Work Order {internal_id}: {update_payload}")
+    
+    # Convert the payload to JSON
+    try:
+        json_payload = json.dumps(update_payload)  # Ensure JSON formatting
+        st.write(f"JSON Payload: {json_payload}")  # Show the formatted JSON payload
+
+        # Make the API request to update the record in NetSuite
+        response = make_netsuite_rest_api_request(f"/record/v1/workorder/{internal_id}", json_payload)
+        
+        # Debugging: Display response status and content
+        if response:
+            st.success(f"Successfully updated Work Order ID {internal_id}. Response: {response}")
+        else:
+            st.error(f"Failed to update Work Order ID {internal_id}. Response: {response}")
+    except Exception as e:
+        st.error(f"Error in processing the request: {e}")
+
+# Apply custom CSS styling for the card container
+st.markdown(
+    """
+    <style>
+    .card {
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Display the cards for each work order
 for index, row in customsearch5163_data_raw.iterrows():
-    # Create a card container for each work order
+    # Create a card container for each work order with custom styling
     with st.container():
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        
         # Top row with Status and Substatus
         col1, col2 = st.columns([3, 1])  # Adjusted to have more space for status
-        col1.success(f"Status: {row['WO Status']}")
-        col2.info(f"Substatus: {row['Substatus']}")
+        col1.success(f"{row['WO Status']}")  # Display work order status as st.success without the prefix
+        col2.info(f"Substatus: {row['Substatus']}")  # Display substatus in info style
 
         # Display additional work order details below the status and substatus
         st.write(f"**Work Order Number:** {row['Work Order Number']}")
@@ -141,6 +177,5 @@ for index, row in customsearch5163_data_raw.iterrows():
             
             # Update work order status
             update_work_order_status(row['Internal ID'], new_status_id, new_substatus_id)
-            
-        st.divider()  # Divider between each card
-        st.write("")  # Add some space between cards
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close the card container
