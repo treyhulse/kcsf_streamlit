@@ -29,7 +29,7 @@ pages = {
     ],
     "Logistics": [  # Section title for Logistics
         st.Page("pages/Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/TMS.py", title="Transportation Management System", icon=":globe_with_meridians:"),
+        st.Page("pages/TMS.py", title="Transportation Management System", icon="🚚"),
     ],
 }
 
