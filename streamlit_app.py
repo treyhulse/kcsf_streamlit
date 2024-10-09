@@ -5,6 +5,23 @@ from utils.mongo_connection import get_mongo_client, get_collection_data
 from bson.objectid import ObjectId
 from utils.auth import capture_user_email
 
+
+pages = {
+    "Your account": [
+        st.Page("create_account.py", title="Create your account"),
+        st.Page("manage_account.py", title="Manage your account"),
+    ],
+    "Resources": [
+        st.Page("learn.py", title="Learn about us"),
+        st.Page("trial.py", title="Try it out"),
+    ],
+}
+
+pg = st.navigation(pages)
+pg.run()
+
+
+
 # Set page configuration with collapsed sidebar
 st.set_page_config(
     page_title="KC Store Fixtures",
