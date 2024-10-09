@@ -33,12 +33,13 @@ st.write(f"You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-import streamlit as st
 import pandas as pd
-import json  # Import JSON module to ensure proper payload formatting
+import json
 import altair as alt
 from utils.rest import make_netsuite_rest_api_request  # Assuming the correct path is utils/rest.py
 from utils.restlet import fetch_restlet_data
+
+st.set_page_config(page_title="Shop Schedule", layout="wide")
 
 # Set the page title
 st.title("Shop Schedule")
@@ -88,6 +89,17 @@ substatus_dict = {
     15: "BOM Drawing"
 }
 
+# Sidebar filters for Work Order Status and Substatus
+with st.sidebar:
+    selected_status = st.multiselect("Filter by Work Order Status", options=list(work_order_status_dict.values()))
+    selected_substatus = st.multiselect("Filter by Substatus", options=list(substatus_dict.values()))
+
+# Apply filters to the dataframe
+filtered_data = customsearch5163_data_raw[
+    (customsearch5163_data_raw["WO Status"].isin(selected_status) if selected_status else True) &
+    (customsearch5163_data_raw["Substatus"].isin(selected_substatus) if selected_substatus else True)
+]
+
 # Function to handle posting updates back to NetSuite using PATCH
 def update_work_order_status(internal_id, new_status_id, new_substatus_id):
     update_payload = {
@@ -98,7 +110,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
     base_url = st.secrets["rest_url"]
     full_url = f"{base_url}workOrder/{internal_id}"
 
-    # Display the payload and URL for debugging purposes (optional)
+    # Display the payload and URL for debugging purposes
     st.write(f"Payload for Work Order {internal_id}: {update_payload}")
 
     try:
@@ -111,8 +123,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
         # If an exception was raised, show an error message
         st.error(f"Failed to update Work Order ID {internal_id}. Error: {e}")
 
-
-# Apply custom CSS styling for the card container
+# Apply custom CSS styling for the card container to fix the layout
 st.markdown(
     """
     <style>
@@ -122,14 +133,16 @@ st.markdown(
         box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
         padding: 16px;
         margin-bottom: 20px;
+        overflow: hidden;  /* Ensure the content fits inside the box */
+        display: block;  /* Ensures the card covers the entire content */
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Display the cards for each work order
-for index, row in customsearch5163_data_raw.iterrows():
+# Display the filtered work orders as cards
+for index, row in filtered_data.iterrows():
     # Create a card container for each work order with custom styling
     with st.container():
         st.markdown('<div class="card">', unsafe_allow_html=True)
