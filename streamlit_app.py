@@ -3,6 +3,7 @@ import streamlit as st
 # Define the list of pages
 pages = {
     "streamlit app": [
+        st.Page("pages/Home.py", title="Home"),
         st.Page("pages/01_Shipping_Report.py", title="Shipping Report"),
         st.Page("pages/02_Supply_Chain.py", title="Supply Chain"),
         st.Page("pages/04_Sales.py", title="Sales"),
@@ -14,7 +15,6 @@ pages = {
         st.Page("pages/12_TMS.py", title="TMS"),
         st.Page("pages/15_AI_Insights.py", title="AI Insights"),
         st.Page("pages/Customer_Portal.py", title="Customer Portal"),
-        st.Page("pages/Home.py", title="Home"),
         st.Page("pages/MRP_TEST.py", title="MRP TEST"),
         st.Page("pages/Pagination_Example.py", title="Pagination Example"),
         st.Page("pages/Practice_Page.py", title="Practice Page"),
