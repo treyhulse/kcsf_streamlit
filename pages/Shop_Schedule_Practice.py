@@ -113,4 +113,5 @@ for index, row in customsearch5163_data_raw.iterrows():
             update_work_order_status(row['Internal ID'], new_status_id, new_substatus_id)
             
         st.divider()  # Divider between each card
+        st.divider()
         st.write("")  # Add some space between cards
