@@ -1,3 +1,6 @@
+# In utils/rest.py
+
+import json
 import requests
 from requests_oauthlib import OAuth1
 import streamlit as st
@@ -20,17 +23,36 @@ def get_netsuite_auth():
         signature_method='HMAC-SHA256'
     )
 
-def make_netsuite_rest_api_request(endpoint):
-    """Make an authenticated GET request to the NetSuite REST API"""
+def make_netsuite_rest_api_request(url, payload=None, method="GET"):
+    """Make an authenticated request to the NetSuite REST API with the specified method."""
     auth = get_netsuite_auth()
     rest_url = st.secrets["rest_url"]
     
-    # Construct the full URL for the request
-    url = f"{rest_url}{endpoint}"
-    response = requests.get(url, auth=auth)
-    
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    # Convert payload to JSON if it's not None
+    json_payload = None
+    if payload:
+        json_payload = json.dumps(payload)
+
+    # Determine the HTTP method and send the request
+    if method == "GET":
+        response = requests.get(url, headers=headers, auth=auth)
+    elif method == "POST":
+        response = requests.post(url, headers=headers, auth=auth, data=json_payload)
+    elif method == "PATCH":
+        response = requests.patch(url, headers=headers, auth=auth, data=json_payload)
+    elif method == "PUT":
+        response = requests.put(url, headers=headers, auth=auth, data=json_payload)
+    else:
+        raise ValueError("Invalid HTTP method specified.")
+
+    # Check for response status and content
     if response.status_code != 200:
         st.error(f"Failed to fetch data: {response.status_code}")
         st.write(f"Error content: {response.text}")
         return None
+
     return response.json()
