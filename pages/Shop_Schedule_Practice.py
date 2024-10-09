@@ -75,7 +75,7 @@ for index, row in customsearch5163_data_raw.iterrows():
     with st.container():
         # Top row with Status and Substatus
         col1, col2 = st.columns([3, 1])  # Adjusted to have more space for status
-        col1.subheader(f"Status: {row['WO Status']}")
+        col1.success(f"Status: {row['WO Status']}")
         col2.info(f"Substatus: {row['Substatus']}")
 
         # Display additional work order details below the status and substatus
@@ -113,5 +113,4 @@ for index, row in customsearch5163_data_raw.iterrows():
             update_work_order_status(row['Internal ID'], new_status_id, new_substatus_id)
             
         st.divider()  # Divider between each card
-        st.divider()
         st.write("")  # Add some space between cards
