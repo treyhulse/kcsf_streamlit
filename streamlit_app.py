@@ -1,8 +1,8 @@
 import streamlit as st
 
-# Define nested pages with groupings
+# Define navigation pages with sections (using function names or file paths)
 pages = {
-    "streamlit app": [
+    "Main": [  # Main section for general pages
         st.Page("pages/Home.py", title="Home"),
         st.Page("pages/Customer_Portal.py", title="Customer Portal"),
         st.Page("pages/Shop.py", title="Shop"),
@@ -13,27 +13,27 @@ pages = {
         st.Page("pages/MRP_TEST.py", title="MRP TEST"),
         st.Page("pages/Shop_Schedule_Practice.py", title="Shop Schedule Practice"),
     ],
-    "Supply Chain": [
+    "Supply Chain": [  # Section title for Supply Chain
         st.Page("pages/Supply_Chain.py", title="Supply Chain Overview"),
-        st.Page("pages/MRP.py", title="Material Resource Planning"),  # Nested under Supply Chain
+        st.Page("pages/MRP.py", title="MRP"),
     ],
-    "Sales": [
+    "Sales": [  # Section title for Sales
         st.Page("pages/Sales.py", title="Sales Overview"),
-        st.Page("pages/Order_Management.py", title="Order Management"),  # Nested under Sales
+        st.Page("pages/Order_Management.py", title="Order Management"),
     ],
-    "Support": [
+    "Support": [  # Section title for Support
         st.Page("pages/Customer_Support.py", title="Customer Support"),
     ],
-    "Management": [
+    "Management": [  # Section title for Management
         st.Page("pages/Distributor_Management.py", title="Distributor Management"),
     ],
-    "Logistics": [
+    "Logistics": [  # Section title for Logistics
         st.Page("pages/Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/TMS.py", title="Transportation Management System"),
+        st.Page("pages/TMS.py", title="Transportation Management System (TMS)"),
     ],
 }
 
-# Configure navigation and run the selected page
+# Configure the sidebar navigation with sections
 pg = st.navigation(pages, position="sidebar", expanded=True)
 
 # Run the selected page
