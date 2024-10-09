@@ -15,7 +15,7 @@ pages = {
     ],
     "Supply Chain": [  # Section title for Supply Chain
         st.Page("pages/Supply_Chain.py", title="Supply Chain Overview"),
-        st.Page("pages/MRP.py", title="MRP"),
+        st.Page("pages/MRP.py", title="Material Resource Planning"),
     ],
     "Sales": [  # Section title for Sales
         st.Page("pages/Sales.py", title="Sales Overview"),
@@ -29,7 +29,7 @@ pages = {
     ],
     "Logistics": [  # Section title for Logistics
         st.Page("pages/Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/TMS.py", title="Transportation Management System (TMS)"),
+        st.Page("pages/TMS.py", title="Transportation Management System", icon=":globe_with_meridians:"),
     ],
 }
 
