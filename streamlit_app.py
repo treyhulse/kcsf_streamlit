@@ -18,13 +18,14 @@ pages = {
         st.Page("pages/Customer_Support.py", title="Support"),
         st.Page("pages/AI_Insights.py", title="AI Insights"),
         st.Page("pages/Roles_and_Permissions.py", title="Roles and Permissions"),
+        st.Page("pages/Estes_Rate_Generator.py", title="Estes Rate Generator", icon="🌱"),
+
     ],
 
     "Practice": [  # Main section for general pages
         st.Page("pages/Pagination_Example.py", title="Pagination Example", icon="🌱"),
         st.Page("pages/Practice_Page.py", title="Practice Page", icon="🌱"),
         st.Page("pages/MRP_TEST.py", title="MRP TEST", icon="🌱"),
-        st.Page("pages/Estes_Rate_Generator.py", title="Estes Rate Generator", icon="🌱"),
     ],
 }
 
