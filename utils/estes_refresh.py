@@ -15,8 +15,8 @@ def get_bearer_token():
         str: The bearer token if the request is successful, else None.
     """
     # Retrieve credentials from Streamlit secrets
-    client_id = st.secrets["ESTES_CLIENT_ID"]
-    client_secret = st.secrets["ESTES_CLIENT_SECRET"]
+    client_id = st.secrets["ESTES_USERNAME"]
+    client_secret = st.secrets["ESTES_PASSWORD"]
     api_key = st.secrets["ESTES_API_KEY"]
     
     # Encode client credentials in base64 for the Authorization header
