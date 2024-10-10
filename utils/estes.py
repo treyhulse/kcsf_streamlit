@@ -26,6 +26,7 @@ def get_bearer_token():
 
     # Send the POST request to authenticate
     response = requests.post(AUTH_URL, headers=headers)
+    st.write(response.status_code, response.text)
 
     # Check the response status and handle accordingly
     if response.status_code == 200:
