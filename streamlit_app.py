@@ -3,21 +3,21 @@ import streamlit as st
 # Define navigation pages with sections (using function names or file paths)
 pages = {
     "Main": [  # Main section for general pages
-        st.Page("pages/Home.py", title="Home"),
-        st.Page("pages/Shipping_Report.py", title="Shipping Report"),
-        st.Page("pages/TMS.py", title="Transportation Management System"),
+        st.Page("pages/Home.py", title="Home", icon="🏠"),
+        st.Page("pages/Shipping_Report.py", title="Shipping Report", icon="📦"),
+        st.Page("pages/TMS.py", title="Transportation Management System", icon="🚚"),
 
-        st.Page("pages/Supply_Chain.py", title="Supply Chain"),
-        st.Page("pages/MRP.py", title="Material Resource Planning"),
-        st.Page("pages/Shop_Schedule.py", title="Shop Schedule"),
+        st.Page("pages/Supply_Chain.py", title="Supply Chain", icon="🔗"),
+        st.Page("pages/MRP.py", title="Material Resource Planning", icon="📊"),
+        st.Page("pages/Shop_Schedule.py", title="Shop Schedule", icon="🗓️"),
 
-        st.Page("pages/Sales.py", title="Sales Dashboard"),
-        st.Page("pages/Order_Management.py", title="Order Management"),
-        st.Page("pages/Distributor_Management.py", title="Distributor Management"),
-        st.Page("pages/Customer_Portal.py", title="Customer Portal"),
-        st.Page("pages/Customer_Support.py", title="Support"),
-        st.Page("pages/AI_Insights.py", title="AI Insights"),
-        st.Page("pages/Roles_and_Permissions.py", title="Roles and Permissions"),
+        st.Page("pages/Sales.py", title="Sales Dashboard", icon="📈"),
+        st.Page("pages/Order_Management.py", title="Order Management", icon="📝"),
+        st.Page("pages/Distributor_Management.py", title="Distributor Management", icon="🏢"),
+        st.Page("pages/Customer_Portal.py", title="Customer Portal", icon="🌐"),
+        st.Page("pages/Customer_Support.py", title="Support", icon="🛠️"),
+        st.Page("pages/AI_Insights.py", title="AI Insights", icon="🤖"),
+        st.Page("pages/Roles_and_Permissions.py", title="Roles and Permissions", icon="🔒"),
     ],
 
     "Practice": [  # Main section for general pages
