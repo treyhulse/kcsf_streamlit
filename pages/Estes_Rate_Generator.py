@@ -1,5 +1,6 @@
 import streamlit as st
 from utils.estes import get_freight_quote, refresh_token
+import pandas as pd
 
 # Streamlit page configuration
 st.set_page_config(page_title="Estes LTL Shipment Rate Generator", page_icon="🚚", layout="wide")
