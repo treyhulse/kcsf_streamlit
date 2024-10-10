@@ -1,3 +1,4 @@
+import base64
 import requests
 import streamlit as st
 
@@ -5,25 +6,35 @@ import streamlit as st
 AUTH_URL = "https://cloudapi.estes-express.com/authenticate"
 QUOTE_URL = "https://cloudapi.estes-express.com/v1/rate-quotes"
 
-# Function to get a new bearer token
+# Function to get a new bearer token with Basic Auth encoding
 def get_bearer_token():
+    # Load Estes API credentials from secrets
     api_key = st.secrets["ESTES_API_KEY"]
     username = st.secrets["ESTES_USERNAME"]
     password = st.secrets["ESTES_PASSWORD"]
 
+    # Encode the username and password in Basic Auth format (Base64)
+    auth_string = f"{username}:{password}"
+    auth_header_value = base64.b64encode(auth_string.encode()).decode()
+
+    # Set the headers, including the Authorization and API key
     headers = {
         'accept': 'application/json',
+        'Authorization': f'Basic {auth_header_value}',
         'apikey': api_key
     }
 
-    response = requests.post(AUTH_URL, headers=headers, auth=(username, password))
+    # Send the POST request to authenticate
+    response = requests.post(AUTH_URL, headers=headers)
 
+    # Check the response status and handle accordingly
     if response.status_code == 200:
         token = response.json().get('access_token')
         st.session_state["bearer_token"] = token  # Store the token in session state
         return token
     else:
-        st.error(f"Failed to authenticate: {response.json().get('error', {}).get('message', 'Unknown error')}")
+        error_message = response.json().get('error', {}).get('message', 'Unknown error')
+        st.error(f"Failed to authenticate: {error_message}")
         return None
 
 # Function to get the current bearer token from session state or refresh if missing
