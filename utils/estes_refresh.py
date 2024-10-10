@@ -1,7 +1,7 @@
 # estes_refresh.py
 
-import requests
 import base64
+import requests
 import streamlit as st
 
 # Estes API URL
@@ -9,25 +9,25 @@ ESTES_AUTH_URL = "https://cloudapi.estes-express.com/authenticate"  # Production
 
 def get_bearer_token():
     """
-    Retrieves a new bearer token from Estes API using client credentials and API key.
+    Retrieves a new bearer token from Estes API using username, password, and API key.
     
     Returns:
         str: The bearer token if the request is successful, else None.
     """
     # Retrieve credentials from Streamlit secrets
-    client_id = st.secrets["ESTES_USERNAME"]
-    client_secret = st.secrets["ESTES_PASSWORD"]
+    estes_username = st.secrets["ESTES_USERNAME"]
+    estes_password = st.secrets["ESTES_PASSWORD"]
     api_key = st.secrets["ESTES_API_KEY"]
     
-    # Encode client credentials in base64 for the Authorization header
-    auth_str = f"{client_id}:{client_secret}"
+    # Encode username and password in base64 for the Authorization header
+    auth_str = f"{estes_username}:{estes_password}"
     encoded_auth = base64.b64encode(auth_str.encode()).decode()
 
     # Headers for the request
     headers = {
         "accept": "application/json",
         "Authorization": f"Basic {encoded_auth}",
-        "apikey": api_key,
+        "APIKEY": api_key,
     }
 
     # Make a POST request to get the bearer token
