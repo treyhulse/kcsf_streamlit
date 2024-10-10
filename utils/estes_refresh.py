@@ -1,13 +1,11 @@
-# utils.py
+# estes_refresh.py
 
 import requests
-import os
+import base64
+import streamlit as st
 
-# Estes API credentials
-ESTES_CLIENT_ID = os.getenv("ESTES_CLIENT_ID")  # Your Client ID here
-ESTES_CLIENT_SECRET = os.getenv("ESTES_CLIENT_SECRET")  # Your Client Secret here
-ESTES_API_KEY = os.getenv("ESTES_API_KEY")  # Your API Key here
-ESTES_AUTH_URL = "https://cloudapi.estes-express.com/authenticate"  # Replace with Test or Production URL as needed
+# Estes API URL
+ESTES_AUTH_URL = "https://cloudapi.estes-express.com/authenticate"  # Production URL
 
 def get_bearer_token():
     """
@@ -16,18 +14,30 @@ def get_bearer_token():
     Returns:
         str: The bearer token if the request is successful, else None.
     """
+    # Retrieve credentials from Streamlit secrets
+    client_id = st.secrets["ESTES_CLIENT_ID"]
+    client_secret = st.secrets["ESTES_CLIENT_SECRET"]
+    api_key = st.secrets["ESTES_API_KEY"]
+    
+    # Encode client credentials in base64 for the Authorization header
+    auth_str = f"{client_id}:{client_secret}"
+    encoded_auth = base64.b64encode(auth_str.encode()).decode()
+
+    # Headers for the request
     headers = {
         "accept": "application/json",
-        "apikey": ESTES_API_KEY,
+        "Authorization": f"Basic {encoded_auth}",
+        "apikey": api_key,
     }
-    auth = (ESTES_CLIENT_ID, ESTES_CLIENT_SECRET)  # Basic authentication with client ID and secret
+
+    # Make a POST request to get the bearer token
     try:
-        response = requests.post(ESTES_AUTH_URL, headers=headers, auth=auth)
+        response = requests.post(ESTES_AUTH_URL, headers=headers)
         response.raise_for_status()
         token_data = response.json()
         return token_data.get("access_token")  # Extract the token from the response
     except requests.exceptions.HTTPError as e:
-        print(f"HTTP error occurred: {e}")
+        st.error(f"HTTP error occurred: {e}")
     except requests.exceptions.RequestException as e:
-        print(f"Request exception occurred: {e}")
+        st.error(f"Request exception occurred: {e}")
     return None
