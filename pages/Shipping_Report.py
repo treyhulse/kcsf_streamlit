@@ -98,7 +98,7 @@ ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
 if st.sidebar.button('Our Truck'):
     default_ship_via = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
 elif st.sidebar.button('LTL'):
-    default_ship_via = ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'FedEx Freight® Priority']
+    default_ship_via = ['FedEx Freight® Priority', 'Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'FedEx Freight® Priority']
 elif st.sidebar.button('Small Package'):
     default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'WEB - Your Method', 'WEB - Method Not Available - Quote Freight Offline', 'DHL']
 else:
