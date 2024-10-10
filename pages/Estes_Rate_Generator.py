@@ -8,9 +8,17 @@ st.set_page_config(page_title="Estes LTL Shipment Rate Generator", page_icon="ðŸ
 # Page title
 st.title("Estes LTL Shipment Rate Generator")
 
-# Refresh Bearer Token Button
+# Show the current bearer token for debugging purposes
+if "bearer_token" in st.session_state:
+    st.write(f"Current Bearer Token: {st.session_state['bearer_token']}")
+
+# Button to manually refresh bearer token
 if st.button("Refresh Bearer Token"):
     refresh_token()
+    if "bearer_token" in st.session_state:
+        st.success("Bearer token refreshed successfully!")
+    else:
+        st.error("Failed to refresh bearer token.")
 
 # Collapsible section for Requestor Details
 with st.expander("Requestor Details"):
@@ -161,6 +169,9 @@ if st.button("Get Freight Quote"):
             "codes": accessorials_codes
         }
     }
+
+    # Display the request body for verification
+    st.json(request_body)
 
     # Send the freight quote request
     quote = get_freight_quote(
