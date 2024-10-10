@@ -1,5 +1,9 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+import pandas as pd
+from datetime import datetime, timedelta
+import plotly.express as px
+from utils.restlet import fetch_restlet_data
 
 # Set page configuration
 st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
@@ -26,19 +30,13 @@ if not validate_page_access(user_email, page_name):
     show_permission_violation()
     st.stop()
 
-st.write(f"You have access to this page.")
+st.write("You have access to this page.")
 
 ################################################################################################
 
 ## AUTHENTICATED
 
 ################################################################################################
-
-from utils.restlet import fetch_restlet_data
-import pandas as pd
-from datetime import datetime, timedelta
-import plotly.express as px
-
 
 st.title("Shipping Report")
 
@@ -79,36 +77,20 @@ email_to_sales_rep = {
     'ray.brown@kcstorefixtures': 'Ray Brown',
 }
 
-
-# Set the default sales rep based on the user's email
-default_sales_rep = email_to_sales_rep.get(user_email, 'All')
-
 # Sales Rep filter with pre-populated default value based on user email
+default_sales_rep = email_to_sales_rep.get(user_email, 'All')
 sales_rep_filter = st.sidebar.multiselect(
     'Sales Rep', 
     options=sales_rep_list, 
     default=[default_sales_rep] if default_sales_rep != 'All' else ['All']
 )
 
-# Ship Via filter with 'All' option
-ship_via_list = merged_df['Ship Via'].unique().tolist()
-ship_via_list.insert(0, 'All')  # Add 'All' option to the beginning of the list
-
-# **Pre-populate the Ship Via filter if the 'Our Truck', 'LTL', or 'Small Package' button is clicked**
-if st.sidebar.button('Our Truck'):
-    default_ship_via = ['Our Truck', 'Our Truck - Small', 'Our Truck - Large']
-elif st.sidebar.button('LTL'):
-    default_ship_via = ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy']
-elif st.sidebar.button('Small Package'):
-    default_ship_via = ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'WEB - Your Method', 'WEB - Method Not Available - Quote Freight Offline', 'DHL']
-else:
-    default_ship_via = 'All'
-
-# Allow user to manually select Ship Via options but pre-populate if the button was clicked
+# Ship Via multi-select filter
+ship_via_options = ['Small Package', 'LTL', 'Our Truck', 'Pick Ups', 'All']
 ship_via_filter = st.sidebar.multiselect(
     'Ship Via', 
-    options=ship_via_list, 
-    default=default_ship_via
+    options=ship_via_options, 
+    default=['All']
 )
 
 # Ship Date filter with 'All Time' option
@@ -164,6 +146,7 @@ merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
 # Create tabs for Open Orders and Shipping Calendar
 tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
+
 
 # Tab 1: Open Orders
 with tab1:
