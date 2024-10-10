@@ -10,30 +10,31 @@ QUOTE_URL = "https://cloudapi.estes-express.com/v1/rate-quotes"
 TRACKING_URL = "https://cloudapi.estes-express.com/v1/shipments/history"
 PICKUP_URL = "https://cloudapi.estes-express.com/v1/pickup-requests"
 
-# Centralized function to get a valid bearer token, refreshing it if necessary
+# Function to handle token retrieval and refresh centrally
 def get_valid_estes_token():
-    # Check if the token is already in session state or has expired
+    # Check if the token exists and has not expired
     if 'estes_token' not in st.session_state or 'estes_token_expiration' not in st.session_state:
-        # Request a new token if none exists
+        # If no token or expiration information, retrieve a new one
         new_token, expires_in = get_estes_bearer_token()
         st.session_state['estes_token'] = new_token
-        st.session_state['estes_token_expiration'] = time.time() + expires_in - 60  # Subtract 60 seconds for safety margin
+        st.session_state['estes_token_expiration'] = time.time() + expires_in - 60  # Subtract 60 seconds as a buffer
     elif time.time() > st.session_state['estes_token_expiration']:
-        # Refresh the token if it has expired
+        # If the token has expired, retrieve a new one
         new_token, expires_in = get_estes_bearer_token()
         st.session_state['estes_token'] = new_token
-        st.session_state['estes_token_expiration'] = time.time() + expires_in - 60  # Subtract 60 seconds for safety margin
+        st.session_state['estes_token_expiration'] = time.time() + expires_in - 60
 
-    # Return the valid token
+    # Return the current valid token
     return st.session_state['estes_token']
 
-# Function to retrieve a new bearer token from Estes API
+# Function to retrieve a new bearer token from the Estes API
 def get_estes_bearer_token():
     api_key = st.secrets["ESTES_API_KEY"]
     username = st.secrets["ESTES_USERNAME"]
     password = st.secrets["ESTES_PASSWORD"]
     auth_string = f"{username}:{password}"
     auth_header_value = base64.b64encode(auth_string.encode()).decode()
+    
     headers = {
         'accept': 'application/json',
         'Authorization': f'Basic {auth_header_value}',
@@ -44,7 +45,11 @@ def get_estes_bearer_token():
     
     if response.status_code == 200:
         token_data = response.json()
-        return token_data.get('access_token'), token_data.get('expires_in', 3600)  # Return the token and expiry time
+        token = token_data.get('access_token')
+        expires_in = token_data.get('expires_in', 3600)  # Default expiry to 3600 seconds if not specified
+        st.session_state['estes_token'] = token  # Save the token immediately to session state
+        st.session_state['estes_token_expiration'] = time.time() + expires_in - 60
+        return token, expires_in
     else:
         error_message = response.json().get('error', {}).get('message', 'Unknown error')
         st.error(f"Failed to authenticate: {error_message}")
@@ -108,13 +113,14 @@ def create_pickup_request(payload):
 # Streamlit UI components
 st.title("Estes API Integration Tool")
 
+# Sidebar to select actions
 st.sidebar.title("API Actions")
 action = st.sidebar.selectbox(
     "Select an Action",
     ("Authenticate", "Get Rate Quote", "Track Shipment", "Create Pickup Request")
 )
 
-# Ensure bearer token is displayed correctly in sidebar
+# Display current bearer token in the sidebar if available
 if 'estes_token' in st.session_state:
     st.sidebar.write(f"Current Bearer Token: {st.session_state['estes_token']}")
 else:
@@ -123,9 +129,10 @@ else:
 if action == "Authenticate":
     if st.button("Authenticate"):
         try:
+            # Fetch or refresh the token and display it
             token = get_valid_estes_token()
             st.success("Authentication successful.")
-            st.sidebar.write(f"Bearer Token: {token}")
+            st.sidebar.write(f"Bearer Token: {token}")  # Update sidebar with new token
         except Exception as e:
             st.error(f"Authentication failed: {e}")
 
@@ -175,3 +182,9 @@ elif action == "Create Pickup Request":
         response = create_pickup_request(pickup_payload)
         if response:
             st.json(response)
+
+# Immediately display the current token state after a successful action
+if 'estes_token' in st.session_state:
+    st.sidebar.write(f"Updated Bearer Token: {st.session_state['estes_token']}")
+else:
+    st.sidebar.write("No Bearer Token available.")
