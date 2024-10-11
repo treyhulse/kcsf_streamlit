@@ -90,7 +90,7 @@ ship_via_mapping = {
     'Small Package': ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'DHL'],
     'LTL': ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy'],
     'Our Truck': ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'],
-    'Pick Ups': ['Pickup 1', 'Pickup 2'],
+    'Pick Ups': ['Customer Pickup', 'In-Store Pickup'],
     'All': merged_df['Ship Via'].unique().tolist()  # This will list all unique values from the column
 }
 
@@ -121,15 +121,39 @@ tasked_orders = st.sidebar.checkbox('Tasked Orders', value=True)
 # Untasked Orders checkbox
 untasked_orders = st.sidebar.checkbox('Untasked Orders', value=True)
 
-# Apply filters based on selected ship via options
+# Apply Sales Rep filter
+if 'All' not in sales_rep_filter:
+    merged_df = merged_df[merged_df['Sales Rep'].isin(sales_rep_filter)]
+
+# Apply Ship Via filter
 if 'All' not in ship_via_filter:
     filtered_ship_vias = [ship_via for key in ship_via_filter for ship_via in ship_via_mapping[key]]
     merged_df = merged_df[merged_df['Ship Via'].isin(filtered_ship_vias)]
 
-# Continue with filtering for dates and other options...
+# Apply Ship Date filter
+today = pd.to_datetime(datetime.today())  # Ensure 'today' is in datetime format
+if ship_date_filter == 'Today':
+    merged_df = merged_df[merged_df['Ship Date'].dt.date == today.date()]  # Compare dates only
+elif ship_date_filter == 'Past (including today)':
+    merged_df = merged_df[merged_df['Ship Date'] <= today]
+elif ship_date_filter == 'Future':
+    merged_df = merged_df[merged_df['Ship Date'] > today]
+elif ship_date_filter == 'Custom Range' and start_date and end_date:
+    merged_df = merged_df[(merged_df['Ship Date'] >= pd.to_datetime(start_date)) & 
+                          (merged_df['Ship Date'] <= pd.to_datetime(end_date))]
+
+# Apply Tasked/Untasked Orders filter
+if tasked_orders and not untasked_orders:
+    merged_df = merged_df[merged_df['Task ID'].notna()]
+elif untasked_orders and not tasked_orders:
+    merged_df = merged_df[merged_df['Task ID'].isna()]
+
+# Remove duplicate Order Numbers
+merged_df = merged_df.drop_duplicates(subset=['Order Number'])
 
 # Create tabs for Open Orders and Shipping Calendar
 tab1, tab2 = st.tabs(["Open Orders", "Shipping Calendar"])
+
 
 # Tab 1: Open Orders
 with tab1:
