@@ -4,7 +4,7 @@ import plotly.express as px
 import streamlit as st
 
 # KPI: Website Revenue by Month
-@st.cache_data(ttl=1200)  # Cache the data for 20 minutes (TTL)
+@st.cache_data(ttl=4800)  # Cache the data for 20 minutes (TTL)
 def get_website_revenue_by_month():
     # Fetch data from the custom search 'customsearch4978'
     df = fetch_restlet_data('customsearch4978')

@@ -147,6 +147,7 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
 for index, row in paginated_data.iterrows():
     # Create a card container for each work order with custom styling
     with st.container():
+        st.write("") # Add an empty line for spacing
         st.divider()  # Add a divider between cards
         # Top row with Status and Substatus
         col1, col2 = st.columns([3, 1])  # Adjusted to have more space for status
