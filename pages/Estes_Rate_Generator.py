@@ -59,14 +59,7 @@ with st.form(key="rate_quote_form"):
         payor = st.selectbox("Payor", ["Shipper", "Consignee", "Third Party"])
         terms = st.selectbox("Terms", ["Prepaid", "Collect", "Third Party Billing"])
 
-        # Requestor details
-        requestor_name = st.text_input("Requestor Name", value="Mary Smith")
-        requestor_phone = st.text_input("Requestor Phone", value="8045551234")
-        requestor_phone_ext = st.text_input("Requestor Phone Extension", value="123")
-        requestor_email = st.text_input("Requestor Email", value="requestor.email@email.com")
-
-        # Origin and Destination details
-        origin_name = st.text_input("Origin Name", value="ABC Origin Company")
+        # Origin and Destination details (Hidden from the UI)
         origin_address1 = st.text_input("Origin Address 1", value="123 Busy Street")
         origin_city = st.text_input("Origin City", value="Washington")
         origin_state = st.text_input("Origin State/Province", value="DC")
@@ -108,14 +101,14 @@ if submitted:
             "payor": payor,
             "terms": terms
         },
-        "requestor": {
-            "name": requestor_name,
-            "phone": requestor_phone,
-            "phoneExt": requestor_phone_ext,
-            "email": requestor_email
+        "requestor": {  # Hidden Requestor Details
+            "name": "Mary Smith",  # Static value as per your requirement
+            "phone": "8045551234",  # Static value
+            "phoneExt": "123",  # Static value
+            "email": "requestor.email@email.com"  # Static value
         },
         "origin": {
-            "name": origin_name,
+            "name": "ABC Origin Company",  # Hidden Origin Name
             "address": {
                 "address1": origin_address1,
                 "city": origin_city,
@@ -156,35 +149,6 @@ if submitted:
     }
 
     # Authenticate and get bearer token
-    token = estes.check_and_get_bearer_token()
-
-    # Display the response in col2 (right column)
-    with col2:
-        st.title("Estes Rate Quote Response")
-
-        # If the token is valid, send the rate quote request
-        if token:
-            rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
-            headers = {
-                "accept": "application/json",
-                "Authorization": f"Bearer {token}",
-                "apikey": st.secrets["ESTES_API_KEY"]
-            }
-
-            # Send the rate quote request
-            response = requests.post(rate_quotes_url, headers=headers, json=rate_quote_body)
-
-            # Display the response
-            if response.status_code == 200:
-                response_data = response.json()
-                if response_data['error']['code'] == 0:
-                    st.success("Rate Quote retrieved successfully!")
-                    render_quote_response(response_data['data'])  # Call function to render response
-                else:
-                    st.error(f"Failed to retrieve rate quote. Message: {response_data['error']['message']}")
-            else:
-                st.error(f"Failed to retrieve rate quote. Status code: {response.status_code}. Message: {response.text}")
-
     token = estes.check_and_get_bearer_token()
 
     # Display the response in col2 (right column)
