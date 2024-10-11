@@ -14,16 +14,9 @@ def main():
     
     # Sidebar for user interactions
     st.sidebar.header("Filters")
-    
-    # Dropdown to select saved search
-    search_option = st.sidebar.selectbox(
-        "Select a saved search to load:",
-        options=['customsearch5127', 'customsearch5167', 'customsearch5128', 'customsearch5129'],
-        index=0  # Default selection
-    )
 
     # Fetching data based on selected search
-    data_raw = fetch_raw_data(search_option)
+    data_raw = fetch_raw_data('customsearch5167')
 
     # Display data in the app
     if not data_raw.empty:
