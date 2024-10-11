@@ -45,47 +45,55 @@ st.title("Estes Rate Quote Request")
 # Define columns for layout
 col1, col2 = st.columns(2)
 
-# Open the form context
-with st.form(key="rate_quote_form"):
-    with col1:
-        st.header("Shipment Information")
+# Split col1 into two columns
+with col1:
+    left_col1, right_col1 = st.columns(2)  # Splitting the left column into two
 
-        # Ship Date and Ship Time
-        ship_date = st.date_input("Ship Date")
-        ship_time = st.time_input("Ship Time", value=None)
+    # Open the form context inside the left part of the page
+    with st.form(key="rate_quote_form"):
+        with left_col1:
+            st.header("Shipment Information")
+            
+            # Ship Date and Ship Time
+            ship_date = st.date_input("Ship Date")
+            ship_time = st.time_input("Ship Time", value=None)
 
-        # Payment details
-        account = st.text_input("Account", value="6100236")
-        payor = st.selectbox("Payor", ["Shipper", "Consignee", "Third Party"])
-        terms = st.selectbox("Terms", ["Prepaid", "Collect", "Third Party Billing"])
+            # Payment details
+            account = st.text_input("Account", value="6100236")
+            payor = st.selectbox("Payor", ["Shipper", "Consignee", "Third Party"])
+            terms = st.selectbox("Terms", ["Prepaid", "Collect", "Third Party Billing"])
 
-        # Origin and Destination details (Hidden from the UI)
-        origin_address1 = st.text_input("Origin Address 1", value="123 Busy Street")
-        origin_city = st.text_input("Origin City", value="Washington")
-        origin_state = st.text_input("Origin State/Province", value="DC")
-        origin_postal_code = st.text_input("Origin Postal Code", value="20001")
-        origin_country = st.text_input("Origin Country", value="US")
+            # Origin Address details
+            origin_address1 = st.text_input("Origin Address 1", value="123 Busy Street")
+            origin_city = st.text_input("Origin City", value="Washington")
+            origin_state = st.text_input("Origin State/Province", value="DC")
 
-        destination_name = st.text_input("Destination Name", value="XYZ Destination Company")
-        destination_address1 = st.text_input("Destination Address 1", value="456 Any Street")
-        destination_city = st.text_input("Destination City", value="Richmond")
-        destination_state = st.text_input("Destination State/Province", value="VA")
-        destination_postal_code = st.text_input("Destination Postal Code", value="23234")
-        destination_country = st.text_input("Destination Country", value="US")
+        with right_col1:
+            # Origin Postal Code and Country
+            origin_postal_code = st.text_input("Origin Postal Code", value="20001")
+            origin_country = st.text_input("Origin Country", value="US")
 
-        # Commodity information
-        commodity_weight = st.number_input("Commodity Weight (lbs)", min_value=1, value=500)
-        commodity_description = st.text_input("Commodity Description", value="Boxes of widgets")
-        is_hazardous = st.checkbox("Hazardous Materials", value=False)
+            # Destination details
+            destination_name = st.text_input("Destination Name", value="XYZ Destination Company")
+            destination_address1 = st.text_input("Destination Address 1", value="456 Any Street")
+            destination_city = st.text_input("Destination City", value="Richmond")
+            destination_state = st.text_input("Destination State/Province", value="VA")
+            destination_postal_code = st.text_input("Destination Postal Code", value="23234")
+            destination_country = st.text_input("Destination Country", value="US")
 
-        # Line item details (required by the API)
-        line_item_description = st.text_input("Line Item Description", value="Boxes of widgets")
-        line_item_weight = st.number_input("Line Item Weight (lbs)", min_value=1, value=commodity_weight)
-        line_item_pieces = st.number_input("Line Item Pieces", min_value=1, value=5)
-        line_item_classification = st.text_input("Classification", value="92.5")
+            # Commodity information
+            commodity_weight = st.number_input("Commodity Weight (lbs)", min_value=1, value=500)
+            commodity_description = st.text_input("Commodity Description", value="Boxes of widgets")
+            is_hazardous = st.checkbox("Hazardous Materials", value=False)
 
-    # Submit button for form
-    submitted = st.form_submit_button("Submit Rate Quote Request")
+            # Line item details (required by the API)
+            line_item_description = st.text_input("Line Item Description", value="Boxes of widgets")
+            line_item_weight = st.number_input("Line Item Weight (lbs)", min_value=1, value=commodity_weight)
+            line_item_pieces = st.number_input("Line Item Pieces", min_value=1, value=5)
+            line_item_classification = st.text_input("Classification", value="92.5")
+
+        # Submit button for form
+        submitted = st.form_submit_button("Submit Rate Quote Request")
 
 # Handling the form submission and display response (col2 - right)
 if submitted:
