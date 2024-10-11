@@ -143,30 +143,11 @@ def update_work_order_status(internal_id, new_status_id, new_substatus_id):
         # If an exception was raised, show an error message
         st.error(f"Failed to update Work Order ID {internal_id}. Error: {e}")
 
-# Apply custom CSS styling for the card container to fix the layout
-st.markdown(
-    """
-    <style>
-    .card {
-        border: 1px solid #e6e6e6;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-        padding: 16px;
-        margin-bottom: 20px;
-        overflow: hidden;  /* Ensure the content fits inside the box */
-        display: block;  /* Ensures the card covers the entire content */
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # Display the paginated work orders as cards
 for index, row in paginated_data.iterrows():
     # Create a card container for each work order with custom styling
     with st.container():
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        
+        st.markdown('<div style="padding: 1rem; border: 1px solid #ccc; border-radius: 5px;">', unsafe_allow_html=True)        
         # Top row with Status and Substatus
         col1, col2 = st.columns([3, 1])  # Adjusted to have more space for status
         col1.success(f"{row['WO Status']}")  # Display work order status as st.success without the prefix
