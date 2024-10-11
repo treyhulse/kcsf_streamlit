@@ -9,10 +9,22 @@ client = OpenAI(
     api_key=st.secrets["NVIDIA_API_KEY"]
 )
 
-# Cache the data fetching process, reset cache every 900 seconds (15 minutes)
-@st.cache_data(ttl=900, show_spinner=False)
-def fetch_inventory_data():
-    return fetch_restlet_data("customsearch5168")
+from utils.restlet import fetch_restlet_data
+import pandas as pd
+
+
+# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
+@st.cache_data(ttl=900)
+def fetch_inventory_data(saved_search_id):
+    # Fetch raw data from RESTlet without filters
+    df = fetch_restlet_data(saved_search_id)
+    return df
+
+# Sidebar filters
+st.sidebar.header("Filters")
+
+# Fetch raw data for estimates, sales orders, customsearch5128, customsearch5129, and quote data
+estimate_data_raw = fetch_inventory_data("customsearch5127")
 
 # Load inventory data
 inventory_data = fetch_inventory_data()
