@@ -1,6 +1,6 @@
+import streamlit as st
 from utils.restlet import fetch_restlet_data
 import pandas as pd
-import streamlit as st
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
 @st.cache(ttl=900, show_spinner=False)
