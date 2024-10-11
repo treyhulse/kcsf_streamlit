@@ -10,9 +10,9 @@ client = OpenAI(
 )
 
 # Cache the data fetching process, reset cache every 900 seconds (15 minutes)
-@st.cache(ttl=900, show_spinner=False)
+@st.cache_data(ttl=900, show_spinner=False)
 def fetch_inventory_data():
-    return fetch_restlet_data("customsearch5167")
+    return fetch_restlet_data("customsearch5168")
 
 # Load inventory data
 inventory_data = fetch_inventory_data()
