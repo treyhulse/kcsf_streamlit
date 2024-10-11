@@ -1,224 +1,121 @@
 import streamlit as st
 import requests
-import base64
+from utils import estes  # Correctly importing the module from the utils folder
 
-# Streamlit UI for displaying title and headers
-st.title("Estes Bearer Token and Rate Quotes API")
+# Render the rate quote request form
+st.title("Estes Rate Quote Request")
 
-# Retrieve stored secrets
-api_key = st.secrets["ESTES_API_KEY"]
-username = st.secrets["ESTES_USERNAME"]
-password = st.secrets["ESTES_PASSWORD"]
+# Form to collect the rate quote information from the user
+with st.form("rate_quote_form"):
+    # Ship Date and Ship Time
+    ship_date = st.date_input("Ship Date")
+    ship_time = st.time_input("Ship Time", value=None)
 
-# Display the credentials for reference (including the password as requested)
-st.write("Using the following credentials:")
-st.write(f"API Key: {api_key}")
-st.write(f"Username: {username}")
-st.write(f"Password: {password}")
+    # Payment details
+    account = st.text_input("Account", value="6100236")
+    payor = st.selectbox("Payor", ["Shipper", "Consignee", "Third Party"])
+    terms = st.selectbox("Terms", ["Prepaid", "Collect", "Third Party Billing"])
 
-# Encode username and password for the Authorization header
-auth_string = f"{username}:{password}"
-encoded_auth = base64.b64encode(auth_string.encode()).decode()
+    # Requestor details
+    requestor_name = st.text_input("Requestor Name", value="Mary Smith")
+    requestor_phone = st.text_input("Requestor Phone", value="8045551234")
+    requestor_phone_ext = st.text_input("Requestor Phone Extension", value="123")
+    requestor_email = st.text_input("Requestor Email", value="requestor.email@email.com")
 
-# URL for the Estes authentication endpoint
-auth_url = "https://cloudapi.estes-express.com/authenticate"
+    # Origin and Destination details
+    origin_name = st.text_input("Origin Name", value="ABC Origin Company")
+    origin_address1 = st.text_input("Origin Address 1", value="123 Busy Street")
+    origin_city = st.text_input("Origin City", value="Washington")
+    origin_state = st.text_input("Origin State/Province", value="DC")
+    origin_postal_code = st.text_input("Origin Postal Code", value="20001")
+    origin_country = st.text_input("Origin Country", value="US")
 
-# Function to retrieve the bearer token and store it in session state
-def get_bearer_token():
-    headers = {
-        "accept": "application/json",
-        "Authorization": f"Basic {encoded_auth}",
-        "apikey": api_key
-    }
+    destination_name = st.text_input("Destination Name", value="XYZ Destination Company")
+    destination_address1 = st.text_input("Destination Address 1", value="456 Any Street")
+    destination_city = st.text_input("Destination City", value="Richmond")
+    destination_state = st.text_input("Destination State/Province", value="VA")
+    destination_postal_code = st.text_input("Destination Postal Code", value="23234")
+    destination_country = st.text_input("Destination Country", value="US")
 
-    response = requests.post(auth_url, headers=headers)
+    # Commodity information
+    commodity_weight = st.number_input("Commodity Weight (lbs)", min_value=1, value=500)
+    commodity_description = st.text_input("Commodity Description", value="Boxes of widgets")
+    is_hazardous = st.checkbox("Hazardous Materials", value=False)
 
-    if response.status_code == 200:
-        # Store the bearer token in Streamlit's session state
-        st.session_state.bearer_token = response.json().get("token", "No token found")
-        st.success("Bearer token successfully retrieved and stored in session state.")
-    else:
-        st.session_state.bearer_token = None
-        st.error(f"Failed to retrieve token. Status code: {response.status_code}. Message: {response.text}")
+    # Submit button for form
+    submitted = st.form_submit_button("Submit Rate Quote Request")
 
-# Button to trigger token retrieval and storage in session state
-if st.button("Get Bearer Token"):
-    get_bearer_token()
-
-# Display the bearer token stored in session state if it exists
-if "bearer_token" in st.session_state and st.session_state.bearer_token:
-    st.write("Bearer Token stored in session state:")
-    st.code(st.session_state.bearer_token)
-else:
-    st.warning("Bearer token not yet retrieved or stored in session state.")
-
-# Add functionality for Rate Quotes API
-st.subheader("Rate Quotes API")
-
-# Rate Quotes API URL
-rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
-
-# Sample Rate Quotes Request Body
-rate_quote_body = {
-    "quoteRequest": {
-        "shipDate": "2024-11-20",
-        "shipTime": "16:00",
-        "serviceLevels": ["LTL", "LTLTC"]
-    },
-    "payment": {
-        "account": "6100236",
-        "payor": "Shipper",
-        "terms": "Prepaid"
-    },
-    "requestor": {
-        "name": "Mary Smith",
-        "phone": "8045551234",
-        "phoneExt": "123",
-        "email": "requestor.email@email.com"
-    },
-    "fullValueCoverageDetails": {
-        "isNeeded": True,
-        "monetaryValue": "12500.00"
-    },
-    "volumeAndExclusiveUseDetails": {
-        "linearFootage": 3,
-        "distributionCenter": "Food Lion"
-    },
-    "origin": {
-        "name": "ABC Origin Company",
-        "locationId": "123",
-        "address": {
-            "address1": "123 Busy Street",
-            "address2": "Suite A",
-            "city": "Washington",
-            "stateProvince": "DC",
-            "postalCode": "20001",
-            "country": "US"
+# Handling the form submission
+if submitted:
+    # Prepare the rate quote request body based on form input
+    rate_quote_body = {
+        "quoteRequest": {
+            "shipDate": ship_date.strftime("%Y-%m-%d"),
+            "shipTime": ship_time.strftime("%H:%M"),
+            "serviceLevels": ["LTL", "LTLTC"]
         },
-        "contact": {
-            "name": "Henry Jones",
-            "phone": "8045559876",
-            "phoneExt": "12",
-            "email": "origin.email@email.com"
-        }
-    },
-    "destination": {
-        "name": "XYZ Destination Company",
-        "locationId": "987-B",
-        "address": {
-            "address1": "456 Any Street",
-            "address2": "Door 2",
-            "city": "Richmond",
-            "stateProvince": "VA",
-            "postalCode": "23234",
-            "country": "US"
+        "payment": {
+            "account": account,
+            "payor": payor,
+            "terms": terms
         },
-        "contact": {
-            "name": "Lucy Patel",
-            "phone": "8045554321",
-            "phoneExt": "1212",
-            "email": "destination.email@email.com"
-        }
-    },
-    "commodity": {
-        "handlingUnits": [
-            {
-                "count": 1,
-                "type": "BX",
-                "weight": 500,
-                "tareWeight": 10,
-                "weightUnit": "Pounds",
-                "length": 48,
-                "width": 48,
-                "height": 48,
-                "dimensionsUnit": "Inches",
-                "isStackable": True,
-                "isTurnable": True,
-                "lineItems": [
-                    {
-                        "description": "Boxes of widgets",
-                        "weight": 490,
-                        "pieces": 5,
-                        "packagingType": "BX",
-                        "classification": "92.5",
-                        "nmfc": "158880",
-                        "nmfcSub": "3",
-                        "isHazardous": True,
-                        "hazardousDescription": "UN1090, Acetone, 3, PG II",
-                        "hazardousDetails": {
-                            "weight": 45,
-                            "classification": "3",
-                            "unnaNumber": 1090,
-                            "properName": "Anhydrous ammonia",
-                            "technicalName": "NH3",
-                            "packagingGroup": "II",
-                            "contractNumber": "54321"
-                        }
-                    }
-                ]
+        "requestor": {
+            "name": requestor_name,
+            "phone": requestor_phone,
+            "phoneExt": requestor_phone_ext,
+            "email": requestor_email
+        },
+        "origin": {
+            "name": origin_name,
+            "address": {
+                "address1": origin_address1,
+                "city": origin_city,
+                "stateProvince": origin_state,
+                "postalCode": origin_postal_code,
+                "country": origin_country
             }
-        ]
-    },
-    "accessorials": {
-        "codes": ["APT", "ULFEE"]
+        },
+        "destination": {
+            "name": destination_name,
+            "address": {
+                "address1": destination_address1,
+                "city": destination_city,
+                "stateProvince": destination_state,
+                "postalCode": destination_postal_code,
+                "country": destination_country
+            }
+        },
+        "commodity": {
+            "handlingUnits": [
+                {
+                    "count": 1,
+                    "type": "BX",
+                    "weight": commodity_weight,
+                    "weightUnit": "Pounds",
+                    "isHazardous": is_hazardous
+                }
+            ]
+        }
     }
-}
 
-# Button to send rate quote request if the bearer token is available
-if st.button("Get Rate Quote"):
-    if "bearer_token" in st.session_state and st.session_state.bearer_token:
-        # Set up headers for rate quote request
+    # Authenticate and get bearer token
+    token = estes.check_and_get_bearer_token()
+
+    # If the token is valid, send the rate quote request
+    if token:
+        rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
         headers = {
             "accept": "application/json",
-            "Authorization": f"Bearer {st.session_state.bearer_token}",
-            "apikey": api_key
+            "Authorization": f"Bearer {token}",
+            "apikey": st.secrets["ESTES_API_KEY"]
         }
 
-        # Send POST request to rate quotes API
+        # Send the rate quote request
         response = requests.post(rate_quotes_url, headers=headers, json=rate_quote_body)
 
-        # Check if the request was successful and display the response
+        # Display the response
         if response.status_code == 200:
             st.success("Rate Quote retrieved successfully.")
-
-            # Parse response JSON
-            data = response.json().get("data", [])
-
-            # Iterate over each quote in the response and build a styled UI container
-            for quote in data:
-                with st.expander(f"Service Level: {quote['serviceLevelText']} - Quote ID: {quote['quoteId']}"):
-                    st.write(f"**Service Level ID:** {quote['serviceLevelId']}")
-                    st.write(f"**Quote Expiration:** {quote['dates']['quoteExpiration']}")
-                    st.write(f"**Transit Delivery Date:** {quote['dates']['transitDeliveryDate']} @ {quote['dates']['transitDeliveryTime']}")
-                    st.write(f"**Total Charges:** ${quote['quoteRate']['totalCharges']}")
-                    st.write(f"**Total Shipment Weight:** {quote['quoteRate']['totalShipmentWeight']} lbs")
-
-                    # Display transit details
-                    transit_details = quote.get("transitDetails", {})
-                    st.write(f"**Transit Days:** {transit_details.get('transitDays', 'N/A')}")
-                    st.write(f"**Lane Type:** {transit_details.get('laneType', 'N/A')}")
-                    st.write(f"**Origin Terminal:** {transit_details.get('originTerminal', 'N/A')}")
-                    st.write(f"**Destination Terminal:** {transit_details.get('destinationTerminal', 'N/A')}")
-
-                    # Display rated accessorials
-                    st.write("### Rated Accessorials")
-                    for accessorial in quote['quoteRate'].get('ratedAccessorials', []):
-                        st.write(f"- **{accessorial['description']}**: ${accessorial['charge']}")
-
-                    # Display line item charges
-                    st.write("### Line Item Charges")
-                    for line_item in quote.get("lineItemCharges", []):
-                        st.write(f"- **{line_item['description']}**: ${line_item['charge']}")
-
-                    # Display additional charge items
-                    st.write("### Additional Charges")
-                    for charge_item in quote.get("chargeItems", []):
-                        st.write(f"- **{charge_item['description']}**: ${charge_item['charge']}")
-
-                    # Disclaimers URL
-                    st.write(f"[Disclaimers and Terms]({quote['disclaimersURL']})")
-
+            st.json(response.json())  # Display the response JSON
         else:
             st.error(f"Failed to retrieve rate quote. Status code: {response.status_code}. Message: {response.text}")
-    else:
-        st.warning("Bearer token not found. Please retrieve the bearer token first.")

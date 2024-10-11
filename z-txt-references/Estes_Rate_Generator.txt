@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import base64
-import json
 
 # Streamlit UI for displaying title and headers
 st.title("Estes Bearer Token and Rate Quotes API")
@@ -55,6 +54,9 @@ else:
 
 # Add functionality for Rate Quotes API
 st.subheader("Rate Quotes API")
+
+# Rate Quotes API URL
+rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
 
 # Sample Rate Quotes Request Body
 rate_quote_body = {
@@ -162,9 +164,6 @@ rate_quote_body = {
     }
 }
 
-# Rate Quotes API URL
-rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
-
 # Button to send rate quote request if the bearer token is available
 if st.button("Get Rate Quote"):
     if "bearer_token" in st.session_state and st.session_state.bearer_token:
@@ -181,7 +180,44 @@ if st.button("Get Rate Quote"):
         # Check if the request was successful and display the response
         if response.status_code == 200:
             st.success("Rate Quote retrieved successfully.")
-            st.json(response.json())  # Display the response JSON in a formatted way
+
+            # Parse response JSON
+            data = response.json().get("data", [])
+
+            # Iterate over each quote in the response and build a styled UI container
+            for quote in data:
+                with st.expander(f"Service Level: {quote['serviceLevelText']} - Quote ID: {quote['quoteId']}"):
+                    st.write(f"**Service Level ID:** {quote['serviceLevelId']}")
+                    st.write(f"**Quote Expiration:** {quote['dates']['quoteExpiration']}")
+                    st.write(f"**Transit Delivery Date:** {quote['dates']['transitDeliveryDate']} @ {quote['dates']['transitDeliveryTime']}")
+                    st.write(f"**Total Charges:** ${quote['quoteRate']['totalCharges']}")
+                    st.write(f"**Total Shipment Weight:** {quote['quoteRate']['totalShipmentWeight']} lbs")
+
+                    # Display transit details
+                    transit_details = quote.get("transitDetails", {})
+                    st.write(f"**Transit Days:** {transit_details.get('transitDays', 'N/A')}")
+                    st.write(f"**Lane Type:** {transit_details.get('laneType', 'N/A')}")
+                    st.write(f"**Origin Terminal:** {transit_details.get('originTerminal', 'N/A')}")
+                    st.write(f"**Destination Terminal:** {transit_details.get('destinationTerminal', 'N/A')}")
+
+                    # Display rated accessorials
+                    st.write("### Rated Accessorials")
+                    for accessorial in quote['quoteRate'].get('ratedAccessorials', []):
+                        st.write(f"- **{accessorial['description']}**: ${accessorial['charge']}")
+
+                    # Display line item charges
+                    st.write("### Line Item Charges")
+                    for line_item in quote.get("lineItemCharges", []):
+                        st.write(f"- **{line_item['description']}**: ${line_item['charge']}")
+
+                    # Display additional charge items
+                    st.write("### Additional Charges")
+                    for charge_item in quote.get("chargeItems", []):
+                        st.write(f"- **{charge_item['description']}**: ${charge_item['charge']}")
+
+                    # Disclaimers URL
+                    st.write(f"[Disclaimers and Terms]({quote['disclaimersURL']})")
+
         else:
             st.error(f"Failed to retrieve rate quote. Status code: {response.status_code}. Message: {response.text}")
     else:
