@@ -3,7 +3,7 @@ from utils.restlet import fetch_restlet_data
 import pandas as pd
 
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache(ttl=900, show_spinner=False)
+@st.cache_data(ttl=900)
 def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet
     return fetch_restlet_data(saved_search_id)
