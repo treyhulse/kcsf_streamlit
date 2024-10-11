@@ -1,5 +1,3 @@
-from utils.restlet import fetch_restlet_data
-import pandas as pd
 import streamlit as st
 from openai import OpenAI
 
@@ -8,18 +6,6 @@ client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",
     api_key=st.secrets["NVIDIA_API_KEY"]
 )
-
-# Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache(ttl=900, allow_output_mutation=True)  # Using `allow_output_mutation=True` as a potential fix for caching mutable objects
-def fetch_raw_data(saved_search_id):
-    # Fetch raw data from RESTlet without filters
-    return fetch_restlet_data(saved_search_id)
-
-# Sidebar filters
-st.sidebar.header("Filters")
-
-# Fetch raw data
-inventory_data = fetch_raw_data("customsearch5122")
 
 def get_ai_response(prompt):
     completion = client.chat.completions.create(
@@ -35,18 +21,19 @@ def get_ai_response(prompt):
     for chunk in completion:
         if chunk.choices[0].delta.content is not None:
             response += chunk.choices[0].delta.content
+
     return response
 
 def main():
-    st.title("NVIDIA AI Inventory Assistant")
-    user_input = st.text_input("Enter your query about our inventory:")
-    if st.button("Submit"):
+    st.title("NVIDIA AI Poem Generator")
+    user_input = st.text_input("Enter a prompt for the AI:")
+    if st.button("Generate"):
         if user_input:
-            with st.spinner("Generating AI response..."):
+            with st.spinner("AI is generating a poem..."):
                 response = get_ai_response(user_input)
                 st.write(response)
         else:
-            st.error("Please enter a query to get a response.")
+            st.write("Please enter a prompt to generate a poem.")
 
 if __name__ == "__main__":
     main()
