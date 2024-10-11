@@ -42,6 +42,12 @@ with st.form("rate_quote_form"):
     commodity_description = st.text_input("Commodity Description", value="Boxes of widgets")
     is_hazardous = st.checkbox("Hazardous Materials", value=False)
 
+    # Line item details (required by the API)
+    line_item_description = st.text_input("Line Item Description", value="Boxes of widgets")
+    line_item_weight = st.number_input("Line Item Weight (lbs)", min_value=1, value=commodity_weight)
+    line_item_pieces = st.number_input("Line Item Pieces", min_value=1, value=5)
+    line_item_classification = st.text_input("Classification", value="92.5")
+
     # Submit button for form
     submitted = st.form_submit_button("Submit Rate Quote Request")
 
@@ -92,7 +98,15 @@ if submitted:
                     "type": "BX",
                     "weight": commodity_weight,
                     "weightUnit": "Pounds",
-                    "isHazardous": is_hazardous
+                    "isHazardous": is_hazardous,
+                    "lineItems": [
+                        {
+                            "description": line_item_description,
+                            "weight": line_item_weight,
+                            "pieces": line_item_pieces,
+                            "classification": line_item_classification
+                        }
+                    ]
                 }
             ]
         }
