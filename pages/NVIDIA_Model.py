@@ -23,8 +23,7 @@ def fetch_inventory_data(saved_search_id):
 # Sidebar filters
 st.sidebar.header("Filters")
 
-# Fetch raw data for estimates, sales orders, customsearch5128, customsearch5129, and quote data
-estimate_data_raw = fetch_inventory_data("customsearch5127")
+estimate_data_raw = fetch_inventory_data("customsearch5122")
 
 # Load inventory data
 inventory_data = fetch_inventory_data()
