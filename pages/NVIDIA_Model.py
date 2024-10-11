@@ -9,36 +9,22 @@ client = OpenAI(
     api_key=st.secrets["NVIDIA_API_KEY"]
 )
 
-from utils.restlet import fetch_restlet_data
-import pandas as pd
-
-
 # Cache the raw data fetching process, reset cache every 15 minutes (900 seconds)
-@st.cache_data(ttl=900)
-def fetch_inventory_data(saved_search_id):
+@st.cache(ttl=900, allow_output_mutation=True)  # Using `allow_output_mutation=True` as a potential fix for caching mutable objects
+def fetch_raw_data(saved_search_id):
     # Fetch raw data from RESTlet without filters
-    df = fetch_restlet_data(saved_search_id)
-    return df
+    return fetch_restlet_data(saved_search_id)
 
 # Sidebar filters
 st.sidebar.header("Filters")
 
-estimate_data_raw = fetch_inventory_data("customsearch5122")
+# Fetch raw data
+inventory_data = fetch_raw_data("customsearch5122")
 
-# Load inventory data
-inventory_data = fetch_inventory_data()
-
-def enhance_query_with_inventory_info(user_query):
-    # Logic to append/prepend inventory details to the user query
-    # This is a simple example; you might need to implement more complex logic
-    inventory_summary = inventory_data.describe().to_string()
-    enhanced_query = f"{user_query}\n\nInventory Overview:\n{inventory_summary}"
-    return enhanced_query
-
-def get_ai_response(enhanced_query):
+def get_ai_response(prompt):
     completion = client.chat.completions.create(
         model="meta/llama-3.2-3b-instruct",
-        messages=[{"role": "user", "content": enhanced_query}],
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
         top_p=0.7,
         max_tokens=1024,
@@ -52,19 +38,15 @@ def get_ai_response(enhanced_query):
     return response
 
 def main():
-    st.title("Intelligent Inventory Assistant")
-    user_input = st.text_input("Ask a question about our inventory:")
-
-    if st.button("Get AI Feedback"):
+    st.title("NVIDIA AI Inventory Assistant")
+    user_input = st.text_input("Enter your query about our inventory:")
+    if st.button("Submit"):
         if user_input:
             with st.spinner("Generating AI response..."):
-                # Enhance the query with inventory data
-                enhanced_query = enhance_query_with_inventory_info(user_input)
-                # Fetch response from NVIDIA AI
-                response = get_ai_response(enhanced_query)
+                response = get_ai_response(user_input)
                 st.write(response)
         else:
-            st.error("Please enter a question to proceed.")
+            st.error("Please enter a query to get a response.")
 
 if __name__ == "__main__":
     main()
