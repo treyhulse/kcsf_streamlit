@@ -87,8 +87,8 @@ sales_rep_filter = st.sidebar.multiselect(
 
 # Define the mapping of Ship Via groups to actual Ship Via values
 ship_via_mapping = {
-    'Small Package': ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'DHL'],
-    'LTL': ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy'],
+    'Small Package': ['Fed Ex 2Day', 'Fed Ex Ground', 'Fed Ex Express Saver', 'Fed Ex Ground Home Delivery', 'UPS Ground', 'DHL', 'FedEx Standard Overnight', 'FedEx Prior Overnight Saturday', 'FedEx International Ground', 'Fed Ex Priority Overnight', 'FedEx First Overnight® Saturday', 'Fed Ex International Priority'],
+    'LTL': ['Dayton Freight', 'Forward Air', 'Cross Country Freight', 'EPES - Truckload', 'Estes Standard', 'SAIA', '*LTL Best Way', 'FedEx Freight® Economy', 'Magnum Freight', 'Old Dominion', 'R&L Carriers', 'YRC Freight', 'XPO Logistics'],
     'Our Truck': ['Our Truck', 'Our Truck - Small', 'Our Truck - Large'],
     'Pick Ups': ['Customer Pickup', 'In-Store Pickup'],
     'All': merged_df['Ship Via'].unique().tolist()  # This will list all unique values from the column
