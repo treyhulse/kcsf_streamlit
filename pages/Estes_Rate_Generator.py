@@ -222,30 +222,3 @@ if submitted:
                 st.error(f"Failed to retrieve rate quote. Status code: {response.status_code}. Message: {response.text}")
 
     token = estes.check_and_get_bearer_token()
-
-    # Display the response in col2 (right column)
-    with col2:
-        st.title("Estes Rate Quote Response")
-
-        # If the token is valid, send the rate quote request
-        if token:
-            rate_quotes_url = "https://cloudapi.estes-express.com/v1/rate-quotes"
-            headers = {
-                "accept": "application/json",
-                "Authorization": f"Bearer {token}",
-                "apikey": st.secrets["ESTES_API_KEY"]
-            }
-
-            # Send the rate quote request
-            response = requests.post(rate_quotes_url, headers=headers, json=rate_quote_body)
-
-            # Display the response
-            if response.status_code == 200:
-                response_data = response.json()
-                if response_data['error']['code'] == 0:
-                    st.success("Rate Quote retrieved successfully!")
-                    render_quote_response(response_data['data'])  # Call function to render response
-                else:
-                    st.error(f"Failed to retrieve rate quote. Message: {response_data['error']['message']}")
-            else:
-                st.error(f"Failed to retrieve rate quote. Status code: {response.status_code}. Message: {response.text}")
