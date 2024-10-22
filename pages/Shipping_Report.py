@@ -48,7 +48,7 @@ def fetch_raw_data(saved_search_id):
     return df
 
 # Fetch raw data
-open_order_data = fetch_raw_data("customsearch5065")
+open_order_data = fetch_raw_data("customsearch5190")
 pick_task_data = fetch_raw_data("customsearch5066")
 our_truck_data = fetch_raw_data("customsearch5147")
 
@@ -63,7 +63,7 @@ try:
 except KeyError as e:
     st.error(f"KeyError: {e}")
     st.stop()  # Stop execution if there's a KeyError
-    
+
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 
