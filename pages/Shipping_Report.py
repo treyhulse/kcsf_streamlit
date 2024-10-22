@@ -52,6 +52,18 @@ open_order_data = fetch_raw_data("customsearch5065")
 pick_task_data = fetch_raw_data("customsearch5066")
 our_truck_data = fetch_raw_data("customsearch5147")
 
+# Debugging step: Print the columns of both DataFrames
+st.write("Open Order Data Columns:", open_order_data.columns)
+st.write("Pick Task Data Columns:", pick_task_data.columns)
+
+# Proceed with the merge
+try:
+    merged_df = pd.merge(open_order_data, pick_task_data, on='Order Number', how='left')
+    st.write("Merged DataFrame Preview:", merged_df.head())  # Preview the merged result for debugging
+except KeyError as e:
+    st.error(f"KeyError: {e}")
+    st.stop()  # Stop execution if there's a KeyError
+    
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 
