@@ -52,10 +52,6 @@ open_order_data = fetch_raw_data("customsearch5190")
 pick_task_data = fetch_raw_data("customsearch5066")
 our_truck_data = fetch_raw_data("customsearch5147")
 
-# Debugging step: Print the columns of both DataFrames
-st.write("Open Order Data Columns:", open_order_data.columns)
-st.write("Pick Task Data Columns:", pick_task_data.columns)
-
 # Select only 'Order Number' and 'Task ID' from pick_task_data
 pick_task_data = pick_task_data[['Order Number', 'Task ID']]
 
