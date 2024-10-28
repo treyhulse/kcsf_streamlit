@@ -94,11 +94,6 @@ demand_supply_file = st.file_uploader("Upload Demand Dataset", type=["csv"])
 inventory_file = st.file_uploader("Upload Current Inventory Dataset", type=["csv"])
 third_file = st.file_uploader("Upload All Transactions Dataset", type=["csv"])
 
-# Button to clear cache and refresh data
-if st.button("Refresh Data"):
-    st.cache_data.clear()
-    st.experimental_rerun()
-
 # Process files if both are uploaded
 if demand_supply_file and inventory_file:
     demand_supply_data = load_data(demand_supply_file)
