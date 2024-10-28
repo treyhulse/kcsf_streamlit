@@ -88,7 +88,7 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     
     # Rename columns for clarity
     demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
-    supply_agg.rename(columns={'Total Quantity Ordered': 'Total Supply'}, inplace=True)
+    supply_agg.rename(columns={'Total Quantity Ordered': 'Incoming Supply'}, inplace=True)
     
     # Merge the demand and supply data with the current inventory data
     combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
@@ -98,10 +98,10 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     # Convert columns to numeric, handling errors and replacing NaN with 0
     combined_data['On Hand'] = pd.to_numeric(combined_data['On Hand'], errors='coerce').fillna(0)
     combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
-    combined_data['Total Supply'] = pd.to_numeric(combined_data['Total Supply'], errors='coerce').fillna(0)
+    combined_data['Incoming Supply'] = pd.to_numeric(combined_data['Incoming Supply'], errors='coerce').fillna(0)
     
     # Calculate the net inventory and total backordered
-    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
+    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
     combined_data['Total Backordered'] = combined_data.apply(
         lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
     )
