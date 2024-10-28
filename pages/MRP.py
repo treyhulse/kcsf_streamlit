@@ -39,91 +39,125 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 ################################################################################################
 
+
 import streamlit as st
 import pandas as pd
-import requests
-from requests_oauthlib import OAuth1
-import logging
-from utils.restlet import fetch_restlet_data
+from datetime import timedelta
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Caching with a 3-hour TTL (time-to-live)
+@st.cache_data(ttl=timedelta(hours=3))
+def load_data(file):
+    return pd.read_csv(file)
 
-# Page title
-st.title("Material Resource Planning Dashboard")
-
-# Function to fetch and cache data
-@st.cache(ttl=900, allow_output_mutation=True)
-def fetch_raw_data(saved_search_id):
-    return fetch_restlet_data(saved_search_id)
-
-# Function to fetch SuiteQL data
-@st.cache(ttl=900, allow_output_mutation=True)
-def fetch_paginated_suiteql_data(query, base_url):
-    auth = OAuth1(
-        st.secrets["consumer_key"],
-        st.secrets["consumer_secret"],
-        st.secrets["token_key"],
-        st.secrets["token_secret"],
-        realm=st.secrets["realm"],
-        signature_method='HMAC-SHA256'
+def calculate_net_inventory(demand_supply_data, inventory_data):
+    # Automatically infer 'Source Warehouse' for Transfer Orders
+    demand_supply_data['Source Warehouse'] = demand_supply_data.apply(
+        lambda row: 'KCSF-OM' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == '1'
+        else '1' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == 'KCSF-OM'
+        else None, axis=1
     )
-    all_data = []
-    next_url = base_url
-    payload = {"q": query}
+    
+    # Separate demand and supply transactions based on 'Order Type'
+    demand_data = demand_supply_data[demand_supply_data['Order Type'] == 'Sales Order']
+    supply_data = demand_supply_data[demand_supply_data['Order Type'].isin(['Transfer Order', 'Purchase Order'])]
+    
+    # Handle Transfer Orders: Duplicate entries for negative supply at the Source Warehouse
+    transfer_data = supply_data[supply_data['Order Type'] == 'Transfer Order']
+    
+    # Convert 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
+    transfer_data['Total Quantity Ordered'] = pd.to_numeric(transfer_data['Total Quantity Ordered'], errors='coerce').fillna(0)
+    
+    # Create a negative supply entry for each transfer order at the Source Warehouse
+    transfer_negative_supply = transfer_data.copy()
+    transfer_negative_supply['Total Quantity Ordered'] *= -1
+    transfer_negative_supply['Warehouse'] = transfer_negative_supply['Source Warehouse']
+    
+    # Concatenate the negative supply entries with the positive supply data
+    supply_data_with_transfer_adjustments = pd.concat([supply_data, transfer_negative_supply], ignore_index=True)
+    
+    # Ensure 'Total Quantity Ordered' in supply data is numeric for aggregation
+    supply_data_with_transfer_adjustments['Total Quantity Ordered'] = pd.to_numeric(
+        supply_data_with_transfer_adjustments['Total Quantity Ordered'], errors='coerce'
+    ).fillna(0)
+    
+    # Aggregate demand and supply data by Item and Warehouse
+    demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
+    supply_agg = supply_data_with_transfer_adjustments.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
+    
+    # Rename columns for clarity
+    demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
+    supply_agg.rename(columns={'Total Quantity Ordered': 'Incoming Supply'}, inplace=True)
+    
+    # Merge the demand and supply data with the current inventory data
+    combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
+                             demand_agg, on=['Item', 'Warehouse'], how='outer')
+    combined_data = pd.merge(combined_data, supply_agg, on=['Item', 'Warehouse'], how='outer')
+    
+    # Convert columns to numeric, handling errors and replacing NaN with 0
+    combined_data['On Hand'] = pd.to_numeric(combined_data['On Hand'], errors='coerce').fillna(0)
+    combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
+    combined_data['Incoming Supply'] = pd.to_numeric(combined_data['Incoming Supply'], errors='coerce').fillna(0)
+    
+    # Calculate the net inventory and total backordered
+    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
+    combined_data['Current Backordered Quantity'] = combined_data.apply(
+        lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
+    )
+    
+    # Filter out rows where both 'On Hand' and 'Total Demand' are zero
+    combined_data = combined_data[(combined_data['On Hand'] > 0) | (combined_data['Total Demand'] > 0)]
+    
+    return combined_data
 
-    while next_url:
-        try:
-            response = requests.post(next_url, auth=auth, json=payload, headers={"Content-Type": "application/json", "Prefer": "transient"})
-            response.raise_for_status()
 
-            data = response.json()
-            items = data.get("items", [])
-            all_data.extend(items)
 
-            next_url = next((link['href'] for link in data.get("links", []) if link['rel'] == 'next'), None)
-        except Exception as e:
-            logger.error(f"Error fetching data: {e}")
-            break
+# Streamlit UI
+st.title("Net Inventory by Item and Warehouse")
 
-    return pd.DataFrame(all_data)
+# Links for dataset sources
+st.write("[Link to Item Demand Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5192&saverun=T&whence=)")
+st.write("[Link to Current Inventory Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5196&saverun=T&whence=)")
+st.write("[Link to All Transactions Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5197&saverun=T&whence=)")
 
-# SuiteQL query for inventory data
-suiteql_query = """
-SELECT
-    invbal.item AS "item",
-    item.displayname AS "display name",
-    invbal.quantityonhand AS "quantity on hand",
-    invbal.quantityavailable AS "quantity available"
-FROM
-    inventorybalance invbal
-JOIN
-    item ON invbal.item = item.id
-WHERE
-    item.isinactive = 'F'
-ORDER BY
-    item.displayname ASC;
-"""
-base_url = f"https://{st.secrets['realm']}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql"
+# Upload files
+demand_supply_file = st.file_uploader("Upload Demand Dataset", type=["csv"])
+inventory_file = st.file_uploader("Upload Current Inventory Dataset", type=["csv"])
+third_file = st.file_uploader("Upload All Transactions Dataset", type=["csv"])
 
-# Fetch all data
-inventory_df = fetch_paginated_suiteql_data(suiteql_query, base_url)
-sales_df = fetch_raw_data("customsearch5141")
-purchase_df = fetch_raw_data("customsearch5142")
+# Process files if both are uploaded
+if demand_supply_file and inventory_file:
+    demand_supply_data = load_data(demand_supply_file)
+    inventory_data = load_data(inventory_file)
+    
+    # Calculate Net Inventory
+    net_inventory_df = calculate_net_inventory(demand_supply_data, inventory_data)
+    
+    # Display Results
+    st.write("### Net Inventory by Item and Warehouse")
+    st.dataframe(net_inventory_df)
 
-# Convert column names to lowercase
-inventory_df.columns = inventory_df.columns.str.lower()
-sales_df.columns = sales_df.columns.str.lower()
-purchase_df.columns = purchase_df.columns.str.lower()
+# Process third file for filtering by 'Type' column and exact 'Item' search
+if third_file:
+    third_data = load_data(third_file)
+    
+    # Ensure 'Type' column is present
+    if 'Type' in third_data.columns:
+        # Select unique types for filtering options
+        unique_types = third_data['Type'].unique()
+        selected_type = st.selectbox("Select Type to Filter", options=["All"] + list(unique_types))
+        
+        # Filter data based on selected type
+        if selected_type != "All":
+            filtered_data = third_data[third_data['Type'] == selected_type]
+        else:
+            filtered_data = third_data
 
-# Joining dataframes on 'item'
-master_df = inventory_df.merge(sales_df, on='item', how='outer').merge(purchase_df, on='item', how='outer')
-
-# Displaying the master DataFrame
-st.write("Aggregated Inventory, Sales, and Purchase Orders Data")
-st.dataframe(master_df)
-
-# Download button for the aggregated data
-csv = master_df.to_csv(index=False)
-st.download_button(label="Download Combined Data as CSV", data=csv, file_name='combined_inventory_sales_purchase_data.csv', mime='text/csv')
+        # Add exact search filter for 'Item' column
+        item_search = st.text_input("Search for exact 'Item'")
+        if item_search:
+            filtered_data = filtered_data[filtered_data['Item'] == item_search]
+        
+        st.write("### Filtered Data based on 'Type' and 'Item'")
+        st.dataframe(filtered_data)
+    else:
+        st.error("The uploaded file does not contain a 'Type' column.")
