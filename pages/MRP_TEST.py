@@ -52,20 +52,31 @@ def load_data(file):
     return pd.read_csv(file)
 
 def calculate_net_inventory(demand_supply_data, inventory_data):
-    # Separate demand and supply transactions based on 'Order Type'
-    demand_data = demand_supply_data[demand_supply_data['Order Type'] == 'Sales Order']
-    supply_data = demand_supply_data[demand_supply_data['Order Type'].isin(['Transfer Order', 'Purchase Order'])]
-
-    # Create the 'From Warehouse' column for Transfer Orders
-    demand_supply_data['From Warehouse'] = demand_supply_data.apply(
+    # Automatically infer 'Source Warehouse' for Transfer Orders
+    demand_supply_data['Source Warehouse'] = demand_supply_data.apply(
         lambda row: 'KCSF-OM' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == '1'
         else '1' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == 'KCSF-OM'
         else None, axis=1
     )
     
+    # Separate demand and supply transactions based on 'Order Type'
+    demand_data = demand_supply_data[demand_supply_data['Order Type'] == 'Sales Order']
+    supply_data = demand_supply_data[demand_supply_data['Order Type'].isin(['Transfer Order', 'Purchase Order'])]
+    
+    # Handle Transfer Orders: Duplicate entries for negative supply at the Source Warehouse
+    transfer_data = supply_data[supply_data['Order Type'] == 'Transfer Order']
+    
+    # Create a negative supply entry for each transfer order at the Source Warehouse
+    transfer_negative_supply = transfer_data.copy()
+    transfer_negative_supply['Total Quantity Ordered'] = -pd.to_numeric(transfer_negative_supply['Total Quantity Ordered'], errors='coerce')
+    transfer_negative_supply['Warehouse'] = transfer_negative_supply['Source Warehouse']
+    
+    # Concatenate the negative supply entries with the positive supply data
+    supply_data_with_transfer_adjustments = pd.concat([supply_data, transfer_negative_supply], ignore_index=True)
+    
     # Aggregate demand and supply data by Item and Warehouse
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
-    supply_agg = supply_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
+    supply_agg = supply_data_with_transfer_adjustments.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
     
     # Rename columns for clarity
     demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
