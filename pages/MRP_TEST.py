@@ -55,6 +55,13 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     # Separate demand and supply transactions based on 'Order Type'
     demand_data = demand_supply_data[demand_supply_data['Order Type'] == 'Sales Order']
     supply_data = demand_supply_data[demand_supply_data['Order Type'].isin(['Transfer Order', 'Purchase Order'])]
+
+    # Create the 'From Warehouse' column for Transfer Orders
+    demand_supply_data['From Warehouse'] = demand_supply_data.apply(
+        lambda row: 'KCSF-OM' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == '1'
+        else '1' if row['Order Type'] == 'Transfer Order' and row['Warehouse'] == 'KCSF-OM'
+        else None, axis=1
+    )
     
     # Aggregate demand and supply data by Item and Warehouse
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
@@ -78,8 +85,6 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
     return combined_data
 
-    # Add a Streamlit line separator
-    st.markdown("---")
 
 # Streamlit UI
 st.title("Net Inventory by Item and Warehouse")
