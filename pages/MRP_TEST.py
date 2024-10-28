@@ -102,7 +102,7 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     
     # Calculate the net inventory and total backordered
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
-    combined_data['Total Backordered'] = combined_data.apply(
+    combined_data['Current Backordered Quantity'] = combined_data.apply(
         lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
     )
     
