@@ -78,18 +78,21 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
     return combined_data
 
+    # Add a Streamlit line separator
+    st.markdown("---")
+
 # Streamlit UI
 st.title("Net Inventory by Item and Warehouse")
 
 # Links for dataset sources
-st.write("[Link to Demand/Supply Dataset Source](#)")
-st.write("[Link to Current Inventory Dataset Source](#)")
-st.write("[Link to Additional Dataset Source](#)")
+st.write("[Link to Item Demand Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5192&saverun=T&whence=)")
+st.write("[Link to Current Inventory Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5196&saverun=T&whence=)")
+st.write("[Link to All Transactions Dataset Source](https://3429264.app.netsuite.com/app/common/search/searchresults.nl?searchid=5197&saverun=T&whence=)")
 
 # Upload files
-demand_supply_file = st.file_uploader("Upload Demand/Supply Dataset", type=["csv"])
+demand_supply_file = st.file_uploader("Upload Demand Dataset", type=["csv"])
 inventory_file = st.file_uploader("Upload Current Inventory Dataset", type=["csv"])
-third_file = st.file_uploader("Upload Additional Dataset (with 'Type' column)", type=["csv"])
+third_file = st.file_uploader("Upload All Transactions Dataset", type=["csv"])
 
 # Button to clear cache and refresh data
 if st.button("Refresh Data"):
