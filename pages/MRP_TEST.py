@@ -100,11 +100,16 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
     combined_data['Total Supply'] = pd.to_numeric(combined_data['Total Supply'], errors='coerce').fillna(0)
     
-    # Calculate the net inventory and total backordered
+    # Calculate the net inventory
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
-    combined_data['Total Backordered'] = combined_data['Total Demand'] - combined_data['On Hand']
+    
+    # Calculate Total Backordered as the difference only when demand exceeds on-hand stock
+    combined_data['Total Backordered'] = combined_data.apply(
+        lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
+    )
     
     return combined_data
+
 
 
 # Streamlit UI
