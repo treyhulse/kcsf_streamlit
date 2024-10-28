@@ -41,8 +41,9 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
-
 import streamlit as st
+from utils.auth import capture_user_email, validate_page_access, show_permission_violation
+from utils.restlet import fetch_restlet_data
 import pandas as pd
 from datetime import timedelta
 
@@ -61,56 +62,56 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     
     # Separate demand and supply transactions based on 'Order Type'
     demand_data = demand_supply_data[demand_supply_data['Order Type'] == 'Sales Order']
-    supply_data = demand_supply_data[demand_supply_data['Order Type'].isin(['Transfer Order', 'Purchase Order'])]
-    
-    # Handle Transfer Orders: Duplicate entries for negative supply at the Source Warehouse
-    transfer_data = supply_data[supply_data['Order Type'] == 'Transfer Order']
+    supply_data = demand_supply_data[demand_supply_data['Order Type'] == 'Purchase Order']
+    transfer_data = demand_supply_data[demand_supply_data['Order Type'] == 'Transfer Order']
     
     # Convert 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
     transfer_data['Total Quantity Ordered'] = pd.to_numeric(transfer_data['Total Quantity Ordered'], errors='coerce').fillna(0)
     
-    # Create a negative supply entry for each transfer order at the Source Warehouse
-    transfer_negative_supply = transfer_data.copy()
-    transfer_negative_supply['Total Quantity Ordered'] *= -1
-    transfer_negative_supply['Warehouse'] = transfer_negative_supply['Source Warehouse']
-    
-    # Concatenate the negative supply entries with the positive supply data
-    supply_data_with_transfer_adjustments = pd.concat([supply_data, transfer_negative_supply], ignore_index=True)
-    
-    # Ensure 'Total Quantity Ordered' in supply data is numeric for aggregation
-    supply_data_with_transfer_adjustments['Total Quantity Ordered'] = pd.to_numeric(
-        supply_data_with_transfer_adjustments['Total Quantity Ordered'], errors='coerce'
-    ).fillna(0)
-    
+    # Add transfer order quantities to Total Demand for the Source Warehouse
+    transfer_demand_adjustment = transfer_data.copy()
+    transfer_demand_adjustment['Warehouse'] = transfer_demand_adjustment['Source Warehouse']
+    transfer_demand_adjustment = transfer_demand_adjustment.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
+    transfer_demand_adjustment.rename(columns={'Total Quantity Ordered': 'Transfer Demand'}, inplace=True)
+
     # Aggregate demand and supply data by Item and Warehouse
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
-    supply_agg = supply_data_with_transfer_adjustments.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
+    supply_agg = supply_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
     
     # Rename columns for clarity
     demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
     supply_agg.rename(columns={'Total Quantity Ordered': 'Incoming Supply'}, inplace=True)
     
-    # Merge the demand and supply data with the current inventory data
+    # Merge the demand, supply, and transfer adjustments into inventory data
     combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
                              demand_agg, on=['Item', 'Warehouse'], how='outer')
     combined_data = pd.merge(combined_data, supply_agg, on=['Item', 'Warehouse'], how='outer')
-    
+    combined_data = pd.merge(combined_data, transfer_demand_adjustment, on=['Item', 'Warehouse'], how='outer')
+
     # Convert columns to numeric, handling errors and replacing NaN with 0
     combined_data['On Hand'] = pd.to_numeric(combined_data['On Hand'], errors='coerce').fillna(0)
     combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
     combined_data['Incoming Supply'] = pd.to_numeric(combined_data['Incoming Supply'], errors='coerce').fillna(0)
+    combined_data['Transfer Demand'] = pd.to_numeric(combined_data['Transfer Demand'], errors='coerce').fillna(0)
     
-    # Calculate the net inventory and total backordered
-    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
+    # Update Total Demand to include Transfer Demand from Source Warehouse
+    combined_data['Total Demand'] += combined_data['Transfer Demand']
+    combined_data.drop(columns=['Transfer Demand'], inplace=True)
+    
+    # Calculate the current backordered quantity and net inventory
     combined_data['Current Backordered Quantity'] = combined_data.apply(
         lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
     )
+    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
     
     # Filter out rows where both 'On Hand' and 'Total Demand' are zero
     combined_data = combined_data[(combined_data['On Hand'] > 0) | (combined_data['Total Demand'] > 0)]
     
+    # Reorder columns to make 'Net Inventory' the last column
+    column_order = ['Item', 'Warehouse', 'On Hand', 'Total Demand', 'Incoming Supply', 'Current Backordered Quantity', 'Net Inventory']
+    combined_data = combined_data[column_order]
+    
     return combined_data
-
 
 
 # Streamlit UI
