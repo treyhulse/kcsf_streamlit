@@ -44,7 +44,10 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 
 import streamlit as st
 import pandas as pd
+from datetime import timedelta
 
+# Caching with a 3-hour TTL (time-to-live)
+@st.cache_data(ttl=timedelta(hours=3))
 def load_data(file):
     return pd.read_csv(file)
 
@@ -78,10 +81,20 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
 # Streamlit UI
 st.title("Net Inventory by Item and Warehouse")
 
+# Links for dataset sources
+st.write("[Link to Demand/Supply Dataset Source](#)")
+st.write("[Link to Current Inventory Dataset Source](#)")
+st.write("[Link to Additional Dataset Source](#)")
+
 # Upload files
 demand_supply_file = st.file_uploader("Upload Demand/Supply Dataset", type=["csv"])
 inventory_file = st.file_uploader("Upload Current Inventory Dataset", type=["csv"])
 third_file = st.file_uploader("Upload Additional Dataset (with 'Type' column)", type=["csv"])
+
+# Button to clear cache and refresh data
+if st.button("Refresh Data"):
+    st.cache_data.clear()
+    st.experimental_rerun()
 
 # Process files if both are uploaded
 if demand_supply_file and inventory_file:
@@ -95,7 +108,7 @@ if demand_supply_file and inventory_file:
     st.write("### Net Inventory by Item and Warehouse")
     st.dataframe(net_inventory_df)
 
-# Process third file for filtering by 'Type' column
+# Process third file for filtering by 'Type' column and exact 'Item' search
 if third_file:
     third_data = load_data(third_file)
     
@@ -110,8 +123,13 @@ if third_file:
             filtered_data = third_data[third_data['Type'] == selected_type]
         else:
             filtered_data = third_data
+
+        # Add exact search filter for 'Item' column
+        item_search = st.text_input("Search for exact 'Item'")
+        if item_search:
+            filtered_data = filtered_data[filtered_data['Item'] == item_search]
         
-        st.write("### Filtered Data based on 'Type'")
+        st.write("### Filtered Data based on 'Type' and 'Item'")
         st.dataframe(filtered_data)
     else:
         st.error("The uploaded file does not contain a 'Type' column.")
