@@ -90,9 +90,16 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
     supply_agg.rename(columns={'Total Quantity Ordered': 'Total Supply'}, inplace=True)
     
-    # Merge the demand and supply data with the current inventory data
-    combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
-                             demand_agg, on=['Item', 'Warehouse'], how='left')
+    # Combine all items and warehouses across demand, supply, and inventory for a full outer merge
+    all_items_warehouses = pd.DataFrame({'Item': pd.concat([inventory_data['Item'], demand_agg['Item'], supply_agg['Item']]).unique()})
+    all_items_warehouses['key'] = 1
+    unique_warehouses = pd.DataFrame({'Warehouse': pd.concat([inventory_data['Warehouse'], demand_agg['Warehouse'], supply_agg['Warehouse']]).unique()})
+    unique_warehouses['key'] = 1
+    all_combinations = pd.merge(all_items_warehouses, unique_warehouses, on='key').drop('key', axis=1)
+    
+    # Merge demand, supply, and inventory data into the all_combinations template to ensure full coverage
+    combined_data = pd.merge(all_combinations, inventory_data[['Item', 'Warehouse', 'On Hand']], on=['Item', 'Warehouse'], how='left')
+    combined_data = pd.merge(combined_data, demand_agg, on=['Item', 'Warehouse'], how='left')
     combined_data = pd.merge(combined_data, supply_agg, on=['Item', 'Warehouse'], how='left')
     
     # Convert columns to numeric, handling errors and replacing NaN with 0
@@ -100,16 +107,13 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
     combined_data['Total Supply'] = pd.to_numeric(combined_data['Total Supply'], errors='coerce').fillna(0)
     
-    # Calculate the net inventory
+    # Calculate the net inventory and total backordered
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
-    
-    # Calculate Total Backordered as the difference only when demand exceeds on-hand stock
     combined_data['Total Backordered'] = combined_data.apply(
         lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
     )
     
     return combined_data
-
 
 
 # Streamlit UI
