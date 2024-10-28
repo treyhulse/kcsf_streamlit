@@ -81,6 +81,7 @@ st.title("Net Inventory by Item and Warehouse")
 # Upload files
 demand_supply_file = st.file_uploader("Upload Demand/Supply Dataset", type=["csv"])
 inventory_file = st.file_uploader("Upload Current Inventory Dataset", type=["csv"])
+third_file = st.file_uploader("Upload Additional Dataset (with 'Type' column)", type=["csv"])
 
 # Process files if both are uploaded
 if demand_supply_file and inventory_file:
@@ -93,3 +94,24 @@ if demand_supply_file and inventory_file:
     # Display Results
     st.write("### Net Inventory by Item and Warehouse")
     st.dataframe(net_inventory_df)
+
+# Process third file for filtering by 'Type' column
+if third_file:
+    third_data = load_data(third_file)
+    
+    # Ensure 'Type' column is present
+    if 'Type' in third_data.columns:
+        # Select unique types for filtering options
+        unique_types = third_data['Type'].unique()
+        selected_type = st.selectbox("Select Type to Filter", options=["All"] + list(unique_types))
+        
+        # Filter data based on selected type
+        if selected_type != "All":
+            filtered_data = third_data[third_data['Type'] == selected_type]
+        else:
+            filtered_data = third_data
+        
+        st.write("### Filtered Data based on 'Type'")
+        st.dataframe(filtered_data)
+    else:
+        st.error("The uploaded file does not contain a 'Type' column.")
