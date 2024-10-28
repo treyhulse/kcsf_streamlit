@@ -66,13 +66,21 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     # Handle Transfer Orders: Duplicate entries for negative supply at the Source Warehouse
     transfer_data = supply_data[supply_data['Order Type'] == 'Transfer Order']
     
+    # Convert 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
+    transfer_data['Total Quantity Ordered'] = pd.to_numeric(transfer_data['Total Quantity Ordered'], errors='coerce').fillna(0)
+    
     # Create a negative supply entry for each transfer order at the Source Warehouse
     transfer_negative_supply = transfer_data.copy()
-    transfer_negative_supply['Total Quantity Ordered'] = -pd.to_numeric(transfer_negative_supply['Total Quantity Ordered'], errors='coerce')
+    transfer_negative_supply['Total Quantity Ordered'] *= -1
     transfer_negative_supply['Warehouse'] = transfer_negative_supply['Source Warehouse']
     
     # Concatenate the negative supply entries with the positive supply data
     supply_data_with_transfer_adjustments = pd.concat([supply_data, transfer_negative_supply], ignore_index=True)
+    
+    # Ensure 'Total Quantity Ordered' in supply data is numeric for aggregation
+    supply_data_with_transfer_adjustments['Total Quantity Ordered'] = pd.to_numeric(
+        supply_data_with_transfer_adjustments['Total Quantity Ordered'], errors='coerce'
+    ).fillna(0)
     
     # Aggregate demand and supply data by Item and Warehouse
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
@@ -95,6 +103,7 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     # Calculate the net inventory
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
     return combined_data
+
 
 
 # Streamlit UI
