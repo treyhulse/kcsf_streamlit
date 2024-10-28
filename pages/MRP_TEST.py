@@ -41,6 +41,7 @@ st.write(f"Welcome, {user_email}. You have access to this page.")
 ## AUTHENTICATED
 
 ################################################################################################
+
 import streamlit as st
 import pandas as pd
 
@@ -65,10 +66,10 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
                              demand_agg, on=['Item', 'Warehouse'], how='left')
     combined_data = pd.merge(combined_data, supply_agg, on=['Item', 'Warehouse'], how='left')
     
-    # Fill NaN values with 0
-    combined_data['Total Demand'].fillna(0, inplace=True)
-    combined_data['Total Supply'].fillna(0, inplace=True)
-    combined_data['On Hand'].fillna(0, inplace=True)
+    # Convert columns to numeric, handling errors and replacing NaN with 0
+    combined_data['On Hand'] = pd.to_numeric(combined_data['On Hand'], errors='coerce').fillna(0)
+    combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
+    combined_data['Total Supply'] = pd.to_numeric(combined_data['Total Supply'], errors='coerce').fillna(0)
     
     # Calculate the net inventory
     combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Total Supply'] - combined_data['Total Demand']
