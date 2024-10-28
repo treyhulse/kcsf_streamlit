@@ -91,23 +91,23 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     supply_agg.rename(columns={'Total Quantity Ordered': 'Incoming Supply'}, inplace=True)
     
     # Merge the demand and supply data with the current inventory data
-    combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'Current On Hand']],
+    combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
                              demand_agg, on=['Item', 'Warehouse'], how='outer')
     combined_data = pd.merge(combined_data, supply_agg, on=['Item', 'Warehouse'], how='outer')
     
     # Convert columns to numeric, handling errors and replacing NaN with 0
-    combined_data['Current On Hand'] = pd.to_numeric(combined_data['Current On Hand'], errors='coerce').fillna(0)
+    combined_data['On Hand'] = pd.to_numeric(combined_data['On Hand'], errors='coerce').fillna(0)
     combined_data['Total Demand'] = pd.to_numeric(combined_data['Total Demand'], errors='coerce').fillna(0)
     combined_data['Incoming Supply'] = pd.to_numeric(combined_data['Incoming Supply'], errors='coerce').fillna(0)
     
     # Calculate the net inventory and total backordered
-    combined_data['Net Inventory'] = combined_data['Current On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
+    combined_data['Net Inventory'] = combined_data['On Hand'] + combined_data['Incoming Supply'] - combined_data['Total Demand']
     combined_data['Total Backordered'] = combined_data.apply(
-        lambda row: max(row['Total Demand'] - row['Current On Hand'], 0), axis=1
+        lambda row: max(row['Total Demand'] - row['On Hand'], 0), axis=1
     )
     
-    # Filter out rows where both 'Current On Hand' and 'Total Demand' are zero
-    combined_data = combined_data[(combined_data['Current On Hand'] > 0) | (combined_data['Total Demand'] > 0)]
+    # Filter out rows where both 'On Hand' and 'Total Demand' are zero
+    combined_data = combined_data[(combined_data['On Hand'] > 0) | (combined_data['Total Demand'] > 0)]
     
     return combined_data
 
