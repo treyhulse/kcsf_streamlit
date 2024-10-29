@@ -65,7 +65,8 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     supply_data = demand_supply_data[demand_supply_data['Order Type'] == 'Purchase Order']
     transfer_data = demand_supply_data[demand_supply_data['Order Type'] == 'Transfer Order']
     
-    # Convert 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
+    # Convert 'Total Remaining Demand' and 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
+    demand_data['Total Remaining Demand'] = pd.to_numeric(demand_data['Total Remaining Demand'], errors='coerce').fillna(0)
     transfer_data['Total Quantity Ordered'] = pd.to_numeric(transfer_data['Total Quantity Ordered'], errors='coerce').fillna(0)
     
     # Step 1: Add transfer order quantities to Total Demand for the Source Warehouse
@@ -78,7 +79,7 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     transfer_supply_adjustment = transfer_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
     transfer_supply_adjustment.rename(columns={'Total Quantity Ordered': 'Transfer Supply'}, inplace=True)
 
-    # Aggregate demand and supply data by Item and Warehouse
+    # Aggregate demand and supply data by Item and Warehouse, using Total Remaining Demand for demand
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
     supply_agg = supply_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
     
