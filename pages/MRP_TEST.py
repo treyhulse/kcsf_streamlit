@@ -65,27 +65,28 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     supply_data = demand_supply_data[demand_supply_data['Order Type'] == 'Purchase Order']
     transfer_data = demand_supply_data[demand_supply_data['Order Type'] == 'Transfer Order']
     
-    # Convert 'Total Remaining Demand' and 'Total Quantity Ordered' to numeric, filling non-numeric entries with 0
+    # Convert 'Total Remaining Demand' to numeric, filling non-numeric entries with 0
     demand_data['Total Remaining Demand'] = pd.to_numeric(demand_data['Total Remaining Demand'], errors='coerce').fillna(0)
-    transfer_data['Total Quantity Ordered'] = pd.to_numeric(transfer_data['Total Quantity Ordered'], errors='coerce').fillna(0)
+    supply_data['Total Remaining Demand'] = pd.to_numeric(supply_data['Total Remaining Demand'], errors='coerce').fillna(0)
+    transfer_data['Total Remaining Demand'] = pd.to_numeric(transfer_data['Total Remaining Demand'], errors='coerce').fillna(0)
     
     # Step 1: Add transfer order quantities to Total Demand for the Source Warehouse
     transfer_demand_adjustment = transfer_data.copy()
     transfer_demand_adjustment['Warehouse'] = transfer_demand_adjustment['Source Warehouse']
-    transfer_demand_adjustment = transfer_demand_adjustment.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
-    transfer_demand_adjustment.rename(columns={'Total Quantity Ordered': 'Transfer Demand'}, inplace=True)
+    transfer_demand_adjustment = transfer_demand_adjustment.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
+    transfer_demand_adjustment.rename(columns={'Total Remaining Demand': 'Transfer Demand'}, inplace=True)
 
     # Step 2: Add transfer order quantities to Incoming Supply for the Destination Warehouse
-    transfer_supply_adjustment = transfer_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
-    transfer_supply_adjustment.rename(columns={'Total Quantity Ordered': 'Transfer Supply'}, inplace=True)
+    transfer_supply_adjustment = transfer_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
+    transfer_supply_adjustment.rename(columns={'Total Remaining Demand': 'Transfer Supply'}, inplace=True)
 
-    # Aggregate demand and supply data by Item and Warehouse, using Total Remaining Demand for demand
+    # Aggregate demand and supply data by Item and Warehouse, using Total Remaining Demand for both
     demand_agg = demand_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
-    supply_agg = supply_data.groupby(['Item', 'Warehouse'])['Total Quantity Ordered'].sum().reset_index()
+    supply_agg = supply_data.groupby(['Item', 'Warehouse'])['Total Remaining Demand'].sum().reset_index()
     
     # Rename columns for clarity
     demand_agg.rename(columns={'Total Remaining Demand': 'Total Demand'}, inplace=True)
-    supply_agg.rename(columns={'Total Quantity Ordered': 'Incoming Supply'}, inplace=True)
+    supply_agg.rename(columns={'Total Remaining Demand': 'Incoming Supply'}, inplace=True)
     
     # Merge the demand, supply, and transfer adjustments into inventory data
     combined_data = pd.merge(inventory_data[['Item', 'Warehouse', 'On Hand']],
@@ -124,6 +125,7 @@ def calculate_net_inventory(demand_supply_data, inventory_data):
     combined_data = combined_data[column_order]
     
     return combined_data
+
 
 
 
