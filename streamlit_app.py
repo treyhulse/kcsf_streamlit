@@ -19,7 +19,7 @@ pages = {
         st.Page("pages/AI_Insights.py", title="AI Insights"),
         st.Page("pages/Roles_and_Permissions.py", title="Roles and Permissions"),
         st.Page("pages/Estes_Rate_Generator.py", title="Estes Rate Generator", icon="🌱"),
-
+        st.Page("pages/Barcode_Generator.py", title="Barcode Generator", icon="🌱"),
     ],
 
     "Practice": [  # Main section for general pages
