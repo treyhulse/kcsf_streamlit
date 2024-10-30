@@ -12,3 +12,4 @@ apscheduler
 altair
 streamlit-echarts
 streamlit-autorefresh
+python-barcode
