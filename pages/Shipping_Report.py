@@ -64,11 +64,11 @@ email_to_sales_rep = {
 }
 
 # Sales Rep filter with pre-populated default value based on user email
-default_sales_rep = email_to_sales_rep.get('All')
+default_sales_rep = 'All'  # Changed to always default to 'All'
 sales_rep_filter = st.sidebar.multiselect(
     'Sales Rep', 
-    options=sales_rep_list, 
-    default=[default_sales_rep] if default_sales_rep != 'All' else ['All']
+    options=sales_rep_list,
+    default=['All']  # Simplified default value
 )
 
 # Define the mapping of Ship Via groups to actual Ship Via values
