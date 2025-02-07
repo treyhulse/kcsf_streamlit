@@ -1,5 +1,4 @@
 import streamlit as st
-from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 import pandas as pd
 from datetime import datetime, timedelta
 from utils.restlet import fetch_restlet_data
@@ -17,14 +16,6 @@ hide_streamlit_style = """
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-
-# Validate access to this specific page
-page_name = 'Shipping Report'
-if not validate_page_access(page_name):
-    show_permission_violation()
-    st.stop()
 
 
 ################################################################################################
