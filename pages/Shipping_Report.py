@@ -18,19 +18,14 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Capture the user's email
-user_email = capture_user_email()
-if user_email is None:
-    st.error("Unable to retrieve user information.")
-    st.stop()
+
 
 # Validate access to this specific page
 page_name = 'Shipping Report'
-if not validate_page_access(user_email, page_name):
+if not validate_page_access(page_name):
     show_permission_violation()
     st.stop()
 
-st.write("You have access to this page.")
 
 ################################################################################################
 
@@ -78,7 +73,7 @@ email_to_sales_rep = {
 }
 
 # Sales Rep filter with pre-populated default value based on user email
-default_sales_rep = email_to_sales_rep.get(user_email, 'All')
+default_sales_rep = email_to_sales_rep.get('All')
 sales_rep_filter = st.sidebar.multiselect(
     'Sales Rep', 
     options=sales_rep_list, 
