@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import date
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from bson.objectid import ObjectId
-from utils.auth import capture_user_email
 
 # Set page configuration with collapsed sidebar
 st.set_page_config(
@@ -73,14 +72,6 @@ today = date.today()
 st.title(f"Welcome to our KC Store Fixtures App! 👋")
 st.subheader(f"**Today's Date:** {today.strftime('%B %d, %Y')}")
 
-# Capture the user's email
-user_email = capture_user_email()
-if user_email is None:
-    st.error("Unable to retrieve user information.")
-    st.stop()
-
-# Admin email list
-admin_email = "treyhulse3@gmail.com"
 
 st.info("**This is in development and your feedback is valuable to improve the app. Please reach out!**")
 
