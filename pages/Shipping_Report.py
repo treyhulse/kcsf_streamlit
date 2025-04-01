@@ -35,7 +35,7 @@ def fetch_raw_data(saved_search_id):
 
 # Fetch raw data
 open_order_data = fetch_raw_data("customsearch5190")
-pick_task_data = fetch_raw_data("customsearch5066")
+pick_task_data = fetch_raw_data("customsearch5457") # customsearch5066 is the old one
 our_truck_data = fetch_raw_data("customsearch5147")
 
 # Select only 'Order Number' and 'Task ID' from pick_task_data
