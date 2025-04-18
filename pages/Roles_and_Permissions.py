@@ -1,7 +1,6 @@
 import streamlit as st
 from utils.auth import capture_user_email, validate_page_access, show_permission_violation
 
-st.set_page_config(layout="wide")
 
 # Capture the user's email
 user_email = capture_user_email()

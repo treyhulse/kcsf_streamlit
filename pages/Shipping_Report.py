@@ -4,26 +4,6 @@ from datetime import datetime, timedelta
 from utils.restlet import fetch_restlet_data
 import plotly.express as px
 
-# Set page configuration
-st.set_page_config(page_title="Shipping Report", page_icon="🚚", layout="wide")
-
-# Custom CSS to hide the top bar and footer
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-################################################################################################
-
-## AUTHENTICATED
-
-################################################################################################
-
 st.title("Shipping Report")
 
 # Cache the raw data fetching process, reset cache every 2 minutes (120 seconds)

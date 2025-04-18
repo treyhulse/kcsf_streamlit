@@ -1,7 +1,5 @@
 import streamlit as st
 
-st.set_page_config(page_title="Estes Rate Generator", 
-                   layout="wide",)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """

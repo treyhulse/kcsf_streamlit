@@ -4,12 +4,6 @@ from datetime import date
 from utils.mongo_connection import get_mongo_client, get_collection_data
 from bson.objectid import ObjectId
 
-# Set page configuration with collapsed sidebar
-st.set_page_config(
-    page_title="KC Store Fixtures",
-    page_icon="./assets/KCSF_Square.png",
-    layout="wide",
-)
 
 # Custom CSS to hide the top bar and footer
 hide_streamlit_style = """
