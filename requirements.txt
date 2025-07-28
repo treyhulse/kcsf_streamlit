@@ -3,14 +3,3 @@ requests
 pandas
 plotly
 requests-oauthlib
-matplotlib
-openai
-pymongo
-streamlit-aggrid
-python-dotenv
-apscheduler
-altair
-streamlit-echarts
-streamlit-autorefresh
-python-barcode
-pillow
