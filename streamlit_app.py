@@ -26,6 +26,7 @@ st.set_page_config(
 
 # Define available pages
 pages = [
+    st.Page("pages/Home.py", title="Home"),
     st.Page("pages/Shipping_Report.py", title="Shipping Report"),
 ]
 
